@@ -330,6 +330,13 @@ first-frame crash once — see §14).
   Coral Ring for +10 max HP and shop prices ×0.8. Map shows `!` on shop
   while the quest is open. Flavor NPCs: Pale Knight (gallery), Caged Imp
   (tower hall).
+- **Bestiary** (`rpg/bestiary.ts`): all enemy stats; NG+ multiplies via
+  `statsFor(id, flags)` when `ng+:1` is set.
+- **Completion** (`rpg/completion.ts`): rooms + relics + bosses + unique
+  items → % on map panel and victory screen.
+- **Endgame**: `canEnterThrone` (3 forms + colossus + wraith) opens the
+  right gate in Clockwork Spire → Throne of Night → Eternal Sovereign →
+  victory UI (time/deaths/clear %, NG+ or fresh run).
 - **Minimap**: draws visited rooms from `RoomDef.mapRect` — every new room
   MUST define a non-overlapping `mapRect`.
 - UI font is always `8px 'Courier New', monospace`; remember

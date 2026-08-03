@@ -6,6 +6,7 @@ import { RELIC_NAMES } from "../entities/interactables";
 import { audio } from "../engine/audio";
 import { music } from "../engine/music";
 import { ROOMS, WARP_PADS } from "../world/rooms";
+import { computeCompletion, formatPlayTime } from "../rpg/completion";
 import type { Game } from "../game";
 
 const SLOTS: { slot: EquipSlot; label: string }[] = [
@@ -289,9 +290,16 @@ export class Menu {
     }
 
     // Legend + options
+    const comp = computeCompletion(game.flags);
     ctx.fillStyle = PAL.textWhite;
     ctx.fillText("♦ save  ▲ warp  ! quest  ■ you", 160, originY + gridH * CELL + 18);
-    ctx.fillStyle = music.isMuted() ? PAL.uiFrame : PAL.textGold;
-    ctx.fillText(`Music: ${music.isMuted() ? "OFF" : "ON"}  (X toggle)`, 160, originY + gridH * CELL + 30);
+    ctx.fillStyle = PAL.textGold;
+    ctx.fillText(
+      `Clear ${comp.percent}%   Time ${formatPlayTime(game.playTicks)}`,
+      160,
+      originY + gridH * CELL + 30,
+    );
+    ctx.fillStyle = music.isMuted() ? PAL.uiFrame : PAL.spellCyan;
+    ctx.fillText(`Music: ${music.isMuted() ? "OFF" : "ON"}  (X toggle)`, 160, originY + gridH * CELL + 42);
   }
 }

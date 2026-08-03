@@ -1,6 +1,7 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { buildMedusaHeadSprites, type SpriteSet } from "../../gfx/sprites";
+import { statsFor } from "../../rpg/bestiary";
 
 /**
  * Classic Medusa Head: flies in a horizontal sine wave. Spawner-managed in
@@ -12,15 +13,8 @@ export class MedusaHead extends Enemy {
   private t = 0;
   private baseY: number;
 
-  constructor(x: number, y: number, dir: 1 | -1 = 1) {
-    super(x - 6, y - 6, 12, 12, {
-      hp: 6,
-      defense: 0,
-      touchPower: 10,
-      exp: 6,
-      goldChance: 0.08,
-      heartChance: 0.2,
-    });
+  constructor(x: number, y: number, dir: 1 | -1 = 1, flags?: Set<string>) {
+    super(x - 6, y - 6, 12, 12, statsFor("medusaHead", flags));
     this.facing = dir;
     this.baseY = y;
     this.body.vx = dir * 1.35;

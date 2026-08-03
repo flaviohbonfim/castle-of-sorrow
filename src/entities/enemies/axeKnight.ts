@@ -3,6 +3,7 @@ import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildAxeKnightSprites, type SpriteSet } from "../../gfx/sprites";
 import { audio } from "../../engine/audio";
+import { statsFor } from "../../rpg/bestiary";
 
 const GRAVITY = 0.26;
 const WALK = 0.38;
@@ -15,15 +16,8 @@ export class AxeKnight extends Enemy {
   private turnCooldown = 0;
   private throwCooldown = 50 + Math.floor(Math.random() * 40);
 
-  constructor(x: number, y: number) {
-    super(x - 8, y - 28, 16, 28, {
-      hp: 40,
-      defense: 6,
-      touchPower: 14,
-      exp: 28,
-      goldChance: 0.4,
-      heartChance: 0.25,
-    });
+  constructor(x: number, y: number, flags?: Set<string>) {
+    super(x - 8, y - 28, 16, 28, statsFor("axeKnight", flags));
     AxeKnight.sprites ??= buildAxeKnightSprites();
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }

@@ -325,9 +325,26 @@ function buildTowerTop(): BuiltRoom {
   b.pillar(5, 8);
   b.pillar(26, 8);
   b.punch(0, 8, 10); // from towerHall
+  // Right wall sealed as Gate by default; Game opens it when throne is unlocked.
+  for (let r = 8; r <= 10; r++) b.set(31, r, TileId.Gate);
   b.at("boss", 20, 10, "wraith");
   b.at("candle", 8, 10);
   b.at("candle", 24, 10);
+  return b.build();
+}
+
+/** Final arena — opens only with all form relics + both wing bosses slain. */
+function buildThrone(): BuiltRoom {
+  const b = new RoomBuilder(36, 14, "tower");
+  b.frame();
+  b.hline(11, 1, 34, TileId.FloorTop);
+  b.fill(1, 12, 34, 12, TileId.Brick);
+  b.pillar(6, 8);
+  b.pillar(29, 8);
+  b.punch(0, 8, 10); // from towerTop
+  b.at("boss", 22, 10, "sovereign");
+  b.at("candle", 10, 10);
+  b.at("candle", 26, 10);
   return b.build();
 }
 
@@ -488,6 +505,12 @@ function buildBossRoom(): BuiltRoom {
   return b.build();
 }
 
+/**
+ * Exit spawn convention (feet = bottom-center):
+ *  - Door floors: stand on FloorTop surface → y = row * TILE
+ *  - Left entry x ≈ 24–40; right entry x ≈ widthPx - 40
+ *  - Never spawn into a floor hole; land on a solid ledge beside it
+ */
 export const ROOMS: Record<string, RoomDef> = {
   entrance: {
     id: "entrance",
@@ -495,8 +518,10 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildEntrance,
     mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 },
     exits: [
-      { side: "right", min: 230, max: 300, target: "corridor", tx: 24, ty: 176 },
-      { side: "bottom", min: 52 * TILE, max: 55 * TILE, target: "cavern", tx: 656, ty: 24 },
+      // Right step (floor y=288) → corridor left floor (y=176)
+      { side: "right", min: 230, max: 300, target: "corridor", tx: 40, ty: 176 },
+      // Floor hole → cavern upper platforms (safe land, not ceiling clip)
+      { side: "bottom", min: 52 * TILE, max: 55 * TILE, target: "cavern", tx: 400, ty: 96 },
     ],
   },
   corridor: {
@@ -505,16 +530,16 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildCorridor,
     mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 },
     exits: [
-      { side: "left", min: 120, max: 180, target: "entrance", tx: 976, ty: 288 },
-      { side: "right", min: 120, max: 180, target: "saveRoom", tx: 24, ty: 144 },
-      // Ceiling shaft → Clock Tower (double-jump gated platforms).
-      // Spawn on the LEFT ledge of the shaft floor (not into the hole).
+      // → entrance right STEP (y=288), not the lower main floor
+      { side: "left", min: 120, max: 180, target: "entrance", tx: 960, ty: 288 },
+      { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
+      // Ceiling hole → shaft left floor ledge (beside bottom hole)
       {
         side: "top",
         min: 24 * TILE,
         max: 26 * TILE,
         target: "towerShaft",
-        tx: 48,
+        tx: 40,
         ty: 592,
       },
     ],
@@ -526,7 +551,7 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerShaft,
     mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 },
     exits: [
-      // Fall through the floor hole back into the Marble Gallery.
+      // Bottom hole → under corridor ceiling hatch
       {
         side: "bottom",
         min: 5 * TILE,
@@ -535,13 +560,13 @@ export const ROOMS: Record<string, RoomDef> = {
         tx: 400,
         ty: 176,
       },
-      // Jump out the wide ceiling hatch into Gear Gallery (solid floor, not the hole).
+      // Ceiling hatch → hall floor, RIGHT of the return hole (cols 4–7)
       {
         side: "top",
         min: 4 * TILE,
         max: 12 * TILE,
         target: "towerHall",
-        tx: 200,
+        tx: 168,
         ty: 208,
       },
     ],
@@ -553,14 +578,14 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerHall,
     mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 },
     exits: [
+      // Floor hole → shaft top-left solid ledge (row 4, y=64)
       {
         side: "bottom",
         min: 4 * TILE,
         max: 8 * TILE,
         target: "towerShaft",
-        // Land on the top-left ledge of the shaft.
         tx: 40,
-        ty: 80,
+        ty: 64,
       },
       {
         side: "right",
@@ -589,6 +614,27 @@ export const ROOMS: Record<string, RoomDef> = {
     },
     exits: [
       { side: "left", min: 120, max: 180, target: "towerHall", tx: 600, ty: 208 },
+      // Final gate (opened only when forms+bosses ready) → throne
+      { side: "right", min: 120, max: 180, target: "throne", tx: 40, ty: 176 },
+    ],
+  },
+  throne: {
+    id: "throne",
+    name: "Throne of Night",
+    zone: "tower",
+    build: buildThrone,
+    mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 },
+    boss: {
+      id: "sovereign",
+      gateCells: [
+        [2, 8],
+        [2, 9],
+        [2, 10],
+      ],
+      rewards: [],
+    },
+    exits: [
+      { side: "left", min: 120, max: 180, target: "towerTop", tx: 472, ty: 176 },
     ],
   },
   saveRoom: {
@@ -596,7 +642,7 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Sanctuary",
     build: buildSaveRoom,
     mapRect: { gx: 7, gy: 0, gw: 2, gh: 1 },
-    exits: [{ side: "left", min: 88, max: 148, target: "corridor", tx: 736, ty: 176 }],
+    exits: [{ side: "left", min: 88, max: 148, target: "corridor", tx: 728, ty: 176 }],
   },
   cavern: {
     id: "cavern",
@@ -604,12 +650,13 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildCavern,
     mapRect: { gx: 3, gy: 2, gw: 3, gh: 2 },
     exits: [
-      { side: "left", min: 40, max: 100, target: "entrance", tx: 32, ty: 320 },
-      // Lower-left door returns from lake right stair.
-      { side: "left", min: 200, max: 260, target: "lake", tx: 856, ty: 208 },
-      { side: "right", min: 200, max: 260, target: "shop", tx: 24, ty: 144 },
-      // Floor hole cols 2–3 → Sunken Gallery.
-      { side: "bottom", min: 2 * TILE, max: 4 * TILE, target: "lake", tx: 160, ty: 40 },
+      // Upper left climb → entrance main floor (left side)
+      { side: "left", min: 40, max: 100, target: "entrance", tx: 48, ty: 320 },
+      // Lower left → lake dry stair (y=224)
+      { side: "left", min: 200, max: 260, target: "lake", tx: 856, ty: 224 },
+      { side: "right", min: 200, max: 260, target: "shop", tx: 40, ty: 144 },
+      // Floor hole → lake upper water (fall-in)
+      { side: "bottom", min: 2 * TILE, max: 4 * TILE, target: "lake", tx: 200, ty: 48 },
     ],
   },
   lake: {
@@ -618,9 +665,9 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildLake,
     mapRect: { gx: 1, gy: 4, gw: 4, gh: 2 },
     exits: [
-      // Right door → cavern lower-left.
+      // Right stair door → cavern lower-left floor
       { side: "right", min: 176, max: 224, target: "cavern", tx: 40, ty: 256 },
-      // Left underwater door → lakeDepths.
+      // Left underwater → lakeDepths near right door
       { side: "left", min: 232, max: 288, target: "lakeDepths", tx: 600, ty: 224 },
     ],
   },
@@ -640,7 +687,7 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 6, gy: 2, gw: 1, gh: 2 },
     exits: [
       { side: "left", min: 88, max: 148, target: "cavern", tx: 728, ty: 256 },
-      { side: "right", min: 88, max: 148, target: "bossRoom", tx: 56, ty: 176 },
+      { side: "right", min: 88, max: 148, target: "bossRoom", tx: 48, ty: 176 },
     ],
   },
   bossRoom: {
@@ -665,3 +712,14 @@ export const ROOMS: Record<string, RoomDef> = {
 };
 
 export const START = { room: "entrance", x: 56, y: 320 };
+
+/** True when the final throne gate should open. */
+export function canEnterThrone(flags: Set<string>): boolean {
+  return (
+    flags.has("relic:batForm") &&
+    flags.has("relic:wolfForm") &&
+    flags.has("relic:mistForm") &&
+    flags.has("boss:colossus") &&
+    flags.has("boss:wraith")
+  );
+}

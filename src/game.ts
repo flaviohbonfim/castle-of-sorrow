@@ -6,7 +6,14 @@ import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
 import { TILE, TileId } from "./gfx/tiles";
 import { ParallaxBackground } from "./gfx/parallax";
-import { nextWarp, ROOMS, START, WARP_CYCLE, type RoomDef } from "./world/rooms";
+import {
+  canEnterThrone,
+  nextWarp,
+  ROOMS,
+  START,
+  WARP_CYCLE,
+  type RoomDef,
+} from "./world/rooms";
 import type { Tilemap } from "./world/tilemap";
 import { Player, type PlayerSave } from "./entities/player/player";
 import { IdleState } from "./entities/player/states";
@@ -40,6 +47,7 @@ import { Hud } from "./ui/hud";
 import { Menu } from "./ui/menu";
 import { WarpUI } from "./ui/warp";
 import { DialogueUI } from "./ui/dialogue";
+import { VictoryUI } from "./ui/victory";
 
 export interface ParticleOpts {
   vx: number;
@@ -56,11 +64,14 @@ interface Particle extends ParticleOpts {
 }
 
 interface SaveFile {
+  version?: number;
   room: string;
   x: number;
   y: number;
   flags: string[];
   player: PlayerSave;
+  playTicks?: number;
+  deaths?: number;
 }
 
 const SAVE_KEY = "castle-of-sorrow-save";
@@ -95,6 +106,7 @@ export class Game {
   private shopUI = new ShopUI();
   private warpUI = new WarpUI();
   private dialogueUI = new DialogueUI();
+  private victoryUI = new VictoryUI();
   private minimap = new Minimap();
   /** Active boss (any fight that shows the HP bar). */
   boss: (Enemy & { displayName: string; maxHp: number }) | null = null;
@@ -105,6 +117,9 @@ export class Game {
   private medusaSpawners: { x: number; y: number; dir: 1 | -1 }[] = [];
   private medusaSpawnTimer = 0;
   tick = 0;
+  /** Simulation ticks spent in active play (for victory timer). */
+  playTicks = 0;
+  deaths = 0;
 
   constructor() {
     this.player = new Player(START.x, START.y);
@@ -135,10 +150,10 @@ export class Game {
 
     for (const s of built.spawns) {
       switch (s.kind) {
-        case "skeleton": this.enemies.push(new Skeleton(s.x, s.y)); break;
-        case "bat": this.enemies.push(new Bat(s.x, s.y)); break;
-        case "fishman": this.enemies.push(new Fishman(s.x, s.y)); break;
-        case "axeKnight": this.enemies.push(new AxeKnight(s.x, s.y)); break;
+        case "skeleton": this.enemies.push(new Skeleton(s.x, s.y, this.flags)); break;
+        case "bat": this.enemies.push(new Bat(s.x, s.y, this.flags)); break;
+        case "fishman": this.enemies.push(new Fishman(s.x, s.y, this.flags)); break;
+        case "axeKnight": this.enemies.push(new AxeKnight(s.x, s.y, this.flags)); break;
         case "medusaSpawner":
           this.medusaSpawners.push({ x: s.x, y: s.y, dir: s.dir ?? 1 });
           break;
@@ -185,6 +200,13 @@ export class Game {
     if (this.boss && def.boss) {
       for (const [c, r] of def.boss.gateCells) {
         this.map.setTile(c, r, TileId.Gate);
+      }
+    }
+    // Final throne gate on the right of the Clockwork Spire.
+    if (id === "towerTop") {
+      const open = canEnterThrone(this.flags);
+      for (let r = 8; r <= 10; r++) {
+        this.map.setTile(31, r, open ? TileId.Empty : TileId.Gate);
       }
     }
     this.flags.add(`visited:${id}`);
@@ -257,6 +279,14 @@ export class Game {
     for (let i = 0; i < 6; i++) {
       this.spawnPickup("gold", cx + (Math.random() * 60 - 30), cy + 10);
     }
+    // Throne clear → victory.
+    if (bossId === "sovereign") {
+      this.victoryUI.show();
+    }
+    // Unlock the spire's right gate if the player now qualifies.
+    if (this.roomId === "towerTop" && canEnterThrone(this.flags)) {
+      for (let r = 8; r <= 10; r++) this.map.setTile(31, r, TileId.Empty);
+    }
   }
 
   private offerBossRewards(def: RoomDef): void {
@@ -274,8 +304,9 @@ export class Game {
     y: number,
   ): (Enemy & { displayName: string; maxHp: number }) | null {
     switch (id) {
-      case "colossus": return new BoneColossus(x, y);
-      case "wraith": return new ClockworkWraith(x, y);
+      case "colossus": return new BoneColossus(x, y, "colossus", this.flags);
+      case "sovereign": return new BoneColossus(x, y, "sovereign", this.flags);
+      case "wraith": return new ClockworkWraith(x, y, this.flags);
       default: return null;
     }
   }
@@ -304,11 +335,14 @@ export class Game {
   saveGame(): void {
     const p = this.player;
     const data: SaveFile = {
+      version: 1,
       room: this.roomId,
       x: p.centerX,
       y: p.body.y + p.body.h,
       flags: [...this.flags],
       player: p.serialize(),
+      playTicks: this.playTicks,
+      deaths: this.deaths,
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -324,11 +358,69 @@ export class Game {
       const data = JSON.parse(raw) as SaveFile;
       this.flags = new Set(data.flags);
       this.player.restore(data.player);
+      this.playTicks = data.playTicks ?? 0;
+      this.deaths = data.deaths ?? 0;
       this.loadRoom(data.room, data.x, data.y);
       return true;
     } catch {
       return false;
     }
+  }
+
+  /** Fresh run at the entrance (keeps nothing). */
+  startFreshRun(): void {
+    this.flags = new Set();
+    this.playTicks = 0;
+    this.deaths = 0;
+    // Mirror Player constructor loadout (equipped pieces are not also in items).
+    this.player.restore({
+      attrs: { str: 6, con: 6, int: 6, lck: 5 },
+      res: { hp: 70, maxHp: 70, mp: 20, maxMp: 20, hearts: 10, maxHearts: 50 },
+      levelState: { level: 1, exp: 0 },
+      relics: [],
+      subweapon: "dagger",
+      inventory: {
+        items: [
+          { itemId: "leatherWhip", count: 1 },
+          { itemId: "nobleRapier", count: 1 },
+          { itemId: "potion", count: 3 },
+        ],
+        gold: 0,
+        equipment: {
+          rightHand: "shortSword",
+          leftHand: null,
+          head: null,
+          body: "travelerTunic",
+          cloak: "wornCloak",
+          accessory1: null,
+          accessory2: null,
+        },
+      },
+    });
+    this.loadRoom(START.room, START.x, START.y);
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** NG+: keep player power, mark harder enemies, soft at entrance. */
+  startNewGamePlus(): void {
+    this.flags.add("ng+:1");
+    // Clear visit/boss progress but keep relics + items + quests done.
+    for (const f of [...this.flags]) {
+      if (f.startsWith("visited:") || f.startsWith("boss:") || f.startsWith("wall:")) {
+        this.flags.delete(f);
+      }
+    }
+    this.flags.add("ng+:1");
+    this.playTicks = 0;
+    this.deaths = 0;
+    this.player.res.hp = this.player.res.maxHp;
+    this.player.res.mp = this.player.res.maxMp;
+    this.loadRoom(START.room, START.x, START.y);
+    this.saveGame();
   }
 
   /* --------------------------- spawning API --------------------------- */
@@ -383,6 +475,7 @@ export class Game {
   }
 
   respawn(): void {
+    this.deaths++;
     const p = this.player;
     p.res.hp = p.res.maxHp;
     p.res.mp = p.res.maxMp;
@@ -445,8 +538,12 @@ export class Game {
     this.input.beginTick();
     this.tick++;
 
-    // Dialogue, shop, warp picker and pause menu freeze the world.
+    // Dialogue, shop, warp picker, victory and pause menu freeze the world.
     setNpcQuestHint(!this.flags.has("quest:coral:done"));
+    if (this.victoryUI.open) {
+      this.victoryUI.update(this);
+      return;
+    }
     if (this.dialogueUI.open) {
       this.dialogueUI.update(this);
       return;
@@ -463,6 +560,8 @@ export class Game {
       this.menu.update(this);
       return;
     }
+
+    this.playTicks++;
     if (this.input.pressed("menu")) {
       this.input.consume("menu");
       this.menu.toggle();
@@ -539,7 +638,7 @@ export class Game {
       return;
     }
     const sp = this.medusaSpawners[Math.floor(Math.random() * this.medusaSpawners.length)];
-    this.enemies.push(new MedusaHead(sp.x, sp.y, sp.dir));
+    this.enemies.push(new MedusaHead(sp.x, sp.y, sp.dir, this.flags));
     this.medusaSpawnTimer = 90;
   }
 
@@ -695,5 +794,6 @@ export class Game {
     if (this.shopUI.open) this.shopUI.draw(ctx, this);
     if (this.warpUI.open) this.warpUI.draw(ctx);
     if (this.dialogueUI.open) this.dialogueUI.draw(ctx);
+    if (this.victoryUI.open) this.victoryUI.draw(ctx, this);
   }
 }

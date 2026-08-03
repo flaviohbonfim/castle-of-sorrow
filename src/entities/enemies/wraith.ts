@@ -4,6 +4,7 @@ import { audio } from "../../engine/audio";
 import { PAL } from "../../gfx/palette";
 import { buildWraithSprites, type SpriteSet } from "../../gfx/sprites";
 import { MedusaHead } from "./medusaHead";
+import { statsFor } from "../../rpg/bestiary";
 
 type Mode = "idle" | "fadeOut" | "fadeIn" | "volley" | "summon";
 
@@ -23,15 +24,8 @@ export class ClockworkWraith extends Enemy {
   readonly displayName = "CLOCKWORK WRAITH";
   readonly bossId = "wraith";
 
-  constructor(x: number, y: number) {
-    super(x - 12, y - 36, 24, 36, {
-      hp: 220,
-      defense: 5,
-      touchPower: 16,
-      exp: 200,
-      goldChance: 1,
-      heartChance: 0,
-    });
+  constructor(x: number, y: number, flags?: Set<string>) {
+    super(x - 12, y - 36, 24, 36, statsFor("wraith", flags));
     this.maxHp = this.stats.hp;
     ClockworkWraith.sprites ??= buildWraithSprites();
     this.facing = -1;
@@ -141,7 +135,7 @@ export class ClockworkWraith extends Enemy {
       case "summon": {
         if (this.modeTicks === 6 && !this.summoned) {
           this.summoned = true;
-          const head = new MedusaHead(this.centerX, this.body.y + 8, this.facing);
+          const head = new MedusaHead(this.centerX, this.body.y + 8, this.facing, game.flags);
           game.spawnEnemy(head);
           audio.play("spell");
           game.camera.addShake(0.35);

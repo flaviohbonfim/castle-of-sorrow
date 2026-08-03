@@ -4,14 +4,13 @@ import { audio } from "../../engine/audio";
 import { moveBody } from "../../world/collision";
 import { buildBossSprites } from "../../gfx/sprites";
 import { PAL } from "../../gfx/palette";
+import { statsFor, type BestiaryId } from "../../rpg/bestiary";
 
 const GRAVITY = 0.26;
 
 /**
- * Bone Colossus — the milestone boss. Lumbers toward the player, tosses bone
- * volleys at range and telegraphs a charging slam up close. Enrages below
- * half HP (faster walk, shorter attack cooldown). Defeat opens the gate and
- * drops the Bat & Wolf form relics.
+ * Bone Colossus — wing boss (and final Sovereign rematch). Lumbers toward the
+ * player, tosses bone volleys and telegraphs a charge. Enrages below half HP.
  */
 export class BoneColossus extends Enemy {
   private static sprites: ReturnType<typeof buildBossSprites> | null = null;
@@ -20,21 +19,23 @@ export class BoneColossus extends Enemy {
   private mode: "walk" | "windup" | "charge" = "walk";
   private modeTicks = 0;
   readonly maxHp: number;
-  readonly displayName = "BONE COLOSSUS";
-  readonly bossId = "colossus";
+  readonly displayName: string;
+  readonly bossId: string;
 
-  constructor(x: number, y: number) {
-    super(x - 13, y - 40, 26, 40, {
-      hp: 170,
-      defense: 4,
-      touchPower: 14,
-      exp: 150,
-      goldChance: 1,
-      heartChance: 0,
-    });
+  constructor(
+    x: number,
+    y: number,
+    kind: "colossus" | "sovereign" = "colossus",
+    flags?: Set<string>,
+  ) {
+    const id: BestiaryId = kind;
+    super(x - 13, y - 40, 26, 40, statsFor(id, flags));
     this.maxHp = this.stats.hp;
+    this.bossId = kind;
+    this.displayName = kind === "sovereign" ? "ETERNAL SOVEREIGN" : "BONE COLOSSUS";
     BoneColossus.sprites ??= buildBossSprites();
     this.facing = -1;
+    if (kind === "sovereign") this.cooldown = 70;
   }
 
   private get enraged(): boolean {

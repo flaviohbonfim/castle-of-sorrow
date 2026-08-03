@@ -1,6 +1,7 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { buildBatSprites, type SpriteSet } from "../../gfx/sprites";
+import { statsFor } from "../../rpg/bestiary";
 
 /**
  * Flyer: hovers on a sine wave until the player comes near, then swoops in a
@@ -13,15 +14,8 @@ export class Bat extends Enemy {
   private t = Math.random() * Math.PI * 2;
   private mode: "hover" | "swoop" = "hover";
 
-  constructor(x: number, y: number) {
-    super(x - 7, y - 4, 14, 8, {
-      hp: 10,
-      defense: 0,
-      touchPower: 8,
-      exp: 8,
-      goldChance: 0.15,
-      heartChance: 0.45,
-    });
+  constructor(x: number, y: number, flags?: Set<string>) {
+    super(x - 7, y - 4, 14, 8, statsFor("bat", flags));
     this.baseY = y - 4;
     Bat.sprites ??= buildBatSprites();
   }

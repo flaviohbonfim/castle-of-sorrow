@@ -3,6 +3,7 @@ import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildFishmanSprites, type SpriteSet } from "../../gfx/sprites";
 import { TILE } from "../../gfx/tiles";
+import { statsFor } from "../../rpg/bestiary";
 
 const GRAVITY = 0.18;
 const WALK = 0.5;
@@ -20,15 +21,8 @@ export class Fishman extends Enemy {
   private spitCooldown = 40 + Math.floor(Math.random() * 40);
   private mode: "walk" | "swim" = "walk";
 
-  constructor(x: number, y: number) {
-    super(x - 7, y - 22, 14, 22, {
-      hp: 18,
-      defense: 1,
-      touchPower: 12,
-      exp: 16,
-      goldChance: 0.3,
-      heartChance: 0.35,
-    });
+  constructor(x: number, y: number, flags?: Set<string>) {
+    super(x - 7, y - 22, 14, 22, statsFor("fishman", flags));
     Fishman.sprites ??= buildFishmanSprites();
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
