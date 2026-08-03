@@ -62,7 +62,7 @@ export const WARP_CYCLE: string[] = ["corridor", "cavern", "towerHall"];
 export const WARP_PADS: Record<string, { x: number; y: number }> = {
   corridor: { x: 88, y: 176 },
   cavern: { x: 72, y: 256 },
-  towerHall: { x: 56, y: 208 },
+  towerHall: { x: 168, y: 208 }, // at("warp", 10, 12)
 };
 
 /** Next warp destination from the pad in `fromRoom`. */
@@ -225,46 +225,59 @@ function buildCorridor(): BuiltRoom {
   return b.build();
 }
 
-/** Tall vertical shaft — platform ladder + medusa head pressure. */
+/**
+ * Tall vertical shaft — staggered one-way platforms + medusa pressure.
+ * Bottom hole returns to the Marble Gallery; open center shaft + wide
+ * ceiling hole exits to Gear Gallery. Platforms are one-way so ↓+Jump
+ * drops through on the way back down.
+ */
 function buildTowerShaft(): BuiltRoom {
   const b = new RoomBuilder(16, 40, "tower");
   b.frame();
-  // Bottom landing
+
+  // --- bottom landing with a real hole through the floor (cols 6–9) ---
   b.hline(37, 1, 14, TileId.FloorTop);
   b.fill(1, 38, 14, 38, TileId.Brick);
-  // Platform ladder (spacing within double-jump range).
-  b.hline(33, 3, 7, TileId.Platform);
-  b.hline(29, 8, 12, TileId.Platform);
-  b.hline(25, 3, 7, TileId.Platform);
-  b.hline(21, 8, 12, TileId.Platform);
-  b.hline(17, 3, 7, TileId.Platform);
-  b.hline(13, 8, 12, TileId.Platform);
-  b.hline(9, 3, 7, TileId.Platform);
-  b.hline(5, 6, 11, TileId.Platform);
-  // Top ledge to right door / ceiling exit
-  b.hline(3, 1, 14, TileId.FloorTop);
-  b.fill(1, 1, 14, 2, TileId.Empty);
-  b.hline(3, 1, 14, TileId.FloorTop);
-
-  // Bottom hole from corridor (open floor at cols 6–9 for entry)
   for (let c = 6; c <= 9; c++) {
+    b.set(c, 37, TileId.Empty);
+    b.set(c, 38, TileId.Empty);
     b.set(c, 39, TileId.Empty);
   }
-  // Top exit to towerHall
-  for (let c = 6; c <= 9; c++) {
+
+  // --- staggered one-way ladder (~3 tiles / 48px — single-jump friendly) ---
+  b.hline(34, 2, 6, TileId.Platform);
+  b.hline(31, 9, 13, TileId.Platform);
+  b.hline(28, 2, 6, TileId.Platform);
+  b.hline(25, 9, 13, TileId.Platform);
+  b.hline(22, 2, 6, TileId.Platform);
+  b.hline(19, 9, 13, TileId.Platform);
+  b.hline(16, 2, 6, TileId.Platform);
+  b.hline(13, 9, 13, TileId.Platform);
+  b.hline(10, 2, 6, TileId.Platform);
+  b.hline(7, 9, 13, TileId.Platform);
+
+  // --- top: side ledges + open center under a wide ceiling hatch ---
+  // Clear the upper cells so the jump path is unobstructed.
+  b.fill(1, 1, 14, 4, TileId.Empty);
+  // Side ledges to stand on (center cols 5–10 stay open for the exit jump).
+  b.hline(4, 1, 4, TileId.FloorTop);
+  b.hline(4, 11, 14, TileId.FloorTop);
+  // Intermediate platform under the hatch (one-way: drop back if you miss).
+  b.hline(5, 5, 10, TileId.Platform);
+  // Wide ceiling hole → towerHall
+  for (let c = 4; c <= 11; c++) {
     b.set(c, 0, TileId.Empty);
   }
-  b.punch(15, 1, 2); // optional side clearance near top
 
   // Medusa spawners at mid height, both sides.
   b.spawns.push({ kind: "medusaSpawner", x: 8, y: 20 * TILE, dir: 1 });
   b.spawns.push({ kind: "medusaSpawner", x: 16 * TILE - 8, y: 14 * TILE, dir: -1 });
   b.spawns.push({ kind: "medusaSpawner", x: 8, y: 28 * TILE, dir: 1 });
 
-  b.at("candle", 4, 36);
-  b.at("candle", 11, 32);
-  b.at("candle", 5, 20);
-  b.at("candle", 10, 8);
+  b.at("candle", 3, 36);
+  b.at("candle", 12, 33);
+  b.at("candle", 4, 21);
+  b.at("candle", 11, 12);
   return b.build();
 }
 
@@ -282,15 +295,16 @@ function buildTowerHall(): BuiltRoom {
   b.hline(9, 24, 28, TileId.Platform);
   b.hline(7, 18, 22, TileId.Platform);
 
-  // Floor hole down to shaft top
-  for (let c = 4; c <= 6; c++) {
+  // Floor hole down to shaft (must cut through FloorTop + subfloor).
+  for (let c = 4; c <= 7; c++) {
     b.set(c, 13, TileId.Empty);
     b.set(c, 14, TileId.Empty);
     b.set(c, 15, TileId.Empty);
   }
   b.punch(39, 10, 12); // to towerTop boss
 
-  b.at("warp", 3, 12);
+  // Warp sits on solid floor to the right of the hole.
+  b.at("warp", 10, 12);
   b.at("axeKnight", 14, 12);
   b.at("axeKnight", 28, 12);
   b.at("candle", 10, 12);
@@ -492,12 +506,13 @@ export const ROOMS: Record<string, RoomDef> = {
       { side: "left", min: 120, max: 180, target: "entrance", tx: 976, ty: 288 },
       { side: "right", min: 120, max: 180, target: "saveRoom", tx: 24, ty: 144 },
       // Ceiling shaft → Clock Tower (double-jump gated platforms).
+      // Spawn on the LEFT ledge of the shaft floor (not into the hole).
       {
         side: "top",
         min: 24 * TILE,
         max: 26 * TILE,
         target: "towerShaft",
-        tx: 128,
+        tx: 48,
         ty: 592,
       },
     ],
@@ -509,22 +524,22 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerShaft,
     mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 },
     exits: [
-      // Fall back into corridor through bottom hole.
+      // Fall through the floor hole back into the Marble Gallery.
       {
         side: "bottom",
-        min: 6 * TILE,
-        max: 10 * TILE,
+        min: 5 * TILE,
+        max: 11 * TILE,
         target: "corridor",
         tx: 400,
         ty: 176,
       },
-      // Climb out top into tower hall (land near the shaft hole).
+      // Jump out the wide ceiling hatch into Gear Gallery (solid floor, not the hole).
       {
         side: "top",
-        min: 6 * TILE,
-        max: 10 * TILE,
+        min: 4 * TILE,
+        max: 12 * TILE,
         target: "towerHall",
-        tx: 88,
+        tx: 200,
         ty: 208,
       },
     ],
@@ -539,10 +554,11 @@ export const ROOMS: Record<string, RoomDef> = {
       {
         side: "bottom",
         min: 4 * TILE,
-        max: 7 * TILE,
+        max: 8 * TILE,
         target: "towerShaft",
-        tx: 128,
-        ty: 64,
+        // Land on the top-left ledge of the shaft.
+        tx: 40,
+        ty: 80,
       },
       {
         side: "right",

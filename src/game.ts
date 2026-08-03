@@ -208,7 +208,9 @@ export class Game {
         (exit.side === "right" && cx > this.map.widthPx - 8 && cy >= exit.min && cy <= exit.max) ||
         (exit.side === "left" && cx < 8 && cy >= exit.min && cy <= exit.max) ||
         (exit.side === "bottom" && p.body.y > this.map.heightPx && cx >= exit.min && cx <= exit.max) ||
-        (exit.side === "top" && p.body.y + p.body.h < 0 && cx >= exit.min && cx <= exit.max);
+        // Top: fire as soon as the hitbox crest crosses the ceiling (not only
+        // when the whole body is above the room — that felt like a dead end).
+        (exit.side === "top" && p.body.y < 0 && cx >= exit.min && cx <= exit.max);
       if (hit) {
         this.loadRoom(exit.target, exit.tx, exit.ty);
         return;
