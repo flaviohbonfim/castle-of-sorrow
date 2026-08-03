@@ -1,51 +1,34 @@
 import { VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import type { Player } from "../entities/player/player";
-import { expToNext } from "../rpg/leveling";
 import { buildPickupSprites } from "../gfx/sprites";
 
 /**
- * HUD layout constants — nudge the left panel here without hunting draw calls.
- * Backbuffer is 480×270; plate ends at y = PLATE.y + PLATE.h (68).
+ * Compact combat HUD (Phase 8.6 option B).
+ * LV / EXP / weapon name live in the pause menu only.
+ *
+ * Plate ~104×28 — under 3% of the 480×270 backbuffer.
  */
 export const LAYOUT = {
-  plate: { x: 6, y: 6, w: 168, h: 62 },
-  hp: {
-    labelX: 12,
-    labelY: 18,
-    barX: 30,
-    barY: 12,
-    barW: 92,
-    barH: 6,
-    valueX: 168,
-  },
-  mp: {
-    labelX: 12,
-    labelY: 29,
-    barX: 30,
-    barY: 24,
-    barW: 92,
-    barH: 4,
-    valueX: 168,
-  },
-  level: { x: 12, y: 40, expX: 168 },
-  weapon: { x: 12, y: 51 },
+  plate: { x: 4, y: 4, w: 104, h: 28 },
+  hp: { barX: 8, barY: 7, barW: 72, barH: 5, valueX: 100 },
+  mp: { barX: 8, barY: 14, barW: 72, barH: 3, valueX: 100 },
   strip: {
-    y: 62,
-    subX: 10,
-    subBoxW: 18,
-    subBoxH: 16,
-    heartsX: 32,
-    goldX: 78,
-    potionsX: 128,
+    y: 28,
+    subX: 6,
+    subBoxW: 14,
+    subBoxH: 12,
+    heartsX: 24,
+    goldX: 52,
+    potionsX: 82,
   },
-  hints: { x: 8, y: VIEW_H - 10 },
+  hints: { x: 6, y: VIEW_H - 10 },
 } as const;
 
 let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
 
 /**
- * Left vitals panel + bottom key hints. Minimap owns the top-right alone.
+ * Minimal left vitals + resource strip. Minimap owns the top-right alone.
  */
 export class Hud {
   draw(ctx: CanvasRenderingContext2D, p: Player): void {
@@ -55,22 +38,19 @@ export class Hud {
     ctx.font = "8px 'Courier New', monospace";
     ctx.textAlign = "left";
 
-    // --- translucent plate ---
+    // --- plate ---
     const { x, y, w, h } = L.plate;
     ctx.fillStyle = "rgba(10, 6, 20, 0.72)";
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = PAL.uiFrameDark;
     ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    // Top highlight edge
     ctx.strokeStyle = PAL.uiFrame;
     ctx.beginPath();
     ctx.moveTo(x + 1, y + 0.5);
     ctx.lineTo(x + w - 1, y + 0.5);
     ctx.stroke();
 
-    // --- HP ---
-    ctx.fillStyle = PAL.textWhite;
-    ctx.fillText("HP", L.hp.labelX, L.hp.labelY);
+    // --- HP (color carries the meaning; no "HP" label) ---
     this.bar(
       ctx,
       L.hp.barX,
@@ -83,11 +63,9 @@ export class Hud {
     );
     ctx.textAlign = "right";
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`${p.res.hp}/${p.res.maxHp}`, L.hp.valueX, L.hp.labelY);
+    ctx.fillText(String(p.res.hp), L.hp.valueX, L.hp.barY + 6);
 
     // --- MP ---
-    ctx.textAlign = "left";
-    ctx.fillText("MP", L.mp.labelX, L.mp.labelY);
     this.bar(
       ctx,
       L.mp.barX,
@@ -98,34 +76,13 @@ export class Hud {
       PAL.mpBlue,
       PAL.mpBlueHi,
     );
-    ctx.textAlign = "right";
-    ctx.fillText(`${Math.floor(p.res.mp)}/${p.res.maxMp}`, L.mp.valueX, L.mp.labelY);
+    ctx.fillStyle = PAL.mpBlueHi;
+    ctx.fillText(String(Math.floor(p.res.mp)), L.mp.valueX, L.mp.barY + 5);
 
-    // --- Level / EXP ---
-    ctx.textAlign = "left";
-    ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`LV ${p.levelState.level}`, L.level.x, L.level.y);
-    ctx.textAlign = "right";
-    ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText(
-      `EXP ${p.levelState.exp}/${expToNext(p.levelState.level)}`,
-      L.level.expX,
-      L.level.y,
-    );
-
-    // --- Weapon ---
-    ctx.textAlign = "left";
-    const weapon = p.inventory.weapon();
-    ctx.fillStyle = PAL.uiFrame;
-    const weaponName = weapon?.name ?? "—";
-    // Clip to plate width so long names never escape.
-    const maxW = L.plate.x + L.plate.w - L.weapon.x - 4;
-    ctx.fillText(this.fit(ctx, weaponName, maxW), L.weapon.x, L.weapon.y);
-
-    // --- Resource strip ---
+    // --- resource strip ---
     this.drawStrip(ctx, p);
 
-    // --- Key hints (bottom-left, outside the plate) ---
+    // --- key hints ---
     ctx.textAlign = "left";
     ctx.fillStyle = PAL.uiFrameDark;
     ctx.fillText("[Tab] Menu  [V] Sub", L.hints.x, L.hints.y);
@@ -141,66 +98,52 @@ export class Hud {
 
     // Sub-weapon slot
     const bx = S.subX;
-    const by = baseline - 12;
+    const by = baseline - 10;
     ctx.fillStyle = "rgba(16, 10, 28, 0.9)";
     ctx.fillRect(bx, by, S.subBoxW, S.subBoxH);
     ctx.strokeStyle = PAL.uiFrameDark;
     ctx.strokeRect(bx + 0.5, by + 0.5, S.subBoxW - 1, S.subBoxH - 1);
-    this.drawSubGlyph(ctx, p.subweapon, bx + 3, by + 2);
+    this.drawSubGlyph(ctx, p.subweapon, bx + 1, by + 1);
 
     // Hearts
     const heart = icons.heart;
-    const hx = S.heartsX;
-    const hy = baseline - heart.height + 1;
-    ctx.drawImage(heart, hx, hy);
+    ctx.drawImage(heart, S.heartsX, baseline - heart.height + 1);
     ctx.textAlign = "left";
     ctx.fillStyle = PAL.heartHi;
-    ctx.fillText(String(p.res.hearts), hx + heart.width + 2, baseline);
+    ctx.fillText(String(p.res.hearts), S.heartsX + heart.width + 1, baseline);
 
     // Gold
     const gold = icons.gold;
-    const gx = S.goldX;
-    const gy = baseline - gold.height + 1;
-    ctx.drawImage(gold, gx, gy);
+    ctx.drawImage(gold, S.goldX, baseline - gold.height + 1);
     ctx.fillStyle = PAL.textGold;
-    const goldText = String(p.inventory.gold);
-    // Keep gold from colliding with potions / plate edge.
-    ctx.fillText(this.fit(ctx, goldText, S.potionsX - gx - gold.width - 6), gx + gold.width + 2, baseline);
+    ctx.fillText(String(p.inventory.gold), S.goldX + gold.width + 1, baseline);
 
-    // Potions (hidden when zero)
+    // Potions (hidden at 0)
     const potions = p.inventory.count("potion");
     if (potions > 0) {
       const pot = icons.potion;
-      const px = S.potionsX;
-      const py = baseline - pot.height + 1;
-      ctx.drawImage(pot, px, py);
+      // Don't overflow the 104px plate
+      const px = Math.min(S.potionsX, LAYOUT.plate.x + LAYOUT.plate.w - pot.width - 12);
+      ctx.drawImage(pot, px, baseline - pot.height + 1);
       ctx.fillStyle = PAL.potionGlass;
-      ctx.fillText(String(potions), px + pot.width + 2, baseline);
+      ctx.fillText(String(potions), px + pot.width + 1, baseline);
     }
-  }
-
-  /** Truncate with "…" so text stays inside `maxW` px. */
-  private fit(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
-    if (ctx.measureText(text).width <= maxW) return text;
-    let t = text;
-    while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
-    return t + "…";
   }
 
   private drawSubGlyph(ctx: CanvasRenderingContext2D, id: string, x: number, y: number): void {
     if (id === "axe") {
       ctx.fillStyle = PAL.blade;
-      ctx.fillRect(x + 2, y, 8, 2);
-      ctx.fillRect(x + 5, y + 2, 2, 8);
+      ctx.fillRect(x + 1, y + 1, 7, 2);
+      ctx.fillRect(x + 4, y + 2, 2, 7);
       ctx.fillStyle = PAL.gold;
-      ctx.fillRect(x + 4, y + 3, 4, 3);
+      ctx.fillRect(x + 3, y + 3, 3, 2);
     } else {
       ctx.fillStyle = PAL.bladeHi;
-      ctx.fillRect(x + 6, y, 2, 9);
+      ctx.fillRect(x + 5, y, 2, 8);
       ctx.fillStyle = PAL.blade;
-      ctx.fillRect(x + 5, y + 1, 4, 2);
+      ctx.fillRect(x + 4, y + 1, 4, 2);
       ctx.fillStyle = PAL.gold;
-      ctx.fillRect(x + 4, y + 8, 6, 2);
+      ctx.fillRect(x + 3, y + 7, 5, 2);
     }
   }
 
