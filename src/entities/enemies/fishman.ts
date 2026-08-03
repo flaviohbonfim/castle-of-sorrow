@@ -22,7 +22,7 @@ export class Fishman extends Enemy {
   private mode: "walk" | "swim" = "walk";
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 7, y - 22, 14, 22, statsFor("fishman", flags));
+    super(x - 7, y - 28, 14, 28, statsFor("fishman", flags));
     Fishman.sprites ??= buildFishmanSprites();
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
