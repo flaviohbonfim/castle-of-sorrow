@@ -33,7 +33,7 @@ npm run typecheck  # strict TS check
 | ↓ + Z | Drop through one-way platforms |
 | Q | Drink potion |
 | Tab / E / Esc | Pause menu: Equip / Items / Map panels (← →) |
-| ↑ (on pads) | Use warp pad (destination list) / save / talk to the Hermit |
+| ↑ (on pads/NPCs) | Warp list / save / talk (Hermit, ghost, caged imp) |
 | Z in mid-air | Double jump (after finding the Soul of the Gale relic) |
 | ↑, ↓ + X | Command spell "Hellfire" — 3 fireballs, costs 16 MP |
 | 1 / 2 / 3 | Transform: Bat / Wolf / Mist — each needs its relic |
@@ -95,6 +95,6 @@ enemies respawn on room entry, classic style.
 
 ## Next milestones
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–6 (water, Clock Tower, map /
-warp UI / gamepad) are in; next is Phase 7: NPCs & dialogue; Phase 8: balance,
-completion % and endgame; Phase 9: real-asset pipeline + packaging.
+See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–7 (through NPCs & dialogue)
+are in; next is Phase 8: balance, completion % and endgame; Phase 9: real-asset
+pipeline + packaging.

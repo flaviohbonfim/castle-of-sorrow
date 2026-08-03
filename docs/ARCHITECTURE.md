@@ -323,6 +323,13 @@ first-frame crash once — see §14).
   the same pending/released queues. Action `swapSub` (KeyV / Select)
   cycles dagger↔axe.
 - **Music**: `music.setVolume` / `setMuted` / `toggleMuted`.
+- **Dialogue** (`ui/dialogue.ts` + `data/dialogues.ts`): world-freeze textbox
+  with portrait, name, multi-page lines. NPCs resolve lines from flags/
+  inventory (`NPC_DEFS.pickDialogue`). Hermit: talk → dialogue → shop.
+  Quest-lite example: `quest:coral:offered` / `quest:coral:done` — deliver
+  Coral Ring for +10 max HP and shop prices ×0.8. Map shows `!` on shop
+  while the quest is open. Flavor NPCs: Pale Knight (gallery), Caged Imp
+  (tower hall).
 - **Minimap**: draws visited rooms from `RoomDef.mapRect` — every new room
   MUST define a non-overlapping `mapRect`.
 - UI font is always `8px 'Courier New', monospace`; remember

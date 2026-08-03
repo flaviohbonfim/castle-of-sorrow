@@ -253,6 +253,11 @@ export class Menu {
         ctx.fillStyle = PAL.spellCyan;
         ctx.fillText("▲", x + gw * CELL - 12, y + 10);
       }
+      // Quest bang on the Hermit's den while coral quest is open.
+      if (def.id === "shop" && !game.flags.has("quest:coral:done")) {
+        ctx.fillStyle = PAL.textGold;
+        ctx.fillText("!", x + gw * CELL / 2 - 2, y + 10);
+      }
 
       // Blink current
       if (isCurrent && game.tick % 40 < 25) {
@@ -285,7 +290,7 @@ export class Menu {
 
     // Legend + options
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText("♦ save   ▲ warp   ■ you", 160, originY + gridH * CELL + 18);
+    ctx.fillText("♦ save  ▲ warp  ! quest  ■ you", 160, originY + gridH * CELL + 18);
     ctx.fillStyle = music.isMuted() ? PAL.uiFrame : PAL.textGold;
     ctx.fillText(`Music: ${music.isMuted() ? "OFF" : "ON"}  (X toggle)`, 160, originY + gridH * CELL + 30);
   }

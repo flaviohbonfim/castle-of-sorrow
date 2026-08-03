@@ -771,6 +771,151 @@ const KEEPER = {
   s: PAL.skin,
 };
 
+/** 32×32 dialogue portraits. */
+export function buildPortraitSprites(): {
+  hermit: Frame;
+  ghost: Frame;
+  demon: Frame;
+} {
+  const hermit = pixelMap(
+    [
+      "        hhhh        ",
+      "      hhhhhhhh      ",
+      "     hhsssssshh     ",
+      "     hssrrrssh     ",
+      "     hsssssssh     ",
+      "      hsssshh      ",
+      "     rrrrrrrrr     ",
+      "    r  rrrr  r    ",
+      "   rr  rrrr  rr   ",
+      "      rrrrrr      ",
+      "     rrrrrrrr     ",
+      "    rr      rr    ",
+    ],
+    {
+      h: "#c8b898",
+      s: PAL.skin,
+      r: "#6a5040",
+    },
+  );
+  const ghost = pixelMap(
+    [
+      "      cccccc      ",
+      "    cccccccccc    ",
+      "   ccwwrrwwccc   ",
+      "   ccwwwwwwccc   ",
+      "    ccwwwwccc    ",
+      "     cccccccc     ",
+      "    ccc  cccc    ",
+      "   ccc    cccc   ",
+      "  ccc      ccc  ",
+      "  cc   cc   cc  ",
+      "  c   c  c   c  ",
+    ],
+    {
+      c: "rgba(180, 200, 220, 0.9)",
+      w: "#e8f0f8",
+      r: PAL.eyeRed,
+    },
+  );
+  const demon = pixelMap(
+    [
+      "   r          r   ",
+      "  rr   dddd   rr  ",
+      "   r  dddddd  r   ",
+      "     dyryryd     ",
+      "     dddddd     ",
+      "      dddd      ",
+      "     gggggg     ",
+      "    gg gggg gg    ",
+      "   g   gggg   g   ",
+      "      g  g      ",
+      "     gg  gg     ",
+    ],
+    {
+      d: "#603040",
+      y: PAL.eyeRed,
+      r: "#a02030",
+      g: "#403050",
+    },
+  );
+  return { hermit, ghost, demon };
+}
+
+export function buildGhostSprites(): SpriteSet {
+  const G = {
+    c: "#a0b8d0",
+    w: "#d0e0f0",
+    r: PAL.eyeRed,
+  };
+  const a = pixelMap(
+    [
+      "   cccc   ",
+      "  cccccc  ",
+      " ccwrrwcc ",
+      "  cccccc  ",
+      "   cccc   ",
+      "  cc  cc  ",
+      " cc    cc ",
+      " c  c  c  ",
+    ],
+    G,
+  );
+  const b = pixelMap(
+    [
+      "   cccc   ",
+      "  cccccc  ",
+      " ccwrrwcc ",
+      "  cccccc  ",
+      "   cccc   ",
+      "  c cc c  ",
+      " c  cc  c ",
+      "c        c",
+    ],
+    G,
+  );
+  return makeSet([a, b]);
+}
+
+export function buildDemonSprites(): SpriteSet {
+  const D = {
+    d: "#603040",
+    r: PAL.eyeRed,
+    h: "#a02030",
+    g: "#403050",
+    c: PAL.stoneMid,
+  };
+  const a = pixelMap(
+    [
+      " h      h ",
+      "h dddddd h",
+      "  drrrrd  ",
+      "  dddddd  ",
+      "   dddd   ",
+      "  gggggg  ",
+      " g gggg g ",
+      "c        c",
+      "cc      cc",
+    ],
+    D,
+  );
+  const b = pixelMap(
+    [
+      " h      h ",
+      "h dddddd h",
+      "  drrrrd  ",
+      "  dddddd  ",
+      "   dddd   ",
+      "  gggggg  ",
+      "g  gggg  g",
+      " c      c ",
+      "cc      cc",
+    ],
+    D,
+  );
+  return makeSet([a, b]);
+}
+
 export function buildShopkeeperSprites(): SpriteSet {
   const a = pixelMap(
     [

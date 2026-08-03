@@ -2,7 +2,13 @@ import { Entity } from "./entity";
 import type { Game } from "../game";
 import { audio } from "../engine/audio";
 import { rectsOverlap } from "../engine/math";
-import { buildInteractableSprites, buildShopkeeperSprites, type SpriteSet } from "../gfx/sprites";
+import {
+  buildDemonSprites,
+  buildGhostSprites,
+  buildInteractableSprites,
+  buildShopkeeperSprites,
+  type SpriteSet,
+} from "../gfx/sprites";
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
 import { ITEMS } from "../rpg/items";
@@ -169,7 +175,7 @@ export class WarpPad extends Entity {
   }
 }
 
-/** The Hermit: stand close and press Up to open the shop. */
+/** The Hermit: ↑ opens dialogue first; shop opens when the talk ends. */
 export class Shopkeeper extends Entity {
   private age = 0;
   private playerNear = false;
@@ -185,7 +191,7 @@ export class Shopkeeper extends Entity {
     this.facing = game.player.centerX >= this.centerX ? 1 : -1;
     if (this.playerNear && game.input.pressed("up")) {
       game.input.consume("up");
-      game.openShop();
+      game.openDialogue("hermit");
     }
   }
 
@@ -199,7 +205,77 @@ export class Shopkeeper extends Entity {
       ctx.font = "8px 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.fillStyle = PAL.textWhite;
-      ctx.fillText("[^] Shop", Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
+      ctx.fillText(
+        _showQuestBang ? "[^] Talk !" : "[^] Talk",
+        Math.round(this.centerX - camX),
+        Math.round(this.body.y - 6 - camY),
+      );
+      ctx.textAlign = "left";
+    }
+  }
+}
+
+/** Game sets this each tick so the Hermit can show a quest bang without a game ref in draw. */
+let _showQuestBang = false;
+export function setNpcQuestHint(open: boolean): void {
+  _showQuestBang = open;
+}
+
+/** Generic talkable NPC (ghost, demon, …). */
+export class Npc extends Entity {
+  private age = 0;
+  private playerNear = false;
+  private sprites: SpriteSet;
+
+  constructor(
+    readonly npcId: string,
+    x: number,
+    y: number,
+  ) {
+    super(x - 8, y - 20, 16, 20);
+    this.sprites =
+      npcId === "demon" ? buildDemonSprites() : buildGhostSprites();
+  }
+
+  update(game: Game): void {
+    this.age++;
+    this.playerNear = rectsOverlap(this.body, game.player.body);
+    this.facing = game.player.centerX >= this.centerX ? 1 : -1;
+    if (this.playerNear && game.input.pressed("up")) {
+      game.input.consume("up");
+      game.openDialogue(this.npcId);
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, _alpha: number): void {
+    const set = this.facing > 0 ? this.sprites.right : this.sprites.left;
+    const frame = set[Math.floor(this.age / 20) % set.length];
+    const x = Math.round(this.centerX - frame.width / 2 - camX);
+    const y = Math.round(this.body.y + this.body.h - frame.height - camY);
+    // Ghost: slight translucent draw
+    if (this.npcId === "ghost") {
+      ctx.save();
+      ctx.globalAlpha = 0.75;
+      ctx.drawImage(frame, x, y);
+      ctx.restore();
+    } else {
+      ctx.drawImage(frame, x, y);
+      // Cage bars for the imp
+      ctx.strokeStyle = PAL.stoneHi;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        const bx = x - 2 + i * 6;
+        ctx.beginPath();
+        ctx.moveTo(bx, y - 2);
+        ctx.lineTo(bx, y + frame.height + 2);
+        ctx.stroke();
+      }
+    }
+    if (this.playerNear) {
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = PAL.textWhite;
+      ctx.fillText("[^] Talk", Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
       ctx.textAlign = "left";
     }
   }

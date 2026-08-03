@@ -15,6 +15,7 @@ export interface Spawn {
     | "warp"
     | "save"
     | "shopkeeper"
+    | "npc"
     | "boss";
   x: number; // world px
   y: number; // feet/bottom for grounded, center for flyers
@@ -216,6 +217,7 @@ function buildCorridor(): BuiltRoom {
   }
 
   b.at("warp", 5, 10);
+  b.at("npc", 38, 10, "ghost"); // Pale Knight — double-jump hint
   b.at("candle", 10, 10);
   b.at("candle", 18, 10);
   b.at("candle", 26, 10);
@@ -305,10 +307,10 @@ function buildTowerHall(): BuiltRoom {
 
   // Warp sits on solid floor to the right of the hole.
   b.at("warp", 10, 12);
+  b.at("npc", 22, 12, "demon"); // Caged Imp — wraith / high-jump hint
   b.at("axeKnight", 14, 12);
-  b.at("axeKnight", 28, 12);
+  b.at("axeKnight", 30, 12);
   b.at("candle", 10, 12);
-  b.at("candle", 22, 12);
   b.at("candle", 34, 12);
   b.at("candle", 19, 6);
   return b.build();

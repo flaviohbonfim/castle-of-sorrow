@@ -21,8 +21,10 @@ import { Pickup, type PickupKind } from "./entities/pickup";
 import { Projectile } from "./entities/projectile";
 import {
   ItemPickup,
+  Npc,
   RelicPickup,
   SavePoint,
+  setNpcQuestHint,
   Shopkeeper,
   WarpPad,
 } from "./entities/interactables";
@@ -37,6 +39,7 @@ import { SUBWEAPONS, type SubweaponId } from "./rpg/subweapons";
 import { Hud } from "./ui/hud";
 import { Menu } from "./ui/menu";
 import { WarpUI } from "./ui/warp";
+import { DialogueUI } from "./ui/dialogue";
 
 export interface ParticleOpts {
   vx: number;
@@ -85,12 +88,13 @@ export class Game {
   private candles: Candle[] = [];
   private pickups: Pickup[] = [];
   private projectiles: Projectile[] = [];
-  private interactables: (RelicPickup | ItemPickup | WarpPad | SavePoint | Shopkeeper)[] = [];
+  private interactables: (RelicPickup | ItemPickup | WarpPad | SavePoint | Shopkeeper | Npc)[] = [];
   private particles: Particle[] = [];
   private hud = new Hud();
   private menu = new Menu();
   private shopUI = new ShopUI();
   private warpUI = new WarpUI();
+  private dialogueUI = new DialogueUI();
   private minimap = new Minimap();
   /** Active boss (any fight that shows the HP bar). */
   boss: (Enemy & { displayName: string; maxHp: number }) | null = null;
@@ -156,6 +160,9 @@ export class Game {
         case "warp": this.interactables.push(new WarpPad(s.x, s.y)); break;
         case "save": this.interactables.push(new SavePoint(s.x, s.y)); break;
         case "shopkeeper": this.interactables.push(new Shopkeeper(s.x, s.y)); break;
+        case "npc":
+          if (s.id) this.interactables.push(new Npc(s.id, s.x, s.y));
+          break;
         case "boss": {
           const bossId = s.id ?? def.boss?.id ?? "colossus";
           if (!this.flags.has(`boss:${bossId}`)) {
@@ -225,7 +232,11 @@ export class Game {
   }
 
   openShop(): void {
-    this.shopUI.toggle();
+    this.shopUI.open = true;
+  }
+
+  openDialogue(npcId: string): void {
+    this.dialogueUI.startFromNpc(this, npcId);
   }
 
   /** Called by bosses on death: open gate, drop configured rewards. */
@@ -434,7 +445,12 @@ export class Game {
     this.input.beginTick();
     this.tick++;
 
-    // Shop, warp picker and pause menu freeze the world.
+    // Dialogue, shop, warp picker and pause menu freeze the world.
+    setNpcQuestHint(!this.flags.has("quest:coral:done"));
+    if (this.dialogueUI.open) {
+      this.dialogueUI.update(this);
+      return;
+    }
     if (this.shopUI.open) {
       this.shopUI.update(this);
       return;
@@ -678,5 +694,6 @@ export class Game {
     if (this.menu.open) this.menu.draw(ctx, this);
     if (this.shopUI.open) this.shopUI.draw(ctx, this);
     if (this.warpUI.open) this.warpUI.draw(ctx);
+    if (this.dialogueUI.open) this.dialogueUI.draw(ctx);
   }
 }
