@@ -6,7 +6,7 @@ import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
 import { TILE, TileId } from "./gfx/tiles";
 import { ParallaxBackground } from "./gfx/parallax";
-import { ROOMS, START, WARP_LINKS, type RoomDef } from "./world/rooms";
+import { nextWarp, ROOMS, START, type RoomDef } from "./world/rooms";
 import type { Tilemap } from "./world/tilemap";
 import { Player, type PlayerSave } from "./entities/player/player";
 import { IdleState } from "./entities/player/states";
@@ -14,6 +14,8 @@ import { Enemy } from "./entities/enemies/enemy";
 import { Skeleton } from "./entities/enemies/skeleton";
 import { Bat } from "./entities/enemies/bat";
 import { Fishman } from "./entities/enemies/fishman";
+import { AxeKnight } from "./entities/enemies/axeKnight";
+import { MedusaHead } from "./entities/enemies/medusaHead";
 import { Candle } from "./entities/candle";
 import { Pickup, type PickupKind } from "./entities/pickup";
 import { Projectile } from "./entities/projectile";
@@ -25,6 +27,7 @@ import {
   WarpPad,
 } from "./entities/interactables";
 import { BoneColossus } from "./entities/enemies/boss";
+import { ClockworkWraith } from "./entities/enemies/wraith";
 import { ShopUI } from "./ui/shop";
 import { Minimap } from "./ui/minimap";
 import { music } from "./engine/music";
@@ -83,10 +86,14 @@ export class Game {
   private menu = new Menu();
   private shopUI = new ShopUI();
   private minimap = new Minimap();
-  boss: BoneColossus | null = null;
+  /** Active boss (any fight that shows the HP bar). */
+  boss: (Enemy & { displayName: string; maxHp: number }) | null = null;
   private hitstopTicks = 0;
   private banner = { text: "", life: 0 };
   private vignette: CanvasGradient | null = null;
+  /** Medusa Head edge spawners for the current room. */
+  private medusaSpawners: { x: number; y: number; dir: 1 | -1 }[] = [];
+  private medusaSpawnTimer = 0;
   tick = 0;
 
   constructor() {
@@ -113,12 +120,18 @@ export class Game {
     this.particles = [];
     this.texts.length = 0;
     this.boss = null;
+    this.medusaSpawners = [];
+    this.medusaSpawnTimer = 45;
 
     for (const s of built.spawns) {
       switch (s.kind) {
         case "skeleton": this.enemies.push(new Skeleton(s.x, s.y)); break;
         case "bat": this.enemies.push(new Bat(s.x, s.y)); break;
         case "fishman": this.enemies.push(new Fishman(s.x, s.y)); break;
+        case "axeKnight": this.enemies.push(new AxeKnight(s.x, s.y)); break;
+        case "medusaSpawner":
+          this.medusaSpawners.push({ x: s.x, y: s.y, dir: s.dir ?? 1 });
+          break;
         case "candle": this.candles.push(new Candle(s.x, s.y)); break;
         case "relic":
           if (s.id && !this.flags.has(`relic:${s.id}`)) {
@@ -137,26 +150,29 @@ export class Game {
         case "warp": this.interactables.push(new WarpPad(s.x, s.y)); break;
         case "save": this.interactables.push(new SavePoint(s.x, s.y)); break;
         case "shopkeeper": this.interactables.push(new Shopkeeper(s.x, s.y)); break;
-        case "boss":
-          if (!this.flags.has("boss:colossus")) {
-            this.boss = new BoneColossus(s.x, s.y);
-            this.enemies.push(this.boss);
+        case "boss": {
+          const bossId = s.id ?? def.boss?.id ?? "colossus";
+          if (!this.flags.has(`boss:${bossId}`)) {
+            const boss = this.makeBoss(bossId, s.x, s.y);
+            if (boss) {
+              this.boss = boss;
+              this.enemies.push(boss);
+            }
           } else {
             // Boss already slain: re-offer any uncollected reward relics.
-            for (const [relic, rx] of [["batForm", 368], ["wolfForm", 416]] as const) {
-              if (!this.flags.has(`relic:${relic}`)) {
-                this.interactables.push(new RelicPickup(relic, rx, 176));
-              }
-            }
+            this.offerBossRewards(def);
           }
           break;
+        }
         case "player": break; // start position comes from START/exits
       }
     }
 
-    // Boss arena: portcullis seals the door while the Colossus lives.
-    if (this.boss) {
-      for (let r = 8; r <= 10; r++) this.map.setTile(2, r, TileId.Gate);
+    // Boss arena: portcullis seals configured gate cells while the boss lives.
+    if (this.boss && def.boss) {
+      for (const [c, r] of def.boss.gateCells) {
+        this.map.setTile(c, r, TileId.Gate);
+      }
     }
     this.flags.add(`visited:${id}`);
     music.setTrack(this.boss ? "boss" : "castle");
@@ -204,27 +220,54 @@ export class Game {
     this.shopUI.toggle();
   }
 
-  /** Called by the Colossus on death: open the gate, drop the reward. */
-  onBossDefeated(boss: BoneColossus): void {
-    this.flags.add("boss:colossus");
+  /** Called by bosses on death: open gate, drop configured rewards. */
+  onBossDefeated(bossId: string): void {
+    this.flags.add(`boss:${bossId}`);
+    const cx = this.boss?.centerX ?? this.player.centerX;
+    const cy = this.boss?.body.y ?? this.player.body.y;
     this.boss = null;
-    for (let r = 8; r <= 10; r++) this.map.setTile(2, r, TileId.BgWall);
+    if (this.room.boss) {
+      for (const [c, r] of this.room.boss.gateCells) {
+        this.map.setTile(c, r, TileId.BgWall);
+      }
+    }
     music.setTrack("castle");
     this.camera.addShake(0.6);
     audio.play("levelup");
-    // Reward relics + a gold shower.
-    for (const [relic, rx] of [["batForm", 368], ["wolfForm", 416]] as const) {
-      if (!this.flags.has(`relic:${relic}`)) {
-        this.interactables.push(new RelicPickup(relic, rx, 176));
-      }
-    }
+    this.offerBossRewards(this.room);
     for (let i = 0; i < 6; i++) {
-      this.spawnPickup("gold", boss.centerX + (Math.random() * 60 - 30), boss.body.y + 10);
+      this.spawnPickup("gold", cx + (Math.random() * 60 - 30), cy + 10);
     }
   }
 
+  private offerBossRewards(def: RoomDef): void {
+    if (!def.boss) return;
+    for (const r of def.boss.rewards) {
+      if (!this.flags.has(`relic:${r.relic}`)) {
+        this.interactables.push(new RelicPickup(r.relic, r.x, r.y));
+      }
+    }
+  }
+
+  private makeBoss(
+    id: string,
+    x: number,
+    y: number,
+  ): (Enemy & { displayName: string; maxHp: number }) | null {
+    switch (id) {
+      case "colossus": return new BoneColossus(x, y);
+      case "wraith": return new ClockworkWraith(x, y);
+      default: return null;
+    }
+  }
+
+  /** Inject an enemy mid-room (e.g. boss summons). */
+  spawnEnemy(enemy: Enemy): void {
+    this.enemies.push(enemy);
+  }
+
   warpFrom(_pad: WarpPad): void {
-    const link = WARP_LINKS[this.roomId];
+    const link = nextWarp(this.roomId);
     if (!link) return;
     audio.play("spell");
     this.loadRoom(link.room, link.x, link.y);
@@ -298,9 +341,9 @@ export class Game {
     }
   }
 
-  /** Enemy-fired projectile (e.g. the Colossus' bone toss, Fishman spit). */
+  /** Enemy-fired projectile (bones, spit, thrown axes, …). */
   spawnHostile(
-    kind: "bone" | "spit",
+    kind: "bone" | "spit" | "axeThrow",
     x: number,
     y: number,
     dir: 1 | -1,
@@ -414,6 +457,7 @@ export class Game {
     for (const p of this.pickups) if (!p.dead) p.update(this);
     for (const p of this.projectiles) if (!p.dead) p.update(this);
     for (const i of this.interactables) if (!i.dead) i.update(this);
+    this.tickMedusaSpawners();
 
     // Enemy contact damage (mist form is intangible).
     const body = this.player.body;
@@ -440,6 +484,22 @@ export class Game {
 
     this.prune();
     this.camera.update(this.player.centerX, this.player.centerY);
+  }
+
+  /** Edge spawners: keep up to 3 Medusa Heads alive in the room. */
+  private tickMedusaSpawners(): void {
+    if (this.medusaSpawners.length === 0) return;
+    if (this.player.state.name === "die") return;
+    this.medusaSpawnTimer--;
+    if (this.medusaSpawnTimer > 0) return;
+    const alive = this.enemies.filter((e) => !e.dead && e instanceof MedusaHead).length;
+    if (alive >= 3) {
+      this.medusaSpawnTimer = 30;
+      return;
+    }
+    const sp = this.medusaSpawners[Math.floor(Math.random() * this.medusaSpawners.length)];
+    this.enemies.push(new MedusaHead(sp.x, sp.y, sp.dir));
+    this.medusaSpawnTimer = 90;
   }
 
   private prune(): void {

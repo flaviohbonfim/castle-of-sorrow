@@ -6,7 +6,7 @@ import { buildSubweaponSprites, buildBoneSprites } from "../gfx/sprites";
 import { PAL } from "../gfx/palette";
 import { rectsOverlap } from "../engine/math";
 
-export type ProjectileKind = "dagger" | "axe" | "spell" | "fire" | "bone" | "spit";
+export type ProjectileKind = "dagger" | "axe" | "spell" | "fire" | "bone" | "spit" | "axeThrow";
 
 let SPRITES: ReturnType<typeof buildSubweaponSprites> | null = null;
 let BONES: HTMLCanvasElement[] | null = null;
@@ -19,6 +19,7 @@ let BONES: HTMLCanvasElement[] | null = null;
  *  - fire "Hellfire": arcing fireball, pierces, INT-scaled (player)
  *  - bone: arcing bone toss that damages the player (hostile)
  *  - spit: flat, slow hostile blob (Fishman); dies on walls
+ *  - axeThrow: arcing hostile axe (Axe Knight); pierces terrain
  */
 export class Projectile extends Entity {
   private swing = new Swing();
@@ -61,7 +62,11 @@ export class Projectile extends Entity {
         break;
       case "spit":
         this.body.vx = dir * 1.7;
-        this.body.vy = 0;
+        this.body.vy = vyBoost; // optional vertical offset for volleys
+        break;
+      case "axeThrow":
+        this.body.vx = dir * 2.0;
+        this.body.vy = -4.4 + vyBoost;
         break;
     }
   }
@@ -70,7 +75,7 @@ export class Projectile extends Entity {
     this.savePrev();
     this.age++;
 
-    if (this.kind === "axe" || this.kind === "bone") {
+    if (this.kind === "axe" || this.kind === "bone" || this.kind === "axeThrow") {
       this.body.vy = Math.min(this.body.vy + 0.22, 7);
     } else if (this.kind === "fire") {
       this.body.vy = Math.min(this.body.vy + 0.09, 4);
@@ -156,7 +161,7 @@ export class Projectile extends Entity {
     if (this.kind === "dagger") {
       const frame = this.facing > 0 ? s.dagger.right[0] : s.dagger.left[0];
       ctx.drawImage(frame, Math.round(x - camX), Math.round(y - camY));
-    } else if (this.kind === "axe") {
+    } else if (this.kind === "axe" || this.kind === "axeThrow") {
       const frame = s.axe[Math.floor(this.age / 4) % s.axe.length];
       ctx.drawImage(frame, Math.round(x - camX), Math.round(y - camY));
     } else if (this.kind === "bone") {

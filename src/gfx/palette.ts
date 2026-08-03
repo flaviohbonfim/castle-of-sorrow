@@ -9,6 +9,12 @@ export const PAL = {
   stoneLight: "#575070",
   stoneHi: "#7d7898",
 
+  // Clock Tower bronze / verdigris ramp
+  towerStoneDark: "#1a221c",
+  towerStoneMid: "#3a4a3e",
+  towerStoneLight: "#5a6e58",
+  towerStoneHi: "#7a9070",
+
   // Background depths
   skyTop: "#0c0a18",
   skyBottom: "#241b3e",

@@ -93,7 +93,7 @@ enemies respawn on room entry, classic style.
 
 ## Next milestones
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) — Phase 4 (water + Water Walking) is
-in; next is Phase 5: Clock Tower wing + second boss; then Phase 6: map
-screen, warp network, gamepad; Phase 7: NPCs & dialogue; Phase 8: balance,
-completion % and endgame; Phase 9: real-asset pipeline + packaging.
+See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–5 (water + Clock Tower) are
+in; next is Phase 6: map screen, warp network, gamepad; Phase 7: NPCs &
+dialogue; Phase 8: balance, completion % and endgame; Phase 9: real-asset
+pipeline + packaging.

@@ -1,4 +1,4 @@
-import { TILE, TileId } from "../gfx/tiles";
+import { TILE, TileId, type ZoneId } from "../gfx/tiles";
 import { Tilemap } from "./tilemap";
 
 export interface Spawn {
@@ -7,6 +7,8 @@ export interface Spawn {
     | "skeleton"
     | "bat"
     | "fishman"
+    | "axeKnight"
+    | "medusaSpawner"
     | "candle"
     | "relic"
     | "item"
@@ -16,8 +18,9 @@ export interface Spawn {
     | "boss";
   x: number; // world px
   y: number; // feet/bottom for grounded, center for flyers
-  id?: string; // relic id, item id, or item flag key
+  id?: string; // relic id, item id, boss id, or item flag key
   n?: number; // item pickup index within the room (for flags)
+  dir?: 1 | -1; // medusa spawner flight direction
 }
 
 export interface RoomExit {
@@ -35,20 +38,44 @@ export interface BuiltRoom {
   spawns: Spawn[];
 }
 
+export interface BossRoomConfig {
+  id: string;
+  gateCells: [number, number][];
+  rewards: { relic: string; x: number; y: number }[];
+}
+
 export interface RoomDef {
   id: string;
   name: string;
   exits: RoomExit[];
-  /** Minimap footprint in map-grid cells. */
+  /** Minimap footprint in map-grid cells (may use negative gy for upper wings). */
   mapRect: { gx: number; gy: number; gw: number; gh: number };
+  zone?: ZoneId;
+  boss?: BossRoomConfig;
   build(): BuiltRoom;
 }
 
-/** Warp pads: room id -> destination room + pad position. */
-export const WARP_LINKS: Record<string, { room: string; x: number; y: number }> = {
-  corridor: { room: "cavern", x: 72, y: 256 },
-  cavern: { room: "corridor", x: 88, y: 176 },
+/** Ordered warp pad cycle — each pad sends you to the next room in the list. */
+export const WARP_CYCLE: string[] = ["corridor", "cavern", "towerHall"];
+
+/** Pad feet positions per room that participates in WARP_CYCLE. */
+export const WARP_PADS: Record<string, { x: number; y: number }> = {
+  corridor: { x: 88, y: 176 },
+  cavern: { x: 72, y: 256 },
+  towerHall: { x: 56, y: 208 },
 };
+
+/** Next warp destination from the pad in `fromRoom`. */
+export function nextWarp(fromRoom: string): { room: string; x: number; y: number } | null {
+  const i = WARP_CYCLE.indexOf(fromRoom);
+  if (i < 0) return null;
+  for (let step = 1; step <= WARP_CYCLE.length; step++) {
+    const room = WARP_CYCLE[(i + step) % WARP_CYCLE.length];
+    const pad = WARP_PADS[room];
+    if (pad) return { room, x: pad.x, y: pad.y };
+  }
+  return null;
+}
 
 /* ------------------------------ builder ------------------------------ */
 
@@ -59,6 +86,7 @@ class RoomBuilder {
   constructor(
     readonly cols: number,
     readonly rows: number,
+    readonly zone: ZoneId = "castle",
   ) {
     this.tiles = new Uint8Array(cols * rows);
   }
@@ -108,7 +136,10 @@ class RoomBuilder {
   }
 
   build(): BuiltRoom {
-    return { map: new Tilemap(this.cols, this.rows, this.tiles), spawns: this.spawns };
+    return {
+      map: new Tilemap(this.cols, this.rows, this.tiles, this.zone),
+      spawns: this.spawns,
+    };
   }
 }
 
@@ -177,6 +208,13 @@ function buildCorridor(): BuiltRoom {
   b.punch(0, 8, 10); // to Entrance
   b.punch(47, 8, 10); // to Sanctuary
 
+  // Double-jump shaft up to the Clock Tower (ceiling hole + climb platforms).
+  b.hline(7, 22, 27, TileId.Platform);
+  b.hline(4, 22, 27, TileId.Platform);
+  for (let c = 24; c <= 25; c++) {
+    b.set(c, 0, TileId.Empty);
+  }
+
   b.at("warp", 5, 10);
   b.at("candle", 10, 10);
   b.at("candle", 18, 10);
@@ -184,6 +222,96 @@ function buildCorridor(): BuiltRoom {
   b.at("candle", 34, 10);
   b.at("skeleton", 20, 10);
   b.at("skeleton", 32, 10);
+  return b.build();
+}
+
+/** Tall vertical shaft — platform ladder + medusa head pressure. */
+function buildTowerShaft(): BuiltRoom {
+  const b = new RoomBuilder(16, 40, "tower");
+  b.frame();
+  // Bottom landing
+  b.hline(37, 1, 14, TileId.FloorTop);
+  b.fill(1, 38, 14, 38, TileId.Brick);
+  // Platform ladder (spacing within double-jump range).
+  b.hline(33, 3, 7, TileId.Platform);
+  b.hline(29, 8, 12, TileId.Platform);
+  b.hline(25, 3, 7, TileId.Platform);
+  b.hline(21, 8, 12, TileId.Platform);
+  b.hline(17, 3, 7, TileId.Platform);
+  b.hline(13, 8, 12, TileId.Platform);
+  b.hline(9, 3, 7, TileId.Platform);
+  b.hline(5, 6, 11, TileId.Platform);
+  // Top ledge to right door / ceiling exit
+  b.hline(3, 1, 14, TileId.FloorTop);
+  b.fill(1, 1, 14, 2, TileId.Empty);
+  b.hline(3, 1, 14, TileId.FloorTop);
+
+  // Bottom hole from corridor (open floor at cols 6–9 for entry)
+  for (let c = 6; c <= 9; c++) {
+    b.set(c, 39, TileId.Empty);
+  }
+  // Top exit to towerHall
+  for (let c = 6; c <= 9; c++) {
+    b.set(c, 0, TileId.Empty);
+  }
+  b.punch(15, 1, 2); // optional side clearance near top
+
+  // Medusa spawners at mid height, both sides.
+  b.spawns.push({ kind: "medusaSpawner", x: 8, y: 20 * TILE, dir: 1 });
+  b.spawns.push({ kind: "medusaSpawner", x: 16 * TILE - 8, y: 14 * TILE, dir: -1 });
+  b.spawns.push({ kind: "medusaSpawner", x: 8, y: 28 * TILE, dir: 1 });
+
+  b.at("candle", 4, 36);
+  b.at("candle", 11, 32);
+  b.at("candle", 5, 20);
+  b.at("candle", 10, 8);
+  return b.build();
+}
+
+/** Mid tower hall with gears, axe knights, warp pad. */
+function buildTowerHall(): BuiltRoom {
+  const b = new RoomBuilder(40, 16, "tower");
+  b.frame();
+  b.hline(13, 1, 38, TileId.FloorTop);
+  b.fill(1, 14, 38, 14, TileId.Brick);
+  b.pillar(8, 10);
+  b.pillar(20, 10);
+  b.pillar(32, 10);
+  // Decorative "gear" platforms
+  b.hline(10, 12, 16, TileId.Platform);
+  b.hline(9, 24, 28, TileId.Platform);
+  b.hline(7, 18, 22, TileId.Platform);
+
+  // Floor hole down to shaft top
+  for (let c = 4; c <= 6; c++) {
+    b.set(c, 13, TileId.Empty);
+    b.set(c, 14, TileId.Empty);
+    b.set(c, 15, TileId.Empty);
+  }
+  b.punch(39, 10, 12); // to towerTop boss
+
+  b.at("warp", 3, 12);
+  b.at("axeKnight", 14, 12);
+  b.at("axeKnight", 28, 12);
+  b.at("candle", 10, 12);
+  b.at("candle", 22, 12);
+  b.at("candle", 34, 12);
+  b.at("candle", 19, 6);
+  return b.build();
+}
+
+/** Clock Tower summit — Wraith boss arena. */
+function buildTowerTop(): BuiltRoom {
+  const b = new RoomBuilder(32, 14, "tower");
+  b.frame();
+  b.hline(11, 1, 30, TileId.FloorTop);
+  b.fill(1, 12, 30, 12, TileId.Brick);
+  b.pillar(5, 8);
+  b.pillar(26, 8);
+  b.punch(0, 8, 10); // from towerHall
+  b.at("boss", 20, 10, "wraith");
+  b.at("candle", 8, 10);
+  b.at("candle", 24, 10);
   return b.build();
 }
 
@@ -338,7 +466,7 @@ function buildBossRoom(): BuiltRoom {
   b.pillar(4, 8);
   b.pillar(35, 8);
   b.punch(0, 8, 10); // from the shop
-  b.at("boss", 28, 10);
+  b.at("boss", 28, 10, "colossus");
   b.at("candle", 8, 10);
   b.at("candle", 32, 10);
   return b.build();
@@ -363,6 +491,86 @@ export const ROOMS: Record<string, RoomDef> = {
     exits: [
       { side: "left", min: 120, max: 180, target: "entrance", tx: 976, ty: 288 },
       { side: "right", min: 120, max: 180, target: "saveRoom", tx: 24, ty: 144 },
+      // Ceiling shaft → Clock Tower (double-jump gated platforms).
+      {
+        side: "top",
+        min: 24 * TILE,
+        max: 26 * TILE,
+        target: "towerShaft",
+        tx: 128,
+        ty: 592,
+      },
+    ],
+  },
+  towerShaft: {
+    id: "towerShaft",
+    name: "Clock Tower Shaft",
+    zone: "tower",
+    build: buildTowerShaft,
+    mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 },
+    exits: [
+      // Fall back into corridor through bottom hole.
+      {
+        side: "bottom",
+        min: 6 * TILE,
+        max: 10 * TILE,
+        target: "corridor",
+        tx: 400,
+        ty: 176,
+      },
+      // Climb out top into tower hall (land near the shaft hole).
+      {
+        side: "top",
+        min: 6 * TILE,
+        max: 10 * TILE,
+        target: "towerHall",
+        tx: 88,
+        ty: 208,
+      },
+    ],
+  },
+  towerHall: {
+    id: "towerHall",
+    name: "Gear Gallery",
+    zone: "tower",
+    build: buildTowerHall,
+    mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 },
+    exits: [
+      {
+        side: "bottom",
+        min: 4 * TILE,
+        max: 7 * TILE,
+        target: "towerShaft",
+        tx: 128,
+        ty: 64,
+      },
+      {
+        side: "right",
+        min: 152,
+        max: 208,
+        target: "towerTop",
+        tx: 40,
+        ty: 176,
+      },
+    ],
+  },
+  towerTop: {
+    id: "towerTop",
+    name: "Clockwork Spire",
+    zone: "tower",
+    build: buildTowerTop,
+    mapRect: { gx: 7, gy: -4, gw: 2, gh: 1 },
+    boss: {
+      id: "wraith",
+      gateCells: [
+        [2, 8],
+        [2, 9],
+        [2, 10],
+      ],
+      rewards: [{ relic: "highJump", x: 256, y: 176 }],
+    },
+    exits: [
+      { side: "left", min: 120, max: 180, target: "towerHall", tx: 600, ty: 208 },
     ],
   },
   saveRoom: {
@@ -422,6 +630,18 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Hall of the Colossus",
     build: buildBossRoom,
     mapRect: { gx: 7, gy: 2, gw: 2, gh: 2 },
+    boss: {
+      id: "colossus",
+      gateCells: [
+        [2, 8],
+        [2, 9],
+        [2, 10],
+      ],
+      rewards: [
+        { relic: "batForm", x: 368, y: 176 },
+        { relic: "wolfForm", x: 416, y: 176 },
+      ],
+    },
     exits: [{ side: "left", min: 120, max: 180, target: "shop", tx: 280, ty: 144 }],
   },
 };

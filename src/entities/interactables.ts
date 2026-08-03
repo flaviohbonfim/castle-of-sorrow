@@ -15,6 +15,7 @@ export const RELIC_NAMES: Record<string, string> = {
   wolfForm: "Skin of the Wolf",
   mistForm: "Power of the Mist",
   waterWalk: "Mermaid Statue",
+  highJump: "Gravity Boots",
 };
 
 const RELIC_DESCS: Record<string, string> = {
@@ -23,6 +24,7 @@ const RELIC_DESCS: Record<string, string> = {
   wolfForm: "Wolf Form [2]!",
   mistForm: "Mist Form [3]!",
   waterWalk: "Water Walking!",
+  highJump: "High Jump!",
 };
 
 /** Floating relic pickup — grants a permanent ability on touch. */

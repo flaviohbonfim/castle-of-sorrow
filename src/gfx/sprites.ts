@@ -331,6 +331,139 @@ const FISH = {
 };
 
 /** Classic merman: green body, fins, facing right (~16x24). */
+export function buildMedusaHeadSprites(): SpriteSet {
+  const M = {
+    g: "#6a8a58",
+    d: "#3a5030",
+    s: PAL.skin,
+    r: PAL.eyeRed,
+    h: "#c8b070",
+  };
+  const a = pixelMap(
+    [
+      "   hhhhhh   ",
+      "  hggggggh  ",
+      " hgssrrssgh ",
+      "  gssssssg  ",
+      "   gggggg   ",
+      "    d  d    ",
+    ],
+    M,
+  );
+  const b = pixelMap(
+    [
+      "  h hhhh h  ",
+      "  hggggggh  ",
+      " hgssrrssgh ",
+      "  gssssssg  ",
+      "   gggggg   ",
+      "   d    d   ",
+    ],
+    M,
+  );
+  return makeSet([a, b]);
+}
+
+export function buildAxeKnightSprites(): SpriteSet {
+  const A = {
+    a: "#5a6068",
+    m: "#3a4048",
+    s: PAL.skin,
+    r: PAL.eyeRed,
+    g: PAL.gold,
+    d: PAL.stoneDark,
+  };
+  const walkA = pixelMap(
+    [
+      "     aaaa     ",
+      "    aaaaaa    ",
+      "    asrrsa    ",
+      "    aaaaaa    ",
+      "     aaaa     ",
+      "   aaaaaaaa   ",
+      "  aa aaaa aa  ",
+      "  g  aaaa  g  ",
+      "     aaaa     ",
+      "     aaaa     ",
+      "    aa  aa    ",
+      "    aa  aa    ",
+      "   mm    mm   ",
+      "  dd      dd  ",
+    ],
+    A,
+  );
+  const walkB = pixelMap(
+    [
+      "     aaaa     ",
+      "    aaaaaa    ",
+      "    asrrsa    ",
+      "    aaaaaa    ",
+      "     aaaa     ",
+      "   aaaaaaaa   ",
+      "  aa aaaa aa  ",
+      "  g  aaaa  g  ",
+      "     aaaa     ",
+      "     aaaa     ",
+      "     aa aa    ",
+      "     aa  aa   ",
+      "    mm    mm  ",
+      "   dd      dd ",
+    ],
+    A,
+  );
+  return makeSet([walkA, walkB]);
+}
+
+export function buildWraithSprites(): SpriteSet {
+  const W = {
+    c: "#4a6870",
+    d: "#2a4048",
+    h: "#a8d0d8",
+    r: PAL.eyeRed,
+    g: PAL.gold,
+    s: "#68a0b0",
+  };
+  const a = pixelMap(
+    [
+      "      hhhh      ",
+      "     hhhhhh     ",
+      "     hrrrrh     ",
+      "     hhhhhh     ",
+      "      ssss      ",
+      "    cccccccc    ",
+      "   cc gggg cc   ",
+      "  cc  cccc  cc  ",
+      "  c   cccc   c  ",
+      "      cccc      ",
+      "     cc  cc     ",
+      "    cc    cc    ",
+      "   dd      dd   ",
+      "  d          d  ",
+    ],
+    W,
+  );
+  const b = pixelMap(
+    [
+      "      hhhh      ",
+      "     hhhhhh     ",
+      "     hrrrrh     ",
+      "     hhhhhh     ",
+      "      ssss      ",
+      "    cccccccc    ",
+      "   cc gggg cc   ",
+      "  cc  cccc  cc  ",
+      " cc   cccc   cc ",
+      "      cccc      ",
+      "     c c  c     ",
+      "    cc    cc    ",
+      "   d        d   ",
+      "  d          d  ",
+    ],
+    W,
+  );
+  return makeSet([a, b]);
+}
+
 export function buildFishmanSprites(): SpriteSet {
   const walkA = pixelMap(
     [

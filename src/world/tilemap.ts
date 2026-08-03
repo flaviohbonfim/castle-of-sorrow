@@ -1,17 +1,19 @@
-import { TILE, TileId, buildTileset } from "../gfx/tiles";
+import { TILE, TileId, buildTileset, type ZoneId } from "../gfx/tiles";
 
 export class Tilemap {
   readonly widthPx: number;
   readonly heightPx: number;
-  private tileset = buildTileset();
+  private tileset: Map<TileId, HTMLCanvasElement[]>;
 
   constructor(
     readonly cols: number,
     readonly rows: number,
     private tiles: Uint8Array, // TileId per cell
+    zone: ZoneId = "castle",
   ) {
     this.widthPx = cols * TILE;
     this.heightPx = rows * TILE;
+    this.tileset = buildTileset(zone);
   }
 
   at(col: number, row: number): TileId {

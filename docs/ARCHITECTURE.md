@@ -142,19 +142,16 @@ platforms only collide when falling onto them from above and
 
 ```
 [entrance 64x24] --right--> [corridor 48x14] --right--> [saveRoom 20x12]
-      |  floor hole                | warp pad                | cracked wall → doubleJump relic
-      v bottom                     v (WARP_LINKS)
-[cavern 48x20] --right--> [shop 20x12] --right--> [bossRoom 40x14]
-      |  floor hole (cols 2–3)     hermit + mist relic       BoneColossus → bat/wolf relics
-      |  + lower-left door return
-      v
-[lake 56x20 Sunken Gallery] --left--> [lakeDepths 40x16]
-      |  waterWalk relic (cracked)        coralRing item chest
-      |  fishmen + swim physics
-      +--right--> cavern lower-left
+      |  floor hole           | top shaft (dbl jump)  | cracked → doubleJump
+      v bottom                v                       |
+[cavern 48x20] ...     [towerShaft 16x40] --top--> [towerHall] --right--> [towerTop]
+      |                       | zone:tower             warp pad              Wraith → highJump
+      v                       +--bottom--> corridor
+[lake] --left--> [lakeDepths]
 ```
 
-- `WARP_LINKS`: keyed by the pad's room id → destination `{room,x,y}`.
+- `WARP_CYCLE` + `WARP_PADS` + `nextWarp(room)`: ordered pad cycle
+  (corridor → cavern → towerHall → …).
 - `START = { room: "entrance", x: 56, y: 320 }`.
 - Jump tuning vs level design: single jump reaches **≤ 3.5 tiles (63px)**;
   double jump ~100px. The cavern climb intentionally has one 64px gap as a
@@ -211,6 +208,8 @@ Cancel rules (SotN-authentic, preserve them):
 - Water: gravity ×0.35, terminal 1.2, free swim-jump (no air-jump spend).
   `waterWalk` relic + `body.walkOnWater` makes `WaterTop` one-way (hold ↓ to
   sink). Splash SFX/particles on water entry.
+- High jump (`highJump` / Gravity Boots): crouch + jump on solid ground
+  launches `vy = -8.5`. On one-way platforms, crouch+jump still drops through.
 
 ### Transformations
 
@@ -252,15 +251,20 @@ calls `becomeHuman()`.
   | fire   | player | shallow arc         | pierces | Hellfire (3x spread) |
   | bone   | enemy  | arc                 | pierces | hurts player on touch |
   | spit   | enemy  | flat, slow          | stops   | Fishman blob |
+  | axeThrow | enemy | arc + spin        | pierces | Axe Knight |
 
-  Enemy shots: `Game.spawnHostile("bone"|"spit", x, y, dir, power, vyBoost?)`.
+  Enemy shots: `Game.spawnHostile("bone"|"spit"|"axeThrow", x, y, dir, power, vyBoost?)`.
 - **Enemy base** (`enemies/enemy.ts`): `takeDamage(game, DamageResult, fromX)`
   handles flash/knockback/hitstop/shake/floating number/death; `die()` grants
   EXP + rolls gold/heart drops. Override `onHit` (knockback) and `die`.
-- **Boss pattern** (boss.ts): mode machine walk → windup(20 ticks telegraph)
-  → bone volley (far) or charge (near); enrage < 50% HP. On death calls
-  `game.onBossDefeated()` → flag, open gate, reward relics, gold shower,
-  music back to castle.
+- **Bosses** are data-driven via `RoomDef.boss: { id, gateCells, rewards }`.
+  Spawn `kind:"boss"` + `id` builds the fight; flag `boss:<id>` is append-only.
+  On death: `game.onBossDefeated(bossId)` opens gate cells, spawns rewards,
+  gold shower, music back to castle.
+  - Colossus (`boss.ts`): walk → windup → bone volley / charge; enrage <50%.
+  - Wraith (`wraith.ts`): teleport fade, 3-way spit, summons Medusa at half HP.
+- **Zone palettes**: `buildTileset("castle"|"tower")`; tower uses bronze/
+  verdigris stone ramp. `RoomDef.zone` flows through `RoomBuilder` → `Tilemap`.
 
 ## 10. RPG layer
 

@@ -21,6 +21,7 @@ export class BoneColossus extends Enemy {
   private modeTicks = 0;
   readonly maxHp: number;
   readonly displayName = "BONE COLOSSUS";
+  readonly bossId = "colossus";
 
   constructor(x: number, y: number) {
     super(x - 13, y - 40, 26, 40, {
@@ -125,7 +126,7 @@ export class BoneColossus extends Enemy {
 
   protected override die(game: Game): void {
     super.die(game);
-    game.onBossDefeated(this);
+    game.onBossDefeated(this.bossId);
   }
 
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, alpha: number): void {

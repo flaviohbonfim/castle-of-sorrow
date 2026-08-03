@@ -105,6 +105,18 @@ function trySubweapon(p: Player, g: Game): boolean {
   return false;
 }
 
+/** True if feet rest on a one-way platform tile. */
+function standingOnOneWay(p: Player, g: Game): boolean {
+  const tile = 16;
+  const row = Math.floor((p.body.y + p.body.h + 1) / tile);
+  const c0 = Math.floor(p.body.x / tile);
+  const c1 = Math.floor((p.body.x + p.body.w - 1) / tile);
+  for (let c = c0; c <= c1; c++) {
+    if (g.map.isOneWay(c, row)) return true;
+  }
+  return false;
+}
+
 function steer(p: Player, g: Game, accel: number, max: number): void {
   const cap = p.inWater(g) ? max * 0.6 : max;
   const dir = (g.input.held("right") ? 1 : 0) - (g.input.held("left") ? 1 : 0);
@@ -167,9 +179,18 @@ export class CrouchState extends PlayerState {
     const dir = (g.input.held("right") ? 1 : 0) - (g.input.held("left") ? 1 : 0);
     if (dir !== 0) p.facing = dir as 1 | -1;
 
-    // Drop through one-way platforms: Down + Jump.
+    // Down + Jump: high jump with Gravity Boots on solid ground; else drop
+    // through one-way platforms (always available for platforms).
     if (g.input.pressed("jump")) {
       g.input.consume("jump");
+      const onOneWay = standingOnOneWay(p, g);
+      if (!onOneWay && p.relics.has("highJump")) {
+        p.body.vy = -8.5;
+        p.coyote = 0;
+        audio.play("jump");
+        p.doubleJumpPuff(g);
+        return new JumpState();
+      }
       p.dropTimer = 8;
       return new FallState();
     }
