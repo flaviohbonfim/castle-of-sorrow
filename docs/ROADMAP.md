@@ -1,6 +1,7 @@
 # Castle of Sorrow — Development Roadmap (Phases 4–9)
 
-> **Status:** Phases 4–8.5 are implemented. **Phase 9 is the current work.**
+> **Status:** Phases 4–8.6 are implemented. **Next: Phase 9** (art/audio
+> pipeline & packaging).
 
 > Execution plan for the next milestones. Written so that any developer or
 > AI model can pick up a phase independently. **Prerequisite reading:**
@@ -445,6 +446,103 @@ remember the `up()`/`down()` same-tick gotcha.
    `deaths` reset), and the old game object is discarded.
 8. `npm run typecheck` clean, `window.__validateMap()` returns `[]`,
    `window.__errs` empty after a full title → play → ending → title loop.
+
+---
+
+## Phase 8.6 — HUD reorganisation  ✅ DONE
+
+**Goal:** the right side of the screen carries **only the minimap**; hearts,
+gold and the sub-weapon move into one framed panel in the top-left.
+
+**Why:** the three right-side widgets are drawn straight over the minimap
+today. In `src/ui/hud.ts` the sub-weapon box occupies
+`x = VIEW_W-82 … VIEW_W-46, y = 4 … 26` and the gold line is right-aligned at
+`y = 40`, while `Minimap.draw` starts at `originY = 32` and spans roughly
+`x 402…472, y 29…79`. So the gold text lands inside the map grid and the
+sub-weapon plate sits directly on its top edge — that is the clutter in the
+reference screenshot, not a scaling artifact.
+
+**Director's decisions (locked):** one **single stacked panel** (vitals →
+level → weapon → resource strip), on a **dark translucent plate with a thin
+frame**. The plate matters: white 8px text currently disappears against pale
+stone walls.
+
+### 8.6.1 Panel layout
+
+Everything lives in `src/ui/hud.ts`. Put the numbers in one exported
+`LAYOUT` const at the top of the file so the panel can be nudged without
+hunting through draw calls — the current code hard-codes ~20 magic offsets.
+
+Target geometry (480×270 backbuffer, origin top-left, 8px Courier):
+
+| Element | Position |
+| --- | --- |
+| Plate | `x 6, y 6, w 168, h 62`, fill `rgba(10, 6, 20, 0.72)`, 1px `PAL.uiFrameDark` border, plus a 1px `PAL.uiFrame` highlight on the top edge |
+| `HP` label | `x 12, baseline y 18` |
+| HP bar | `x 30, y 12, w 92, h 6` (existing `bar()` helper) |
+| HP value | right-aligned at `x 168, baseline 18` |
+| `MP` label | `x 12, baseline y 29` |
+| MP bar | `x 30, y 24, w 92, h 4` |
+| MP value | right-aligned at `x 168, baseline 29` |
+| `LV n` | `x 12, baseline y 40` |
+| `EXP a/b` | right-aligned at `x 168, baseline 40` |
+| Weapon name | `x 12, baseline y 51`, `PAL.uiFrame` |
+| Resource strip | baseline `y 62`: sub-weapon icon box at `x 10 (18×16)`, hearts at `x 32`, gold at `x 78`, potions at `x 128` |
+
+Rules:
+- Round every coordinate; keep the font at `8px 'Courier New', monospace`;
+  restore `ctx.textAlign = "left"` before returning (other overlays assume it).
+- Hide the potion entry when the count is 0 (as today). Never let the strip
+  overflow the plate — if a value would run past `x 168`, shorten the label,
+  don't widen the panel.
+- Keep the bottom-left key hints (`[Tab] Menu  [V] Sub`) where they are.
+
+### 8.6.2 Icons — reuse the pickup sprites
+
+Do **not** rely on the `♥` / `$` text glyphs. `buildPickupSprites()` in
+`src/gfx/sprites.ts` already returns `heart`, `gold` and `potion` frames;
+build them once in a module-level cache in `hud.ts` and `drawImage` them
+into the strip, with the count as text beside each. This keeps the HUD in
+the same procedural pixel language as the pickups the player just collected.
+
+Keep the existing `drawSubGlyph()` for the dagger/axe icon, drawn inside a
+small framed box so the currently selected sub-weapon reads as a slot.
+Drop the "first letter of the sub-weapon name" text — the icon carries it.
+
+### 8.6.3 Minimap
+
+- **Modify `src/ui/minimap.ts`:** `originY = 32` → `10`. That offset only
+  existed to duck under the sub-weapon plate; with the right side cleared
+  the map should sit in the corner.
+- Nothing else changes — it stays right-aligned via
+  `originX = VIEW_W - 10 - gridW * CELL` and keeps handling negative
+  `gx`/`gy`.
+
+### 8.6.4 Things NOT to touch
+
+The boss HP bar (`Game.draw`, centred at `y = VIEW_H - 26`), the room-name
+banner (`y ≈ 60`, centred) and every overlay (menu, shop, warp, dialogue,
+slots, cutscene, results) keep their current geometry. Check the new panel
+against the boss bar and the banner once — they should not overlap, since
+the panel ends at `y = 68` and the banner is centred horizontally.
+
+### Acceptance tests
+
+Pump-driven (ARCHITECTURE §14 — remember: pump `app.update()`).
+
+1. **No overlap:** with every room visited, nothing but the minimap is drawn
+   right of `x = 300`. Screenshot the Entrance and confirm the map's box is
+   clear of text.
+2. **All values present:** HP, MP, LV, EXP, weapon name, sub-weapon icon,
+   hearts, gold and potions are all visible in the left panel; hearts and
+   gold update live after smashing a candle and picking the drops up.
+3. **Sub-weapon swap:** pressing `V` changes the icon in the strip.
+4. **Empty states:** 0 potions hides that entry and nothing shifts position;
+   0 hearts still shows `0`.
+5. **Legibility:** the plate keeps the text readable in the Marble Gallery
+   (pale walls) — compare against the current build.
+6. `npm run typecheck` clean, `window.__validateMap()` returns `[]`,
+   `window.__errs` empty.
 
 ---
 

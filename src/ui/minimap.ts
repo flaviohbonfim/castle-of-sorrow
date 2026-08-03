@@ -25,7 +25,8 @@ export class Minimap {
     const gridW = maxGx - minGx;
     const gridH = maxGy - minGy;
     const originX = VIEW_W - 10 - gridW * CELL;
-    const originY = 32;
+    // Top-right corner: no longer offset under the old sub-weapon plate (Phase 8.6).
+    const originY = 10;
 
     ctx.save();
     ctx.globalAlpha = 0.85;
