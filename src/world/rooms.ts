@@ -383,11 +383,11 @@ function buildSaveRoom(): BuiltRoom {
 }
 
 /**
- * Underground Cavern — sits under the Entrance Hall's right pit.
- * Continuity:
- *  - CEILING hole (cols 40–43, right) ↔ Entrance floor pit (cols 52–54)
- *  - FLOOR hole (cols 3–5, left) ↔ Lake ceiling shaft (right side of lake)
- *  - LEFT lower door ↔ Lake right stair door (walk connection)
+ * Underground Cavern — under Entrance (vertical shaft) and right of Lake.
+ *
+ * Exactly THREE neighbors (one link each — no duplicate doors/holes):
+ *  - UP    ceiling shaft ↔ Entrance floor pit
+ *  - LEFT  door ↔ Lake right door
  *  - RIGHT door ↔ Hermit's Den
  */
 function buildCavern(): BuiltRoom {
@@ -395,50 +395,35 @@ function buildCavern(): BuiltRoom {
   b.frame();
   b.hline(16, 1, 46, TileId.FloorTop);
   b.fill(1, 17, 46, 18, TileId.Brick);
-  b.pillar(8, 13);
-  b.pillar(30, 13);
-  b.door(47, 13, 15); // right door to the Hermit's Den
+  b.pillar(12, 13);
+  b.pillar(28, 13);
+  b.door(47, 13, 15); // right → shop
+  b.door(0, 13, 15); // left → lake (ONLY link to lake)
 
-  // --- CEILING SHAFT back up to Entrance (right side) ---
-  // Open ceiling so a full jump from the ledge triggers the top exit.
+  // Ceiling shaft ↔ Entrance (right side of room, under entrance pit).
   for (let c = 40; c <= 43; c++) {
     b.set(c, 0, TileId.Empty);
     b.set(c, 1, TileId.Empty);
     b.set(c, 2, TileId.Empty);
   }
-  // Landing ledges under the entrance drop + climb ladder back up the shaft.
-  b.hline(3, 40, 43, TileId.Platform); // high — single jump exits to entrance
+  b.hline(3, 40, 43, TileId.Platform);
   b.hline(5, 36, 39, TileId.Platform);
   b.hline(5, 44, 46, TileId.Platform);
   b.hline(8, 38, 45, TileId.Platform);
   b.hline(11, 36, 42, TileId.Platform);
   b.hline(13, 40, 46, TileId.Platform);
 
-  // Mid platforms (optional climb path across the room).
-  b.hline(13, 20, 28, TileId.Platform);
-  b.hline(10, 12, 18, TileId.Platform);
-  b.hline(7, 6, 12, TileId.Platform);
+  // Mid platforms for combat / traversal across the hall.
+  b.hline(13, 18, 26, TileId.Platform);
+  b.hline(10, 10, 16, TileId.Platform);
 
-  // Lower-left door: walk connection to Sunken Gallery stairs.
-  b.door(0, 13, 15);
-
-  // --- FLOOR SHAFT down to Lake (LEFT side, above the left door) ---
-  // Aligns with lake's right-ceiling shaft geographically (lake is to the left).
-  for (let c = 3; c <= 5; c++) {
-    b.set(c, 16, TileId.Empty);
-    for (let r = 17; r <= 19; r++) b.set(c, r, TileId.Empty);
-  }
-  // Solid lips beside the pit so you don't slide in while using the door.
-  b.set(2, 16, TileId.FloorTop);
-  b.set(6, 16, TileId.FloorTop);
-
-  // Warp away from both pits.
+  // Solid floor everywhere — no pit to lake (that was a second link).
   b.at("warp", 22, 15);
   b.at("skeleton", 18, 15);
   b.at("skeleton", 34, 15);
   b.spawns.push({ kind: "bat", x: 20 * TILE, y: 10 * TILE });
   b.spawns.push({ kind: "bat", x: 32 * TILE, y: 8 * TILE });
-  b.at("candle", 12, 15);
+  b.at("candle", 10, 15);
   b.at("candle", 28, 15);
   b.at("candle", 38, 12);
   b.at("candle", 42, 7);
@@ -446,68 +431,54 @@ function buildCavern(): BuiltRoom {
 }
 
 /**
- * Sunken Gallery — flooded chamber left of the cavern.
- * Continuity:
- *  - RIGHT door ↔ cavern lower-left door
- *  - CEILING shaft (cols 48–51, over the dry stair) ↔ cavern floor pit
- *  - LEFT door ↔ lakeDepths
+ * Sunken Gallery — flooded wing LEFT of the cavern (same map band).
+ *
+ * Exactly TWO neighbors:
+ *  - RIGHT door ↔ cavern left door
+ *  - LEFT  door ↔ lakeDepths
+ * No ceiling shaft (that duplicated the cavern link).
  */
 function buildLake(): BuiltRoom {
-  const b = new RoomBuilder(56, 20);
+  const b = new RoomBuilder(48, 18);
   b.frame();
 
-  // --- water column (most of the room) ---
-  const surface = 11;
-  b.hline(surface, 1, 54, TileId.WaterTop);
-  b.fill(1, surface + 1, 54, 17, TileId.Water);
-  b.hline(18, 1, 54, TileId.FloorTop);
+  const surface = 9;
+  b.hline(surface, 1, 46, TileId.WaterTop);
+  b.fill(1, surface + 1, 46, 15, TileId.Water);
+  b.hline(16, 1, 46, TileId.FloorTop);
 
-  // Upper dry platforms (left/center only — right is the stair shaft).
-  b.hline(5, 8, 20, TileId.Platform);
-  b.hline(5, 28, 40, TileId.Platform);
-  b.hline(8, 18, 30, TileId.Platform);
+  // Upper dry ledges
+  b.hline(4, 6, 16, TileId.Platform);
+  b.hline(4, 24, 36, TileId.Platform);
+  b.hline(6, 16, 28, TileId.Platform);
 
-  // Left dry pedestal for Mermaid Statue (air pocket + solid floor).
-  b.fill(2, surface, 7, 14, TileId.Empty);
-  b.hline(15, 2, 7, TileId.FloorTop);
-  b.fill(2, 16, 7, 17, TileId.Brick);
-  // Cracked wall sealing the alcove from the open water on the right.
-  for (let r = 12; r <= 15; r++) b.set(8, r, TileId.Cracked);
+  // Left dry pedestal for Mermaid Statue.
+  b.fill(2, surface, 7, 12, TileId.Empty);
+  b.hline(13, 2, 7, TileId.FloorTop);
+  b.fill(2, 14, 7, 15, TileId.Brick);
+  for (let r = 10; r <= 13; r++) b.set(8, r, TileId.Cracked);
 
-  // Submerged shelves (swim-through platforms).
-  b.hline(15, 22, 26, TileId.Platform);
-  b.hline(14, 36, 40, TileId.Platform);
+  // Submerged shelves
+  b.hline(13, 18, 24, TileId.Platform);
+  b.hline(12, 30, 36, TileId.Platform);
 
-  // Right dry stair block + CEILING SHAFT from cavern (aligned drop).
-  b.fill(48, surface, 54, 13, TileId.Empty);
-  b.hline(14, 48, 54, TileId.FloorTop);
-  b.fill(48, 15, 54, 17, TileId.Brick);
-  b.hline(12, 46, 47, TileId.Platform);
-  b.hline(10, 50, 54, TileId.Platform);
-  // Open the ceiling above the stair so the cavern pit drops you HERE,
-  // not into mid-water in the center of the room.
-  for (let c = 48; c <= 51; c++) {
-    b.set(c, 0, TileId.Empty);
-    b.set(c, 1, TileId.Empty);
-    b.set(c, 2, TileId.Empty);
-    b.set(c, 3, TileId.Empty);
-    b.set(c, 4, TileId.Empty);
-  }
-  // Catch + climb platforms in the shaft (one-way; ↓+Jump to drop through).
-  b.hline(3, 48, 51, TileId.Platform); // high enough to jump back to cavern
-  b.hline(6, 48, 52, TileId.Platform);
+  // Right dry landing for the door into cavern (no ceiling hole).
+  b.fill(40, surface, 46, 12, TileId.Empty);
+  b.hline(13, 40, 46, TileId.FloorTop);
+  b.fill(40, 14, 46, 15, TileId.Brick);
+  b.hline(11, 38, 42, TileId.Platform);
 
-  b.door(55, 11, 13); // right door → cavern lower-left
-  b.door(0, 15, 17); // left door → lakeDepths (underwater)
+  b.door(47, 10, 12); // right → cavern
+  b.door(0, 13, 15); // left → lakeDepths (underwater)
 
-  b.at("relic", 4, 14, "waterWalk");
-  b.at("fishman", 18, 17);
-  b.at("fishman", 32, 17);
-  b.at("fishman", 42, 17);
-  b.at("candle", 12, 4);
-  b.at("candle", 34, 4);
-  b.at("candle", 50, 9);
-  b.at("candle", 24, 14);
+  b.at("relic", 4, 12, "waterWalk");
+  b.at("fishman", 16, 15);
+  b.at("fishman", 28, 15);
+  b.at("fishman", 36, 15);
+  b.at("candle", 10, 3);
+  b.at("candle", 30, 3);
+  b.at("candle", 42, 12);
+  b.at("candle", 20, 12);
   return b.build();
 }
 
@@ -568,29 +539,42 @@ function buildBossRoom(): BuiltRoom {
 }
 
 /**
+ * Castle topology (minimap grid — gx right, gy down). ONE link per edge.
+ *
+ * ```
+ *                 [towerHall]——[towerTop]——[throne]
+ *                      |
+ *                 [towerShaft]
+ *                      |
+ *  [entrance]——[corridor]——[saveRoom]
+ *       |           ^up from corridor
+ *       v
+ *  [lake]——[cavern]——[shop]——[bossRoom]
+ *    |
+ *  [lakeDepths]
+ * ```
+ *
  * Exit spawn convention (feet = bottom-center):
- *  - Door floors: stand on FloorTop surface → y = row * TILE
- *  - Left entry x ≈ 24–40; right entry x ≈ widthPx - 40
- *  - Never spawn into a floor hole; land on a solid ledge beside it
+ *  - Door floors: y = FloorTop row * TILE
+ *  - Left entry x ≈ 40; right entry x ≈ widthPx - 40
+ *  - Shaft landings: solid ledge beside the hole, never into the void
  */
 export const ROOMS: Record<string, RoomDef> = {
   entrance: {
     id: "entrance",
     name: "Entrance Hall",
     build: buildEntrance,
-    // Map: spans left castle; pit on the right sits over cavern's top-right.
     mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 },
     exits: [
-      // Right step (floor y=288) → corridor left floor (y=176)
       { side: "right", min: 230, max: 300, target: "corridor", tx: 40, ty: 176 },
-      // Floor pit (cols 52–54) → cavern ceiling shaft landing (right ledges)
+      // Only vertical link to cavern (right pit → cavern ceiling shaft).
       {
         side: "bottom",
         min: 52 * TILE,
         max: 55 * TILE,
         target: "cavern",
-        tx: 600, // between right-side platforms under the shaft
-        ty: 96, // feet on platform row 5/6
+        tx: 600,
+        ty: 96,
       },
     ],
   },
@@ -600,10 +584,8 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildCorridor,
     mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 },
     exits: [
-      // → entrance right STEP (y=288), not the lower main floor
       { side: "left", min: 120, max: 180, target: "entrance", tx: 960, ty: 288 },
       { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
-      // Ceiling hole → shaft left floor ledge (beside bottom hole)
       {
         side: "top",
         min: 24 * TILE,
@@ -621,7 +603,6 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerShaft,
     mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 },
     exits: [
-      // Bottom hole → under corridor ceiling hatch
       {
         side: "bottom",
         min: 5 * TILE,
@@ -630,7 +611,6 @@ export const ROOMS: Record<string, RoomDef> = {
         tx: 400,
         ty: 176,
       },
-      // Ceiling hatch → hall floor, RIGHT of the return hole (cols 4–7)
       {
         side: "top",
         min: 4 * TILE,
@@ -648,7 +628,6 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerHall,
     mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 },
     exits: [
-      // Floor hole → shaft top-left solid ledge (row 4, y=64)
       {
         side: "bottom",
         min: 4 * TILE,
@@ -675,7 +654,6 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 7, gy: -4, gw: 2, gh: 1 },
     boss: {
       id: "wraith",
-      // Left doorway (col 0) — seals the exit while the Wraith lives.
       gateCells: [
         [0, 8],
         [0, 9],
@@ -685,7 +663,6 @@ export const ROOMS: Record<string, RoomDef> = {
     },
     exits: [
       { side: "left", min: 120, max: 180, target: "towerHall", tx: 600, ty: 208 },
-      // Final gate (opened only when forms+bosses ready) → throne
       { side: "right", min: 120, max: 180, target: "throne", tx: 40, ty: 176 },
     ],
   },
@@ -719,69 +696,51 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "cavern",
     name: "Underground Cavern",
     build: buildCavern,
-    // Under entrance-right; lake sits to the left on the map.
-    mapRect: { gx: 3, gy: 2, gw: 3, gh: 2 },
+    // Under entrance/corridor; lake is immediately to the LEFT on the map.
+    mapRect: { gx: 1, gy: 2, gw: 3, gh: 2 },
     exits: [
-      // Jump out ceiling shaft (cols 40–43) → entrance pit lip (col 51)
+      // Ceiling shaft → entrance pit lip
       {
         side: "top",
         min: 40 * TILE,
         max: 44 * TILE,
         target: "entrance",
-        tx: 816, // solid floor left of the pit (col 51)
+        tx: 816,
         ty: 320,
       },
-      // Lower-left door → lake right stair (walk)
-      { side: "left", min: 200, max: 260, target: "lake", tx: 856, ty: 224 },
+      // Left door → lake (ONLY link to lake)
+      { side: "left", min: 200, max: 260, target: "lake", tx: 720, ty: 208 },
       // Right door → shop
       { side: "right", min: 200, max: 260, target: "shop", tx: 40, ty: 144 },
-      // Floor shaft (cols 3–5) → lake ceiling shaft above the dry stair
-      {
-        side: "bottom",
-        min: 3 * TILE,
-        max: 6 * TILE,
-        target: "lake",
-        tx: 792, // under lake ceiling hole cols 48–51
-        ty: 112, // catch platform row 6
-      },
     ],
   },
   lake: {
     id: "lake",
     name: "Sunken Gallery",
     build: buildLake,
-    // Left of cavern, one row lower on the minimap.
-    mapRect: { gx: 0, gy: 4, gw: 3, gh: 2 },
+    // Same vertical band as cavern, one cell to the left.
+    mapRect: { gx: 0, gy: 2, gw: 1, gh: 2 },
     exits: [
-      // Right stair door → cavern lower-left floor (beside the floor pit)
-      { side: "right", min: 176, max: 224, target: "cavern", tx: 120, ty: 256 },
-      // Jump out ceiling shaft → cavern next to floor pit lip
-      {
-        side: "top",
-        min: 48 * TILE,
-        max: 52 * TILE,
-        target: "cavern",
-        tx: 112, // solid lip col 6 beside pit
-        ty: 256,
-      },
-      // Left underwater → lakeDepths near right door
-      { side: "left", min: 232, max: 288, target: "lakeDepths", tx: 600, ty: 224 },
+      // Right door → cavern left (ONLY link to cavern)
+      { side: "right", min: 152, max: 208, target: "cavern", tx: 40, ty: 256 },
+      // Left door → depths below on the map
+      { side: "left", min: 200, max: 256, target: "lakeDepths", tx: 600, ty: 224 },
     ],
   },
   lakeDepths: {
     id: "lakeDepths",
     name: "Sunken Depths",
     build: buildLakeDepths,
-    mapRect: { gx: 0, gy: 6, gw: 2, gh: 1 },
+    mapRect: { gx: 0, gy: 4, gw: 2, gh: 1 },
     exits: [
-      { side: "right", min: 176, max: 224, target: "lake", tx: 40, ty: 288 },
+      { side: "right", min: 176, max: 224, target: "lake", tx: 40, ty: 256 },
     ],
   },
   shop: {
     id: "shop",
     name: "Hermit's Den",
     build: buildShop,
-    mapRect: { gx: 6, gy: 2, gw: 1, gh: 2 },
+    mapRect: { gx: 4, gy: 2, gw: 2, gh: 2 },
     exits: [
       { side: "left", min: 88, max: 148, target: "cavern", tx: 728, ty: 256 },
       { side: "right", min: 88, max: 148, target: "bossRoom", tx: 48, ty: 176 },
@@ -791,11 +750,9 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "bossRoom",
     name: "Hall of the Colossus",
     build: buildBossRoom,
-    mapRect: { gx: 7, gy: 2, gw: 2, gh: 2 },
+    mapRect: { gx: 6, gy: 2, gw: 2, gh: 2 },
     boss: {
       id: "colossus",
-      // Gate tiles fill the left doorway (same cells as punch(0, 8, 10)).
-      // Human/wolf blocked; mist phases through; defeat clears to Empty.
       gateCells: [
         [0, 8],
         [0, 9],

@@ -141,14 +141,21 @@ platforms only collide when falling onto them from above and
 - Current rooms & topology:
 
 ```
-[entrance 64x24] --right--> [corridor 48x14] --right--> [saveRoom 20x12]
-      |  floor hole           | top shaft (dbl jump)  | cracked → doubleJump
-      v bottom                v                       |
-[cavern 48x20] ...     [towerShaft 16x40] --top--> [towerHall] --right--> [towerTop]
-      |                       | zone:tower             warp pad              Wraith → highJump
-      v                       +--bottom--> corridor
-[lake] --left--> [lakeDepths]
+                 [towerHall]——[towerTop]——[throne]
+                      |
+                 [towerShaft]
+                      |
+  [entrance]——[corridor]——[saveRoom]
+       |           ^ (dbl-jump hatch)
+       v shaft
+  [lake]——[cavern]——[shop]——[bossRoom]
+    |
+  [lakeDepths]
 ```
+
+**Rule:** each pair of adjacent rooms has exactly ONE link (door or shaft).
+No double entries (e.g. door + floor hole to the same room). Minimap
+`mapRect`s follow that graph (lake left of cavern, shaft above corridor).
 
 - `WARP_CYCLE` + `WARP_PADS` + `nextWarp(room)`: ordered pad cycle
   (corridor → cavern → towerHall → …).
