@@ -62,18 +62,34 @@ export class Tilemap {
     const c1 = Math.min(this.cols - 1, Math.ceil((camX + viewW) / TILE));
     const r0 = Math.max(0, Math.floor(camY / TILE));
     const r1 = Math.min(this.rows - 1, Math.ceil((camY + viewH) / TILE));
+    const bgWall = this.tileset.get(TileId.BgWall);
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
         const t = this.at(c, r);
         if (t === TileId.Empty) continue;
         const variants = this.tileset.get(t);
         if (!variants) continue;
+        const dx = c * TILE - camX;
+        const dy = r * TILE - camY;
+        // Platform / pillar sprites only paint part of the 16×16 cell (thin lip
+        // or center column). Without a wall underlay the transparent pixels
+        // punch through to the parallax sky — looks like accidental "windows".
+        if (
+          bgWall &&
+          (t === TileId.Platform ||
+            t === TileId.PillarTop ||
+            t === TileId.Pillar ||
+            t === TileId.PillarBase)
+        ) {
+          const under = bgWall[(c * 7 + r * 13) % bgWall.length];
+          ctx.drawImage(under, dx, dy);
+        }
         // WaterTop alternates by column for a static ripple strip.
         const img =
           t === TileId.WaterTop
             ? variants[c % variants.length]
             : variants[(c * 7 + r * 13) % variants.length];
-        ctx.drawImage(img, c * TILE - camX, r * TILE - camY);
+        ctx.drawImage(img, dx, dy);
       }
     }
   }
