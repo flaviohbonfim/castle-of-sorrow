@@ -39,7 +39,7 @@ src/
 ├── world/
 │   ├── tilemap.ts           # Tilemap: at/setTile/isSolid/isOneWay/draw
 │   ├── collision.ts         # moveBody (axis-separated AABB), groundAhead
-│   └── rooms.ts             # RoomBuilder, ROOMS registry, exits, WARP_LINKS, START
+│   └── rooms.ts             # RoomBuilder, ROOMS registry, exits, WARP_CYCLE, START
 ├── entities/
 │   ├── entity.ts            # abstract Entity base (body, facing, savePrev, renderX/Y)
 │   ├── player/
