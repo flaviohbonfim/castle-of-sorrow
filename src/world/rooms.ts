@@ -131,6 +131,11 @@ class RoomBuilder {
     for (let r = r0; r <= r1; r++) this.set(c, r, TileId.Empty);
   }
 
+  /** Horizontal hole across a ceiling/floor row (shaft mouth). */
+  hpunch(r: number, c0: number, c1: number): void {
+    for (let c = c0; c <= c1; c++) this.set(c, r, TileId.Empty);
+  }
+
   /**
    * Side-wall doorway (gothic arch stack). Tilemap picks arch/mid/sill art
    * from vertical neighbors so a 3-cell door reads as one passage.
@@ -178,7 +183,9 @@ function buildEntrance(): BuiltRoom {
   b.hline(11, 36, 42, TileId.Platform);
 
   b.pillar(12, 17);
-  b.pillar(50, 17);
+  // Pillar kept clear of cols 49–51 so the cavern shaft has a real landing
+  // ledge left of the pit (the old col-50 pillar swallowed the return spawn).
+  b.pillar(48, 17);
 
   // Doorway to the Marble Gallery (above the right step).
   b.door(63, 15, 17);
@@ -424,7 +431,7 @@ function buildCavern(): BuiltRoom {
   b.spawns.push({ kind: "bat", x: 20 * TILE, y: 10 * TILE });
   b.spawns.push({ kind: "bat", x: 32 * TILE, y: 8 * TILE });
   b.at("candle", 10, 15);
-  b.at("candle", 28, 15);
+  b.at("candle", 25, 15); // clear of the col-28 pillar base
   b.at("candle", 38, 12);
   b.at("candle", 42, 7);
   return b.build();
@@ -434,9 +441,8 @@ function buildCavern(): BuiltRoom {
  * Sunken Gallery — flooded wing LEFT of the cavern (same map band).
  *
  * Exactly TWO neighbors:
- *  - RIGHT door ↔ cavern left door
- *  - LEFT  door ↔ lakeDepths
- * No ceiling shaft (that duplicated the cavern link).
+ *  - RIGHT  door       ↔ cavern left door
+ *  - BOTTOM water pit  ↔ lakeDepths ceiling (the depths sit BELOW on the map)
  */
 function buildLake(): BuiltRoom {
   const b = new RoomBuilder(48, 18);
@@ -469,7 +475,13 @@ function buildLake(): BuiltRoom {
   b.hline(11, 38, 42, TileId.Platform);
 
   b.door(47, 10, 12); // right → cavern
-  b.door(0, 13, 15); // left → lakeDepths (underwater)
+
+  // Dive shaft down to the Sunken Depths — flooded so it reads as deep water
+  // continuing below, not a hole onto the sky. Clear of both stone shelves.
+  for (let c = 26; c <= 29; c++) {
+    b.set(c, 16, TileId.Water);
+    b.set(c, 17, TileId.Water);
+  }
 
   b.at("relic", 4, 12, "waterWalk");
   b.at("fishman", 16, 15);
@@ -497,7 +509,11 @@ function buildLakeDepths(): BuiltRoom {
   b.hline(11, 30, 34, TileId.FloorTop);
   b.fill(30, 12, 34, 13, TileId.Brick);
 
-  b.door(39, 11, 13); // right door → lake left
+  // Ceiling shaft back up to the Sunken Gallery. Rows 1–2 are already open
+  // air above the surface; only the stone ceiling needs punching through.
+  b.hpunch(0, 18, 21);
+  // Launch platform under the shaft so the swim-up exit is always reachable.
+  b.hline(4, 18, 21, TileId.Platform);
 
   b.at("fishman", 10, 13);
   b.at("fishman", 18, 13);
@@ -548,9 +564,10 @@ function buildBossRoom(): BuiltRoom {
  *                      |
  *  [entrance]——[corridor]——[saveRoom]
  *       |           ^up from corridor
- *       v
+ *       v pit
  *  [lake]——[cavern]——[shop]——[bossRoom]
  *    |
+ *    v dive shaft
  *  [lakeDepths]
  * ```
  *
@@ -558,23 +575,28 @@ function buildBossRoom(): BuiltRoom {
  *  - Door floors: y = FloorTop row * TILE
  *  - Left entry x ≈ 40; right entry x ≈ widthPx - 40
  *  - Shaft landings: solid ledge beside the hole, never into the void
+ *
+ * Minimap scale: ONE grid cell ≈ 16 columns × 12 rows of room, rounded, so a
+ * footprint reflects the room's real size. Keep new rooms on that scale —
+ * `__validateMap()` checks adjacency/direction but not proportion.
  */
 export const ROOMS: Record<string, RoomDef> = {
   entrance: {
     id: "entrance",
     name: "Entrance Hall",
     build: buildEntrance,
-    mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 },
+    mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 }, // 64x24
     exits: [
       { side: "right", min: 230, max: 300, target: "corridor", tx: 40, ty: 176 },
       // Only vertical link to cavern (right pit → cavern ceiling shaft).
+      // Lands on the first shaft ledge so the drop reads as continuous.
       {
         side: "bottom",
         min: 52 * TILE,
         max: 55 * TILE,
         target: "cavern",
-        tx: 600,
-        ty: 96,
+        tx: 672,
+        ty: 48,
       },
     ],
   },
@@ -582,7 +604,7 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "corridor",
     name: "Marble Gallery",
     build: buildCorridor,
-    mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 },
+    mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 }, // 48x14
     exits: [
       { side: "left", min: 120, max: 180, target: "entrance", tx: 960, ty: 288 },
       { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
@@ -601,12 +623,13 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Clock Tower Shaft",
     zone: "tower",
     build: buildTowerShaft,
-    mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 },
+    mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 }, // 16x40
     exits: [
+      // Range matches the floor hole exactly (cols 6–9).
       {
         side: "bottom",
-        min: 5 * TILE,
-        max: 11 * TILE,
+        min: 6 * TILE,
+        max: 10 * TILE,
         target: "corridor",
         tx: 400,
         ty: 176,
@@ -626,7 +649,7 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Gear Gallery",
     zone: "tower",
     build: buildTowerHall,
-    mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 },
+    mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 }, // 40x16
     exits: [
       {
         side: "bottom",
@@ -651,7 +674,7 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Clockwork Spire",
     zone: "tower",
     build: buildTowerTop,
-    mapRect: { gx: 7, gy: -4, gw: 2, gh: 1 },
+    mapRect: { gx: 7, gy: -4, gw: 2, gh: 1 }, // 32x14
     boss: {
       id: "wraith",
       gateCells: [
@@ -671,7 +694,7 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Throne of Night",
     zone: "tower",
     build: buildThrone,
-    mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 },
+    mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 }, // 36x14
     boss: {
       id: "sovereign",
       gateCells: [
@@ -689,14 +712,14 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "saveRoom",
     name: "Sanctuary",
     build: buildSaveRoom,
-    mapRect: { gx: 7, gy: 0, gw: 2, gh: 1 },
+    mapRect: { gx: 7, gy: 0, gw: 1, gh: 1 }, // 20x12
     exits: [{ side: "left", min: 88, max: 148, target: "corridor", tx: 728, ty: 176 }],
   },
   cavern: {
     id: "cavern",
     name: "Underground Cavern",
     build: buildCavern,
-    // Under entrance/corridor; lake is immediately to the LEFT on the map.
+    // Under entrance; lake is immediately to the LEFT on the map. 48x20
     mapRect: { gx: 1, gy: 2, gw: 3, gh: 2 },
     exits: [
       // Ceiling shaft → entrance pit lip
@@ -718,29 +741,44 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "lake",
     name: "Sunken Gallery",
     build: buildLake,
-    // Same vertical band as cavern, one cell to the left.
-    mapRect: { gx: 0, gy: 2, gw: 1, gh: 2 },
+    // Same vertical band as cavern, immediately to its left. 48x18
+    mapRect: { gx: -2, gy: 2, gw: 3, gh: 2 },
     exits: [
       // Right door → cavern left (ONLY link to cavern)
       { side: "right", min: 152, max: 208, target: "cavern", tx: 40, ty: 256 },
-      // Left door → depths below on the map
-      { side: "left", min: 200, max: 256, target: "lakeDepths", tx: 600, ty: 224 },
+      // Dive shaft (cols 26–29) → depths, which sit BELOW on the map.
+      {
+        side: "bottom",
+        min: 26 * TILE,
+        max: 30 * TILE,
+        target: "lakeDepths",
+        tx: 320,
+        ty: 48,
+      },
     ],
   },
   lakeDepths: {
     id: "lakeDepths",
     name: "Sunken Depths",
     build: buildLakeDepths,
-    mapRect: { gx: 0, gy: 4, gw: 2, gh: 1 },
+    mapRect: { gx: -2, gy: 4, gw: 3, gh: 1 }, // 40x16
     exits: [
-      { side: "right", min: 176, max: 224, target: "lake", tx: 40, ty: 256 },
+      // Swim up the ceiling shaft (cols 18–21) → lake floor, beside its pit.
+      {
+        side: "top",
+        min: 18 * TILE,
+        max: 22 * TILE,
+        target: "lake",
+        tx: 376,
+        ty: 256,
+      },
     ],
   },
   shop: {
     id: "shop",
     name: "Hermit's Den",
     build: buildShop,
-    mapRect: { gx: 4, gy: 2, gw: 2, gh: 2 },
+    mapRect: { gx: 4, gy: 3, gw: 1, gh: 1 }, // 20x12
     exits: [
       { side: "left", min: 88, max: 148, target: "cavern", tx: 728, ty: 256 },
       { side: "right", min: 88, max: 148, target: "bossRoom", tx: 48, ty: 176 },
@@ -750,7 +788,7 @@ export const ROOMS: Record<string, RoomDef> = {
     id: "bossRoom",
     name: "Hall of the Colossus",
     build: buildBossRoom,
-    mapRect: { gx: 6, gy: 2, gw: 2, gh: 2 },
+    mapRect: { gx: 5, gy: 3, gw: 3, gh: 1 }, // 40x14
     boss: {
       id: "colossus",
       gateCells: [

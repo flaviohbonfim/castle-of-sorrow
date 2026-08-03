@@ -285,8 +285,11 @@ fallback, then ship.
    before finishing; run `graphify update .` after code changes.
 2. Any new persistent state = a new **flag namespace** or a new field with
    a default in the save-load path (append-only; old saves must load).
-3. Any new room: exits both ways, mapRect, reachability check against jump
-   heights (63px single / ~100px double / super jump after Phase 5).
+3. Any new room: exits both ways, mapRect on the 16-cols × 12-rows scale,
+   reachability check against jump heights (63px single / ~100px double /
+   super jump after Phase 5) — then **`__validateMap()` must return `[]`**
+   (ARCHITECTURE.md §14.1). An exit's `side` has to match the minimap
+   direction: put the room where the door actually leads.
 4. Any new enemy: goes through `Enemy` base (drops/EXP/flash for free);
    stats into the bestiary once Phase 8 lands.
 5. Any new UI overlay: world-freeze pattern (check `.open` early in

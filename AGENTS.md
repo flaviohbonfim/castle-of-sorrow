@@ -47,5 +47,18 @@ const pump = n => { for (let i = 0; i < n; i++) g.update(); };
 const tap  = (c, held = 4) => { down(c); pump(held); up(c); pump(8); };
 ```
 
+Never `up(key)` and `down(key)` without a `pump()` between them — presses are
+applied before releases in a tick, so they cancel out and the key is not held.
+
 Reset progression: `localStorage.removeItem('castle-of-sorrow-save')` then
 reload. The full regression checklist is in ARCHITECTURE.md §14.
+
+**After ANY room/map change**, run the topology validator in the console and
+make sure it returns an empty array:
+
+```js
+window.__validateMap()   // [] === healthy
+```
+
+It checks reciprocity, entry positions, trigger bands, spawn embedding, warp
+pads and minimap adjacency/direction. Details in ARCHITECTURE.md §14.1.

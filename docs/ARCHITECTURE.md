@@ -21,7 +21,9 @@ sprites, tiles, SFX and music are generated procedurally at boot.
 
 ```
 src/
-├── main.ts                  # boot: Renderer + Game + startLoop; DEV exposes window.__game
+├── main.ts                  # boot: Renderer + Game + startLoop; DEV exposes __game / __validateMap
+├── dev/
+│   └── validateMap.ts       # static castle-topology audit (see §14.1)
 ├── game.ts                  # Game class: world orchestration (THE central file)
 ├── engine/
 │   ├── loop.ts              # fixed 60Hz timestep + render interpolation alpha
@@ -147,15 +149,27 @@ platforms only collide when falling onto them from above and
                       |
   [entrance]——[corridor]——[saveRoom]
        |           ^ (dbl-jump hatch)
-       v shaft
+       v pit
   [lake]——[cavern]——[shop]——[bossRoom]
     |
+    v dive shaft (flooded)
   [lakeDepths]
 ```
 
-**Rule:** each pair of adjacent rooms has exactly ONE link (door or shaft).
-No double entries (e.g. door + floor hole to the same room). Minimap
-`mapRect`s follow that graph (lake left of cavern, shaft above corridor).
+**Rules — all machine-checked by `__validateMap()` (see §14.1):**
+1. Each pair of adjacent rooms has exactly ONE link (door or shaft). No
+   double entries (e.g. door + floor hole to the same room).
+2. Every exit is reciprocal and on the opposite side of the target.
+3. The exit's `side` must agree with the minimap direction: a `left` exit's
+   target sits at a smaller `gx`, a `bottom` exit's target at a larger `gy`.
+   (This is why lake→lakeDepths is a *bottom* dive shaft: the depths sit
+   below on the map. A side door there was the old inconsistency.)
+4. Entry points (`tx`,`ty`) must be free of solid tiles for the 12x28
+   standing hitbox, supported by ground (side doors land flat), and must not
+   re-trigger an exit on arrival (bounce loop).
+5. Minimap scale: **one grid cell ≈ 16 columns × 12 rows**, rounded, so
+   footprints reflect real room size. `mapRect`s may use negative `gx`/`gy`
+   (tower wing above, lake wing left) — both map renderers normalize.
 
 - `WARP_CYCLE` + `WARP_PADS` + `nextWarp(room)`: ordered pad cycle
   (corridor → cavern → towerHall → …).
@@ -368,7 +382,37 @@ first-frame crash once — see §14).
   // e.g.: tap('KeyX'); pump(30); check g.player / g.enemies / g.flags ...
   ```
 
+  **Gotcha:** never `up(key)` and `down(key)` without a `pump()` between
+  them. `beginTick` applies presses before releases, so both landing in the
+  same tick cancel out and the key ends up *not* held. To walk a long
+  distance, press once and pump in a loop, then release.
+
 - Reset progression: `localStorage.removeItem('castle-of-sorrow-save')` + reload.
+
+### 14.1 Map validator — run after ANY room change
+
+`src/dev/validateMap.ts` mechanically checks the castle topology; DEV builds
+expose it as **`__validateMap()`** (logs a report, returns the issue array).
+It must return `[]` before any map work is considered done:
+
+```js
+window.__validateMap()   // [] === healthy
+```
+
+It verifies, for every exit: target exists, reciprocity, opposite side,
+entry inside bounds, entry not embedded in solids, entry supported by
+ground (side doors) or landing within a sane fall (shafts), no arrival
+bounce-loop, the trigger band lines up with actually passable tiles
+(`Gate` counts as open — boss portcullises are conditional), and minimap
+adjacency + direction. It also checks every grounded spawn (candles,
+NPCs, relics, bosses…) is not inside a wall or floating, that warp pads
+match `WARP_PADS` and sit on solid ground, that no two `mapRect`s overlap,
+and that all rooms are reachable from the start.
+
+What it does **not** check: whether the player can physically *reach* an
+exit (jump-height reachability). For that, drive the player with `pump()`
+through the transition — the four boss-room exits are expected to fail
+while their boss lives (the portcullis seals the arena).
 - Regression checklist (run after any gameplay change): walk/jump heights
   (full ~63px, short ~35px, double ~100px), backdash i-frames, candle →
   drop → magnetize, skeleton kill → EXP, hurt knockback + i-frames, potion

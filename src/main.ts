@@ -12,9 +12,12 @@ const game = new Game();
 // Music can only start from a user gesture (autoplay policy).
 window.addEventListener("keydown", () => music.start(), { once: true });
 
-// Debug handle for automated play-testing in dev.
+// Debug handles for automated play-testing / map auditing in dev.
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Game }).__game = game;
+  void import("./dev/validateMap").then((m) => {
+    (window as unknown as { __validateMap: typeof m.reportMap }).__validateMap = m.reportMap;
+  });
 }
 
 startLoop(
