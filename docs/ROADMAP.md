@@ -1,5 +1,8 @@
 # Castle of Sorrow — Development Roadmap (Phases 4–9)
 
+> **Status:** Phases 4–8 are implemented. **Phase 8.5 (front end, save
+> slots, ending cutscene) is the current work** and comes before Phase 9.
+
 > Execution plan for the next milestones. Written so that any developer or
 > AI model can pick up a phase independently. **Prerequisite reading:**
 > [`ARCHITECTURE.md`](ARCHITECTURE.md) — especially §14 (testing workflow)
@@ -249,6 +252,200 @@ final gate.
 ### Acceptance tests
 Full playthrough from clean save to victory possible; completion reaches
 100% when everything collected; NG+ multiplies enemy stats; old saves load.
+
+---
+
+## Phase 8.5 — Front end, save slots & ending cutscene
+
+**Goal:** give the game a real front door and a real ending. Today the app
+boots straight into a loaded save, there is exactly one save file, and
+beating the Sovereign flashes a stats box that the player's still-buffered
+attack press dismisses instantly. This phase adds a title screen, three
+save slots (chosen both when loading and when saving), and an illustrated
+ending cutscene followed by results and a return to the title.
+
+**Director's decisions (locked):** the cutscene is **illustrated full-screen
+panels** (procedural art + typewriter narration + fades), not an in-engine
+scripted scene. There are **two endings selected by completeness** — a short
+one below 100% collection, and the full one when every relic and unique item
+was found.
+
+### 8.5.1 App shell — boot flow (do this first; everything else hangs off it)
+
+Today `main.ts` does `new Game()` and the constructor auto-loads the save.
+A title screen needs to exist *before* any Game does.
+
+- **Create `src/app.ts`** — an `App` class owning the screen state machine:
+  `"title" | "slots" | "playing"`. It holds `game: Game | null`, the shared
+  `Input`, the `ParallaxBackground` used by the title, and the current UI
+  screen. `update()` / `draw(ctx, alpha)` dispatch by screen.
+  - `App` owns the single `Input` instance and calls `input.beginTick()`
+    **exactly once per tick** — so `Game.update()` must stop calling it
+    itself. Pass the Input into `Game` via its constructor. This is the one
+    invasive change; get it right or inputs double-fire.
+- **Modify `src/main.ts`**: build `App`, drive it from `startLoop`. Keep
+  `window.__game` working by having `App` re-point it whenever a Game is
+  created (and set it to `null` on the title). Add `window.__app` for tests.
+- **Modify `src/game.ts`**:
+  - Constructor becomes `constructor(input: Input, init?: SaveFile | null, slot?: number | null)`.
+    With `init` → restore from it; without → fresh run. **No implicit
+    localStorage read in the constructor** — the App decides.
+  - Extract the starting loadout currently duplicated between the `Player`
+    constructor and `startFreshRun()` into one exported
+    `DEFAULT_PLAYER_SAVE` const (`src/rpg/defaultSave.ts`) and use it in
+    both. Today they can silently drift apart.
+  - Add `exitToTitle = false` plus `requestExitToTitle()`. `App` checks the
+    flag each tick and switches screens (avoids a circular App↔Game import).
+  - Track `currentSlot: number | null`.
+
+### 8.5.2 Save slots
+
+- **Create `src/rpg/saveSlots.ts`** — the only module allowed to touch
+  localStorage for saves:
+  - `SLOT_COUNT = 3`, `slotKey(i) = "castle-of-sorrow-save:" + i`.
+  - `readSlot(i): SaveFile | null` (try/catch + `version` check → treat
+    unreadable/newer as empty, never throw).
+  - `writeSlot(i, data)`, `deleteSlot(i)`, `anySlotUsed(): boolean`,
+    `mostRecentSlot(): number | null` (by `savedAt`).
+  - `slotSummary(i): SlotSummary | null` → `{ roomName, level, percent,
+    time, deaths, savedAt }`, derived from the existing `SaveFile` fields
+    (`ROOMS[data.room].name`, `player.levelState.level`,
+    `computeCompletion(new Set(data.flags))`, `formatPlayTime(playTicks)`).
+  - `migrateLegacy()` — if the old single key `castle-of-sorrow-save`
+    exists and slot 0 is empty, copy it into slot 0, then remove the legacy
+    key. Call once at App boot. **Save keys are append-only: add the slot
+    keys, migrate, never repurpose the old one.**
+- **Modify `SaveFile`** (`src/game.ts`): add `savedAt: number` (Date.now()).
+  Keep every existing field and keep `version: 1`; readers must tolerate a
+  missing `savedAt` (default 0).
+- **Modify `Game.saveGame(slot?: number)`**: writes through
+  `writeSlot(slot ?? this.currentSlot ?? 0, data)` and updates
+  `currentSlot`. Also update `startFreshRun()` / `startNewGamePlus()`,
+  which currently poke `SAVE_KEY` directly.
+
+### 8.5.3 Screens
+
+All three follow the existing world-freeze overlay pattern (check `.open`
+early in the host's update, draw last). UI font stays
+`8px 'Courier New', monospace`; reset `ctx.textAlign` when done.
+
+**`src/ui/title.ts` — `TitleScreen`**
+- Animated backdrop: reuse `ParallaxBackground` with a slowly increasing
+  fake `camX` so the castle drifts, plus the vignette and a few drifting
+  mist particles. Draw a procedural logotype: "CASTLE OF SORROW" in large
+  letters with a dark offset shadow and a thin gothic frame; subtitle below.
+- Items: `New Game`, `Load Game`. `Load Game` is dimmed and unselectable
+  when `anySlotUsed()` is false.
+- Input: ↑↓ move, X/Z confirm. `audio.play("pickup")` on move,
+  `"heart"` on confirm.
+- Starts `music` on the first key (autoplay policy already handled this way
+  in `main.ts`); add a `title` track to `src/engine/music.ts` — a slower,
+  sparser pattern than `castle`.
+
+**`src/ui/slots.ts` — `SlotScreen`** (shared by title-load and in-game-save)
+- Written as a reusable component, not a Game-only overlay:
+  `open(mode: "load" | "save" | "new", onPick: (slot) => void, onCancel: () => void)`.
+  Both `App` (load / new game) and `Game` (save point) host an instance.
+- Renders 3 rows: `SLOT 1 — Marble Gallery  LV 7  42%  0:38:12  ✝2`
+  or `SLOT 1 — EMPTY`.
+- Keys: ↑↓ navigate, X confirm, Z/Tab cancel, C delete (with a
+  confirm line). In `"load"` mode an empty slot is not selectable; in
+  `"save"`/`"new"` mode picking an occupied slot asks
+  `Overwrite slot N? X = yes, Z = no`.
+- **Modify `SavePoint`** (`src/entities/interactables.ts`): pressing ↑ now
+  calls `game.openSaveSlots()` instead of `game.saveGame()` directly. Heal
+  to full when the save is actually written (not on opening the picker).
+
+**`src/ui/cutscene.ts` — `CutsceneUI`** (Game overlay)
+- `play(endingId)` loads scenes from `src/data/endings.ts` and freezes the
+  world; `update()` advances; when the last panel finishes it calls
+  `game.showResults(endingId)`.
+- Per panel: fade-in (≈20 ticks) → scene art animates while a **typewriter**
+  reveals the narration (~1 char every 2 ticks) → wait for confirm →
+  fade-out. Confirm while typing completes the line instantly instead of
+  advancing (standard, prevents accidental skips).
+- **Input lockout — this is the actual bug the player reported.** The
+  Sovereign dies with `attack` still held/buffered, so the old victory box
+  was dismissed on the same frame. On `play()`: call
+  `input.clearCommands()`, `input.consume("attack")`, `input.consume("jump")`,
+  and ignore all confirms for the first `LOCK_TICKS = 45`. Apply the same
+  lockout when the results screen opens.
+- **Create `src/gfx/scenes.ts`** — one exported draw function per panel,
+  `(ctx, age: number) => void`, full-screen 480x270, colors from `PAL`:
+  - `throneCollapse` — cracked throne silhouette, debris falling with `age`
+  - `castleCrumbles` — castle skyline against the moon, towers sinking
+  - `dawn` — horizon gradient warming, sun rising with `age`, lone hero
+    silhouette walking right
+  - `sealedGate` — closed portcullis seen from inside, hero silhouette,
+    cold blue palette (short ending)
+  Keep them pure drawing code (no game state) so they're trivially testable.
+
+**Results screen** — evolve the existing `src/ui/victory.ts` (`VictoryUI`)
+rather than replacing it: it already renders time / deaths / clear % /
+rooms / relics / bosses. Changes:
+- Shown *after* the cutscene, not on boss death.
+- Add the ending name achieved and, for the short ending, one line hinting
+  what was missed (e.g. `Relics 4/6 — the castle keeps its secrets`).
+- Actions: **`X — Return to Title`** (primary; calls
+  `game.requestExitToTitle()`), `C — New Game+` (keep the existing
+  `startNewGamePlus()`), and apply the same input lockout.
+
+### 8.5.4 Conditional endings
+
+- **Create `src/data/endings.ts`**:
+  - `type EndingId = "short" | "true"`.
+  - `pickEnding(flags): EndingId` — `"true"` when
+    `c.relics === c.relicsTotal && c.items === c.itemsTotal` (using
+    `computeCompletion`), else `"short"`. The Sovereign kill is implied by
+    reaching the cutscene at all.
+  - `ENDINGS: Record<EndingId, { name: string; panels: { scene: SceneId; lines: string[] }[] }>`.
+    Short ending ≈ 2 panels (`sealedGate`, then a terse closing line); true
+    ending ≈ 4 panels (`throneCollapse` → `castleCrumbles` → `dawn` →
+    closing card). Write the narration in `endings.ts` only — no strings
+    baked into the UI code.
+  - On completion, add the flag `ending:<id>` so future work (a gallery, or
+    NG+ text variants) can tell what the player has seen.
+- **Modify `Game.onBossDefeated`**: for `"sovereign"`, replace
+  `this.victoryUI.show()` with the cutscene. Keep the gate/reward/gold
+  logic that already runs before it.
+
+### 8.5.5 Wiring order (suggested, each step leaves the game runnable)
+
+1. `defaultSave.ts` extraction + `saveSlots.ts` + `savedAt` (no UI yet;
+   `saveGame()` writes to slot 0, migration in place). Verify old saves load.
+2. `app.ts` + `main.ts` + `Game` constructor/Input change, with the App
+   booting straight into `"playing"` (no title UI yet). Verify the game
+   still plays identically and inputs don't double-fire.
+3. `TitleScreen` + `SlotScreen`, wire New Game / Load Game.
+4. `SavePoint` → slot picker.
+5. `scenes.ts` + `endings.ts` + `CutsceneUI`; hook the Sovereign kill.
+6. Results screen rework + return-to-title.
+
+### Acceptance tests
+
+Drive everything with the synchronous `pump()` driver (ARCHITECTURE §14) —
+remember the `up()`/`down()` same-tick gotcha.
+
+1. **Boot:** app opens on the title, not in a room. `Load Game` is dimmed
+   with no saves present. `New Game` starts at the Entrance with the
+   default loadout.
+2. **Slots:** save at a pedestal into slot 2 → title → Load → slot 2 shows
+   the right room name / level / % / time → loading restores flags, relics,
+   inventory and position. Slots 0 and 1 remain untouched and independent.
+3. **Overwrite & delete:** saving onto an occupied slot asks first;
+   cancelling leaves it unchanged. Delete empties only the chosen slot.
+4. **Legacy migration:** write an old-format `castle-of-sorrow-save`, boot,
+   and confirm it appears as slot 1 (index 0) and the legacy key is gone.
+5. **Cutscene lockout (the reported bug):** kill the Sovereign while
+   holding X — the first panel must stay up; confirm is ignored for
+   ~45 ticks; the run cannot reach the results screen in under ~2 seconds.
+6. **Endings:** with all relics + items → `"true"` (4 panels, dawn);
+   missing any → `"short"` (2 panels, sealed gate). `ending:<id>` flag set.
+7. **Return to title:** X on results returns to the title; starting a New
+   Game from there begins a clean run (no leftover flags, `playTicks` and
+   `deaths` reset), and the old game object is discarded.
+8. `npm run typecheck` clean, `window.__validateMap()` returns `[]`,
+   `window.__errs` empty after a full title → play → ending → title loop.
 
 ---
 

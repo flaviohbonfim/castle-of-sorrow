@@ -95,5 +95,7 @@ enemies respawn on room entry, classic style.
 
 ## Next milestones
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–8 (through endgame / NG+) are
-in; next is Phase 9: real-asset pipeline + packaging.
+See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–8 (through endgame / NG+)
+are in. Next is **Phase 8.5**: title screen, 3 save slots (picked when
+loading *and* saving), and an illustrated ending cutscene with two endings
+by completeness. Phase 9 (real-asset pipeline + packaging) follows.
