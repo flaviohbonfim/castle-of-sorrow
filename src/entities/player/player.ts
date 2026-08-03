@@ -237,8 +237,8 @@ export class Player extends Entity {
   }
 
   throwSubweapon(game: Game): boolean {
-    // Hold Up + Subweapon to throw the axe; plain press throws the dagger.
-    const id: SubweaponId = game.input.held("up") ? "axe" : this.subweapon === "axe" ? "axe" : "dagger";
+    // Hold Up + Subweapon still forces the axe; otherwise use the selected sub.
+    const id: SubweaponId = game.input.held("up") ? "axe" : this.subweapon;
     const def = SUBWEAPONS[id];
     if (this.res.hearts < def.heartCost) return false;
     this.res.hearts -= def.heartCost;

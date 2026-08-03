@@ -314,6 +314,15 @@ first-frame crash once — see §14).
   equipment / inventory; X equips/uses/unequips; relics listed.
 - **ShopUI**: same freeze pattern; `STOCK` table in ui/shop.ts; relic
   entries filtered out once owned (via `relic:` flag).
+- **WarpUI** (`ui/warp.ts`): destination list when `WARP_CYCLE.length ≥ 3`;
+  freezes world like the shop.
+- **Menu panels**: Equip / Items / Map (←→). Map draws visited `mapRect`s
+  ×3 minimap scale, door notches from exits, ♦ save / ▲ warp markers;
+  X toggles music mute.
+- **Input**: keyboard + `GamepadAdapter` (`engine/gamepad.ts`) inject into
+  the same pending/released queues. Action `swapSub` (KeyV / Select)
+  cycles dagger↔axe.
+- **Music**: `music.setVolume` / `setMuted` / `toggleMuted`.
 - **Minimap**: draws visited rooms from `RoomDef.mapRect` — every new room
   MUST define a non-overlapping `mapRect`.
 - UI font is always `8px 'Courier New', monospace`; remember

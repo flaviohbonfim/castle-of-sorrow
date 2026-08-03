@@ -6,7 +6,7 @@ import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
 import { TILE, TileId } from "./gfx/tiles";
 import { ParallaxBackground } from "./gfx/parallax";
-import { nextWarp, ROOMS, START, type RoomDef } from "./world/rooms";
+import { nextWarp, ROOMS, START, WARP_CYCLE, type RoomDef } from "./world/rooms";
 import type { Tilemap } from "./world/tilemap";
 import { Player, type PlayerSave } from "./entities/player/player";
 import { IdleState } from "./entities/player/states";
@@ -36,6 +36,7 @@ import { computeDamage, type FloatingText } from "./combat/damage";
 import { SUBWEAPONS, type SubweaponId } from "./rpg/subweapons";
 import { Hud } from "./ui/hud";
 import { Menu } from "./ui/menu";
+import { WarpUI } from "./ui/warp";
 
 export interface ParticleOpts {
   vx: number;
@@ -74,6 +75,10 @@ export class Game {
   camera!: Camera;
   private room!: RoomDef;
   private roomId = START.room;
+  /** Public room id for map UI / debug. */
+  get currentRoomId(): string {
+    return this.roomId;
+  }
   private lastEntry = { room: START.room, x: START.x, y: START.y };
 
   private enemies: Enemy[] = [];
@@ -85,6 +90,7 @@ export class Game {
   private hud = new Hud();
   private menu = new Menu();
   private shopUI = new ShopUI();
+  private warpUI = new WarpUI();
   private minimap = new Minimap();
   /** Active boss (any fight that shows the HP bar). */
   boss: (Enemy & { displayName: string; maxHp: number }) | null = null;
@@ -269,6 +275,11 @@ export class Game {
   }
 
   warpFrom(_pad: WarpPad): void {
+    // With 3+ pads, open the destination list; otherwise hop to the next pad.
+    if (WARP_CYCLE.length >= 3) {
+      this.warpUI.show(this.roomId);
+      return;
+    }
     const link = nextWarp(this.roomId);
     if (!link) return;
     audio.play("spell");
@@ -423,9 +434,13 @@ export class Game {
     this.input.beginTick();
     this.tick++;
 
-    // Shop and pause menu freeze the world.
+    // Shop, warp picker and pause menu freeze the world.
     if (this.shopUI.open) {
       this.shopUI.update(this);
+      return;
+    }
+    if (this.warpUI.open) {
+      this.warpUI.update(this);
       return;
     }
     if (this.menu.open) {
@@ -436,6 +451,14 @@ export class Game {
       this.input.consume("menu");
       this.menu.toggle();
       return;
+    }
+
+    // Quick sub-weapon cycle (dagger ↔ axe); persists via PlayerSave.subweapon.
+    if (this.input.pressed("swapSub")) {
+      this.input.consume("swapSub");
+      const p = this.player;
+      p.subweapon = p.subweapon === "dagger" ? "axe" : "dagger";
+      audio.play("pickup");
     }
 
     if (this.hitstopTicks > 0) {
@@ -578,6 +601,20 @@ export class Game {
     for (const c of this.candles) if (!c.dead) c.drawGlow(ctx, camX, camY);
     ctx.restore();
 
+    // Low-HP heartbeat vignette pulse below 20%.
+    const hpFrac = this.player.res.hp / Math.max(1, this.player.res.maxHp);
+    if (hpFrac > 0 && hpFrac < 0.2 && this.player.state.name !== "die") {
+      const pulse = 0.12 + 0.1 * (0.5 + 0.5 * Math.sin(this.tick * 0.18));
+      const g = ctx.createRadialGradient(
+        VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35,
+        VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.85,
+      );
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, `rgba(120, 10, 24, ${pulse.toFixed(3)})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    }
+
     // Vignette
     if (!this.vignette) {
       this.vignette = ctx.createRadialGradient(
@@ -640,5 +677,6 @@ export class Game {
 
     if (this.menu.open) this.menu.draw(ctx, this);
     if (this.shopUI.open) this.shopUI.draw(ctx, this);
+    if (this.warpUI.open) this.warpUI.draw(ctx);
   }
 }

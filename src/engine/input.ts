@@ -1,3 +1,5 @@
+import { GamepadAdapter } from "./gamepad";
+
 export type Action =
   | "left"
   | "right"
@@ -11,7 +13,8 @@ export type Action =
   | "menu"
   | "formBat"
   | "formWolf"
-  | "formMist";
+  | "formMist"
+  | "swapSub";
 
 const KEY_MAP: Record<string, Action> = {
   ArrowLeft: "left",
@@ -38,6 +41,7 @@ const KEY_MAP: Record<string, Action> = {
   Digit1: "formBat",
   Digit2: "formWolf",
   Digit3: "formMist",
+  KeyV: "swapSub",
 };
 
 const BUFFER_TICKS = 6; // press is honored up to 6 ticks (100ms) later
@@ -51,7 +55,7 @@ interface TapEvent {
  * Tick-synchronized input: `held` is the live key state, `pressed` is an
  * edge-trigger with a small buffer window (so jump inputs slightly before
  * landing still count). Directional tap history feeds command-move detection
- * (e.g. SotN's Down, Up + Attack spells).
+ * (e.g. SotN's Down, Up + Attack spells). Gamepad edges feed the same queues.
  */
 export class Input {
   private heldKeys = new Set<Action>();
@@ -60,6 +64,7 @@ export class Input {
   private released: Action[] = [];
   private tapHistory: TapEvent[] = [];
   private tick = 0;
+  private gamepad = new GamepadAdapter();
 
   constructor() {
     window.addEventListener("keydown", (e) => {
@@ -78,8 +83,18 @@ export class Input {
     });
   }
 
+  /** Gamepad (and other devices) inject edges into the same pipeline. */
+  injectPress(action: Action): void {
+    this.pending.push(action);
+  }
+
+  injectRelease(action: Action): void {
+    this.released.push(action);
+  }
+
   /** Call once at the start of every simulation tick. */
   beginTick(): void {
+    this.gamepad.poll(this);
     this.tick++;
     for (const a of this.pending) {
       this.heldKeys.add(a);

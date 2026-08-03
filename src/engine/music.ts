@@ -50,6 +50,8 @@ class MusicEngine {
   private step = 0;
   private nextTime = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private master = 0.16;
+  private muted = false;
 
   /** Must be called from a user-gesture handler (audio autoplay policy). */
   start(): void {
@@ -60,7 +62,7 @@ class MusicEngine {
       return;
     }
     this.gain = this.ctx.createGain();
-    this.gain.gain.value = 0.16;
+    this.applyGain();
     this.gain.connect(this.ctx.destination);
     this.nextTime = this.ctx.currentTime + 0.1;
     this.timer = setInterval(() => this.schedule(), 40);
@@ -71,6 +73,29 @@ class MusicEngine {
       this.track = name;
       this.step = 0;
     }
+  }
+
+  /** 0..1 master volume multiplier (default level is baked into the base). */
+  setVolume(v: number): void {
+    this.master = Math.max(0, Math.min(1, v)) * 0.16;
+    this.applyGain();
+  }
+
+  setMuted(m: boolean): void {
+    this.muted = m;
+    this.applyGain();
+  }
+
+  isMuted(): boolean {
+    return this.muted;
+  }
+
+  toggleMuted(): void {
+    this.setMuted(!this.muted);
+  }
+
+  private applyGain(): void {
+    if (this.gain) this.gain.gain.value = this.muted ? 0 : this.master;
   }
 
   private schedule(): void {

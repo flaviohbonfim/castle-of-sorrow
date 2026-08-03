@@ -26,16 +26,18 @@ npm run typecheck  # strict TS check
 | ↓ / S | Crouch |
 | Z / Space | Jump (variable height — release early for a short hop) |
 | X / J | Attack (hold ↑ for upward slash; works crouched and airborne) |
-| C / K | Sub-weapon: dagger (hold ↑ + C: axe) — costs Hearts |
+| C / K | Sub-weapon (selected); hold ↑ + C still forces axe — costs Hearts |
+| V | Cycle sub-weapon (dagger ↔ axe) |
 | Shift / L | Backdash (i-frames on startup, jump-cancellable) |
 | ↓, ↑ + X | Command spell "Soul Lance" — costs 10 MP |
 | ↓ + Z | Drop through one-way platforms |
 | Q | Drink potion |
-| Tab / E / Esc | Equipment & inventory menu (pauses the game) |
-| ↑ (on pads) | Use warp pad / save pedestal / talk to the Hermit |
+| Tab / E / Esc | Pause menu: Equip / Items / Map panels (← →) |
+| ↑ (on pads) | Use warp pad (destination list) / save / talk to the Hermit |
 | Z in mid-air | Double jump (after finding the Soul of the Gale relic) |
 | ↑, ↓ + X | Command spell "Hellfire" — 3 fireballs, costs 16 MP |
-| 1 / 2 / 3 | Transform: Bat (fly, drains MP) / Wolf (fast) / Mist (intangible, drains MP) — each needs its relic |
+| 1 / 2 / 3 | Transform: Bat / Wolf / Mist — each needs its relic |
+| Gamepad | A jump · X attack · B backdash · Y sub · Start menu · LB/RB/LT forms · RT potion · Select swap sub |
 
 ## Architecture
 
@@ -93,7 +95,6 @@ enemies respawn on room entry, classic style.
 
 ## Next milestones
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–5 (water + Clock Tower) are
-in; next is Phase 6: map screen, warp network, gamepad; Phase 7: NPCs &
-dialogue; Phase 8: balance, completion % and endgame; Phase 9: real-asset
-pipeline + packaging.
+See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–6 (water, Clock Tower, map /
+warp UI / gamepad) are in; next is Phase 7: NPCs & dialogue; Phase 8: balance,
+completion % and endgame; Phase 9: real-asset pipeline + packaging.

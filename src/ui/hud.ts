@@ -2,8 +2,9 @@ import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import type { Player } from "../entities/player/player";
 import { expToNext } from "../rpg/leveling";
+import { SUBWEAPONS } from "../rpg/subweapons";
 
-/** SotN-style HUD: HP/MP bars, hearts, gold, level/EXP, equipped weapon. */
+/** SotN-style HUD: HP/MP bars, hearts, sub-weapon, gold, level/EXP. */
 export class Hud {
   draw(ctx: CanvasRenderingContext2D, p: Player): void {
     ctx.save();
@@ -17,12 +18,23 @@ export class Hud {
     ctx.fillText(`HP ${p.res.hp}/${p.res.maxHp}`, 102, 14);
     ctx.fillText(`MP ${Math.floor(p.res.mp)}`, 82, 22);
 
-    // Hearts (sub-weapon ammo) + gold, top-right like the classics.
-    ctx.textAlign = "right";
+    // Sub-weapon glyph + hearts (top-right).
+    const sub = SUBWEAPONS[p.subweapon];
+    const subX = VIEW_W - 78;
+    ctx.fillStyle = "rgba(16, 10, 28, 0.75)";
+    ctx.fillRect(subX - 4, 4, 36, 22);
+    ctx.strokeStyle = PAL.uiFrameDark;
+    ctx.strokeRect(subX - 3.5, 4.5, 35, 21);
+    this.drawSubGlyph(ctx, p.subweapon, subX + 4, 8);
     ctx.fillStyle = PAL.heartHi;
-    ctx.fillText(`♥ ${p.res.hearts}`, VIEW_W - 8, 14);
+    ctx.textAlign = "left";
+    ctx.fillText(`♥${p.res.hearts}`, subX + 18, 18);
+    ctx.fillStyle = PAL.uiFrame;
+    ctx.fillText(sub.name[0] ?? "?", subX + 4, 28);
+
+    ctx.textAlign = "right";
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText(`$ ${p.inventory.gold}`, VIEW_W - 8, 24);
+    ctx.fillText(`$ ${p.inventory.gold}`, VIEW_W - 8, 40);
 
     // Level / EXP / weapon, bottom-left.
     ctx.textAlign = "left";
@@ -42,9 +54,28 @@ export class Hud {
       ctx.fillText(`[Q] Potion x${potions}`, 8, 48);
     }
     ctx.fillStyle = PAL.uiFrameDark;
-    ctx.fillText("[Tab] Menu", 8, VIEW_H - 10);
+    ctx.fillText("[Tab] Menu  [V] Sub", 8, VIEW_H - 10);
 
     ctx.restore();
+  }
+
+  private drawSubGlyph(ctx: CanvasRenderingContext2D, id: string, x: number, y: number): void {
+    if (id === "axe") {
+      // Tiny spinning-axe glyph
+      ctx.fillStyle = PAL.blade;
+      ctx.fillRect(x + 2, y, 8, 2);
+      ctx.fillRect(x + 5, y + 2, 2, 8);
+      ctx.fillStyle = PAL.gold;
+      ctx.fillRect(x + 4, y + 3, 4, 3);
+    } else {
+      // Dagger
+      ctx.fillStyle = PAL.bladeHi;
+      ctx.fillRect(x + 6, y, 2, 9);
+      ctx.fillStyle = PAL.blade;
+      ctx.fillRect(x + 5, y + 1, 4, 2);
+      ctx.fillStyle = PAL.gold;
+      ctx.fillRect(x + 4, y + 8, 6, 2);
+    }
   }
 
   private bar(
