@@ -321,6 +321,58 @@ export function buildBatSprites(): SpriteSet {
   return makeSet([up, down]);
 }
 
+const FISH = {
+  g: "#2a6a58",
+  m: "#3e8a6e",
+  d: "#1a4038",
+  s: PAL.skin,
+  r: PAL.eyeRed,
+  f: "#c8a060",
+};
+
+/** Classic merman: green body, fins, facing right (~16x24). */
+export function buildFishmanSprites(): SpriteSet {
+  const walkA = pixelMap(
+    [
+      "    mmmm    ",
+      "   mmmmmm   ",
+      "   msrrmm   ",
+      "   mmmmmm   ",
+      "    mssm    ",
+      "   gggggg   ",
+      "  f gggg f  ",
+      "  f gggg f  ",
+      "    gggg    ",
+      "    gggg    ",
+      "   gg  gg   ",
+      "   g    g   ",
+      "  ff    ff  ",
+      " fff    fff ",
+    ],
+    FISH,
+  );
+  const walkB = pixelMap(
+    [
+      "    mmmm    ",
+      "   mmmmmm   ",
+      "   msrrmm   ",
+      "   mmmmmm   ",
+      "    mssm    ",
+      "   gggggg   ",
+      "  f gggg f  ",
+      "  f gggg f  ",
+      "    gggg    ",
+      "    gggg    ",
+      "    gg gg   ",
+      "    g   g   ",
+      "   ff   ff  ",
+      "  fff   fff ",
+    ],
+    FISH,
+  );
+  return makeSet([walkA, walkB]);
+}
+
 const CANDLE = {
   o: PAL.flameOut,
   m: PAL.flameMid,

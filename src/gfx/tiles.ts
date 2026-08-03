@@ -15,6 +15,8 @@ export const enum TileId {
   BgWindow = 8,
   Cracked = 9,
   Gate = 10,
+  Water = 11,
+  WaterTop = 12,
 }
 
 /** Deterministic per-tile noise so bricks look weathered but stable. */
@@ -200,6 +202,41 @@ export function buildTileset(): Map<TileId, HTMLCanvasElement[]> {
       ctx.fillStyle = PAL.stoneLight;
       ctx.fillRect(3, 4, 1, 12);
       ctx.fillRect(12, 4, 1, 12);
+    }),
+  );
+
+  tiles.set(
+    TileId.Water,
+    variants(2, (ctx, s) => {
+      ctx.fillStyle = PAL.waterDeep;
+      ctx.fillRect(0, 0, TILE, TILE);
+      ctx.fillStyle = PAL.waterMid;
+      for (let i = 0; i < 6; i++) {
+        const x = Math.floor(noise(s + 3, i) * 16);
+        const y = Math.floor(noise(i, s + 9) * 16);
+        ctx.fillRect(x, y, 2, 1);
+      }
+    }),
+  );
+
+  // Two surface variants; rooms pick by column for a static ripple pattern.
+  tiles.set(
+    TileId.WaterTop,
+    variants(2, (ctx, s) => {
+      ctx.fillStyle = PAL.waterDeep;
+      ctx.fillRect(0, 0, TILE, TILE);
+      ctx.fillStyle = PAL.waterMid;
+      ctx.fillRect(0, 4, TILE, TILE - 4);
+      ctx.fillStyle = PAL.waterHi;
+      ctx.fillRect(0, 0, TILE, 2);
+      // Alternating crest for the two seeds.
+      const phase = s % 2 === 0 ? 0 : 4;
+      for (let x = phase; x < TILE; x += 8) {
+        ctx.fillRect(x, 2, 3, 1);
+        ctx.fillRect(x + 1, 3, 1, 1);
+      }
+      ctx.fillStyle = "rgba(160, 220, 240, 0.35)";
+      ctx.fillRect(2 + (s % 2) * 3, 1, 2, 1);
     }),
   );
 

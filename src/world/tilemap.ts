@@ -44,6 +44,17 @@ export class Tilemap {
     return this.at(col, row) === TileId.Platform;
   }
 
+  /** Any flooded cell (body + surface). Non-solid. */
+  isWater(col: number, row: number): boolean {
+    const t = this.at(col, row);
+    return t === TileId.Water || t === TileId.WaterTop;
+  }
+
+  /** Surface row only — used for Water Walking one-way landings. */
+  isWaterTop(col: number, row: number): boolean {
+    return this.at(col, row) === TileId.WaterTop;
+  }
+
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, viewW: number, viewH: number): void {
     const c0 = Math.max(0, Math.floor(camX / TILE));
     const c1 = Math.min(this.cols - 1, Math.ceil((camX + viewW) / TILE));
@@ -55,7 +66,11 @@ export class Tilemap {
         if (t === TileId.Empty) continue;
         const variants = this.tileset.get(t);
         if (!variants) continue;
-        const img = variants[(c * 7 + r * 13) % variants.length];
+        // WaterTop alternates by column for a static ripple strip.
+        const img =
+          t === TileId.WaterTop
+            ? variants[c % variants.length]
+            : variants[(c * 7 + r * 13) % variants.length];
         ctx.drawImage(img, c * TILE - camX, r * TILE - camY);
       }
     }

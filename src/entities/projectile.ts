@@ -6,7 +6,7 @@ import { buildSubweaponSprites, buildBoneSprites } from "../gfx/sprites";
 import { PAL } from "../gfx/palette";
 import { rectsOverlap } from "../engine/math";
 
-export type ProjectileKind = "dagger" | "axe" | "spell" | "fire" | "bone";
+export type ProjectileKind = "dagger" | "axe" | "spell" | "fire" | "bone" | "spit";
 
 let SPRITES: ReturnType<typeof buildSubweaponSprites> | null = null;
 let BONES: HTMLCanvasElement[] | null = null;
@@ -18,6 +18,7 @@ let BONES: HTMLCanvasElement[] | null = null;
  *  - spell "Soul Lance": piercing bolt, INT-scaled (player)
  *  - fire "Hellfire": arcing fireball, pierces, INT-scaled (player)
  *  - bone: arcing bone toss that damages the player (hostile)
+ *  - spit: flat, slow hostile blob (Fishman); dies on walls
  */
 export class Projectile extends Entity {
   private swing = new Swing();
@@ -34,10 +35,10 @@ export class Projectile extends Entity {
     vyBoost = 0,
   ) {
     super(
-      x - (kind === "spell" ? 8 : 5),
-      y - (kind === "spell" ? 4 : 3),
-      kind === "spell" ? 16 : 10,
-      kind === "spell" ? 8 : 6,
+      x - (kind === "spell" ? 8 : kind === "spit" ? 3 : 5),
+      y - (kind === "spell" ? 4 : kind === "spit" ? 2 : 3),
+      kind === "spell" ? 16 : kind === "spit" ? 6 : 10,
+      kind === "spell" ? 8 : kind === "spit" ? 4 : 6,
     );
     SPRITES ??= buildSubweaponSprites();
     BONES ??= buildBoneSprites();
@@ -57,6 +58,10 @@ export class Projectile extends Entity {
       case "bone":
         this.body.vx = dir * 1.9;
         this.body.vy = -4.6 + vyBoost;
+        break;
+      case "spit":
+        this.body.vx = dir * 1.7;
+        this.body.vy = 0;
         break;
     }
   }
@@ -84,13 +89,13 @@ export class Projectile extends Entity {
       return;
     }
 
-    // Daggers stop at walls; everything else pierces terrain.
-    if (this.kind === "dagger") {
+    // Daggers and spit stop at walls; everything else pierces terrain.
+    if (this.kind === "dagger" || this.kind === "spit") {
       const col = Math.floor((this.body.x + (this.facing > 0 ? this.body.w : 0)) / TILE);
       const row = Math.floor(this.centerY / TILE);
       if (map.isSolid(col, row)) {
         this.dead = true;
-        this.impactSparks(game, PAL.bladeHi);
+        this.impactSparks(game, this.kind === "spit" ? PAL.waterHi : PAL.bladeHi);
         return;
       }
     }
@@ -157,6 +162,13 @@ export class Projectile extends Entity {
     } else if (this.kind === "bone") {
       const frame = BONES![Math.floor(this.age / 6) % BONES!.length];
       ctx.drawImage(frame, Math.round(x - camX), Math.round(y - camY));
+    } else if (this.kind === "spit") {
+      const cx = x + this.body.w / 2 - camX;
+      const cy = y + this.body.h / 2 - camY;
+      ctx.fillStyle = PAL.waterHi;
+      ctx.fillRect(Math.round(cx - 2), Math.round(cy - 2), 4, 4);
+      ctx.fillStyle = PAL.spellCyan;
+      ctx.fillRect(Math.round(cx - 1), Math.round(cy - 1), 2, 2);
     } else {
       // Glowing bolt (Soul Lance cyan / Hellfire orange).
       const fire = this.kind === "fire";

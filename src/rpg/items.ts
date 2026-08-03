@@ -89,6 +89,10 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "armor", id: "moonRing", name: "Moon Ring", slot: "accessory2",
     def: 0, bonus: { int: 2, maxMp: 10 },
   },
+  coralRing: {
+    kind: "armor", id: "coralRing", name: "Coral Ring", slot: "accessory1",
+    def: 0, bonus: { lck: 2 },
+  },
 
   // Consumables
   potion: { kind: "consumable", id: "potion", name: "Potion", restoreHp: 50 },

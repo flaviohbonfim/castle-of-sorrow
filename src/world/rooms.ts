@@ -2,10 +2,22 @@ import { TILE, TileId } from "../gfx/tiles";
 import { Tilemap } from "./tilemap";
 
 export interface Spawn {
-  kind: "player" | "skeleton" | "bat" | "candle" | "relic" | "warp" | "save" | "shopkeeper" | "boss";
+  kind:
+    | "player"
+    | "skeleton"
+    | "bat"
+    | "fishman"
+    | "candle"
+    | "relic"
+    | "item"
+    | "warp"
+    | "save"
+    | "shopkeeper"
+    | "boss";
   x: number; // world px
   y: number; // feet/bottom for grounded, center for flyers
-  id?: string; // relic id
+  id?: string; // relic id, item id, or item flag key
+  n?: number; // item pickup index within the room (for flags)
 }
 
 export interface RoomExit {
@@ -210,6 +222,13 @@ function buildCavern(): BuiltRoom {
   b.hline(6, 1, 5, TileId.Platform);
 
   b.punch(0, 3, 5); // back to Entrance
+  // Lower-left door: return path from the Sunken Gallery.
+  b.punch(0, 13, 15);
+  // Floor hole down into the Underground Lake (cols 2–3).
+  for (let c = 2; c <= 3; c++) {
+    b.set(c, 16, TileId.Empty);
+    for (let r = 17; r <= 19; r++) b.set(c, r, TileId.Empty);
+  }
 
   b.at("warp", 4, 15);
   b.at("skeleton", 24, 15);
@@ -220,6 +239,81 @@ function buildCavern(): BuiltRoom {
   b.at("candle", 30, 15);
   b.at("candle", 36, 12);
   b.at("candle", 26, 8);
+  return b.build();
+}
+
+/** Flooded Sunken Gallery: upper dry ledges, lower water, waterWalk relic. */
+function buildLake(): BuiltRoom {
+  const b = new RoomBuilder(56, 20);
+  b.frame();
+
+  // --- water column (most of the room) ---
+  const surface = 11;
+  b.hline(surface, 1, 54, TileId.WaterTop);
+  b.fill(1, surface + 1, 54, 17, TileId.Water);
+  b.hline(18, 1, 54, TileId.FloorTop);
+
+  // Upper dry platforms (fall entry lands here or into water).
+  b.hline(5, 8, 20, TileId.Platform);
+  b.hline(5, 28, 42, TileId.Platform);
+  b.hline(8, 18, 30, TileId.Platform);
+
+  // Left dry pedestal for Mermaid Statue (air pocket + solid floor).
+  b.fill(2, surface, 7, 14, TileId.Empty);
+  b.hline(15, 2, 7, TileId.FloorTop);
+  b.fill(2, 16, 7, 17, TileId.Brick);
+  // Cracked wall sealing the alcove from the open water on the right.
+  for (let r = 12; r <= 15; r++) b.set(8, r, TileId.Cracked);
+
+  // Submerged shelves (swim-through platforms).
+  b.hline(15, 22, 26, TileId.Platform);
+  b.hline(14, 36, 40, TileId.Platform);
+
+  // Right dry stair block leading to the return door.
+  b.fill(48, surface, 54, 13, TileId.Empty);
+  b.hline(14, 48, 54, TileId.FloorTop);
+  b.fill(48, 15, 54, 17, TileId.Brick);
+  b.hline(12, 46, 47, TileId.Platform);
+  b.hline(10, 50, 54, TileId.Platform);
+
+  b.punch(55, 11, 13); // right door → cavern lower-left
+  b.punch(0, 15, 17); // left door → lakeDepths (underwater)
+
+  b.at("relic", 4, 14, "waterWalk");
+  b.at("fishman", 18, 17);
+  b.at("fishman", 32, 17);
+  b.at("fishman", 42, 17);
+  b.at("candle", 12, 4);
+  b.at("candle", 34, 4);
+  b.at("candle", 50, 9);
+  b.at("candle", 24, 14);
+  return b.build();
+}
+
+/** Fully flooded lower depths with denser fishmen + Coral Ring chest. */
+function buildLakeDepths(): BuiltRoom {
+  const b = new RoomBuilder(40, 16);
+  b.frame();
+
+  // Entire interior flooded; thin surface band near the ceiling.
+  b.hline(3, 1, 38, TileId.WaterTop);
+  b.fill(1, 4, 38, 13, TileId.Water);
+  b.hline(14, 1, 38, TileId.FloorTop);
+
+  // Air-pocket treasure ledge (right) with Coral Ring.
+  b.fill(30, 8, 34, 10, TileId.Empty);
+  b.hline(11, 30, 34, TileId.FloorTop);
+  b.fill(30, 12, 34, 13, TileId.Brick);
+
+  b.punch(39, 11, 13); // right door → lake left
+
+  b.at("fishman", 10, 13);
+  b.at("fishman", 18, 13);
+  b.at("fishman", 26, 13);
+  b.spawns.push({ kind: "item", x: 32 * TILE + 8, y: 11 * TILE, id: "coralRing", n: 0 });
+  b.at("candle", 6, 13);
+  b.at("candle", 22, 13);
+  b.at("candle", 32, 10);
   return b.build();
 }
 
@@ -285,7 +379,32 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 3, gy: 2, gw: 3, gh: 2 },
     exits: [
       { side: "left", min: 40, max: 100, target: "entrance", tx: 32, ty: 320 },
+      // Lower-left door returns from lake right stair.
+      { side: "left", min: 200, max: 260, target: "lake", tx: 856, ty: 208 },
       { side: "right", min: 200, max: 260, target: "shop", tx: 24, ty: 144 },
+      // Floor hole cols 2–3 → Sunken Gallery.
+      { side: "bottom", min: 2 * TILE, max: 4 * TILE, target: "lake", tx: 160, ty: 40 },
+    ],
+  },
+  lake: {
+    id: "lake",
+    name: "Sunken Gallery",
+    build: buildLake,
+    mapRect: { gx: 1, gy: 4, gw: 4, gh: 2 },
+    exits: [
+      // Right door → cavern lower-left.
+      { side: "right", min: 176, max: 224, target: "cavern", tx: 40, ty: 256 },
+      // Left underwater door → lakeDepths.
+      { side: "left", min: 232, max: 288, target: "lakeDepths", tx: 600, ty: 224 },
+    ],
+  },
+  lakeDepths: {
+    id: "lakeDepths",
+    name: "Sunken Depths",
+    build: buildLakeDepths,
+    mapRect: { gx: 0, gy: 4, gw: 1, gh: 2 },
+    exits: [
+      { side: "right", min: 176, max: 224, target: "lake", tx: 40, ty: 288 },
     ],
   },
   shop: {

@@ -28,6 +28,13 @@ function tryJump(p: Player, g: Game): PlayerState | null {
     audio.play("jump");
     return new JumpState();
   }
+  // Swim stroke: always available while submerged; does not spend air jumps.
+  if (p.inWater(g)) {
+    g.input.consume("jump");
+    p.body.vy = PHYS.jumpVel * 0.75;
+    audio.play("splash");
+    return new JumpState();
+  }
   // Double jump — granted by the Soul of the Gale relic.
   if (p.relics.has("doubleJump") && p.airJumpsLeft > 0) {
     g.input.consume("jump");
@@ -99,11 +106,12 @@ function trySubweapon(p: Player, g: Game): boolean {
 }
 
 function steer(p: Player, g: Game, accel: number, max: number): void {
+  const cap = p.inWater(g) ? max * 0.6 : max;
   const dir = (g.input.held("right") ? 1 : 0) - (g.input.held("left") ? 1 : 0);
   if (dir !== 0) {
     p.facing = dir as 1 | -1;
     p.body.vx += dir * accel;
-    if (Math.abs(p.body.vx) > max) p.body.vx = dir * max;
+    if (Math.abs(p.body.vx) > cap) p.body.vx = dir * cap;
   } else {
     p.body.vx *= p.body.onGround ? 0.6 : 0.95;
     if (Math.abs(p.body.vx) < 0.05) p.body.vx = 0;
@@ -331,11 +339,17 @@ export class WolfFormState extends PlayerState {
     if (f === "mist") return new MistFormState();
 
     p.applyGravity(g);
-    steer(p, g, 0.5, 2.7); // fast lope
-    if (g.input.pressed("jump") && (p.body.onGround || p.coyote > 0)) {
-      g.input.consume("jump");
-      p.body.vy = PHYS.jumpVel;
-      audio.play("jump");
+    steer(p, g, 0.5, 2.7); // fast lope (water speed handled inside steer)
+    if (g.input.pressed("jump")) {
+      if (p.body.onGround || p.coyote > 0) {
+        g.input.consume("jump");
+        p.body.vy = PHYS.jumpVel;
+        audio.play("jump");
+      } else if (p.inWater(g)) {
+        g.input.consume("jump");
+        p.body.vy = PHYS.jumpVel * 0.75;
+        audio.play("splash");
+      }
     }
     return null;
   }

@@ -145,8 +145,13 @@ platforms only collide when falling onto them from above and
       |  floor hole                | warp pad                | cracked wall → doubleJump relic
       v bottom                     v (WARP_LINKS)
 [cavern 48x20] --right--> [shop 20x12] --right--> [bossRoom 40x14]
-      ^ left door → entrance       hermit + mist relic       BoneColossus → bat/wolf relics
-      warp pad; double-jump-gated platform climb
+      |  floor hole (cols 2–3)     hermit + mist relic       BoneColossus → bat/wolf relics
+      |  + lower-left door return
+      v
+[lake 56x20 Sunken Gallery] --left--> [lakeDepths 40x16]
+      |  waterWalk relic (cracked)        coralRing item chest
+      |  fishmen + swim physics
+      +--right--> cavern lower-left
 ```
 
 - `WARP_LINKS`: keyed by the pad's room id → destination `{room,x,y}`.
@@ -194,14 +199,18 @@ crouched (feet-anchored resizes via `setHitboxSize`).
 States: Idle, Walk, Crouch, Jump, Fall, Attack, Backdash, SpellCast, Hurt,
 Die, BatForm, WolfForm, MistForm. Each state has `enter/update/exit`;
 `update` returns the next state or null. Shared helpers: `tryJump` (incl.
-double jump via `doubleJump` relic + `airJumpsLeft`), `tryBackdash`,
-`tryAttack` (spells first, then melee), `trySubweapon`, `tryForm`, `steer`.
+swim stroke when `inWater`, double jump via `doubleJump` relic +
+`airJumpsLeft`), `tryBackdash`, `tryAttack` (spells first, then melee),
+`trySubweapon`, `tryForm`, `steer` (×0.6 max speed in water).
 
 Cancel rules (SotN-authentic, preserve them):
 - Backdash → jump-cancellable at any point; i-frames on startup.
 - Grounded attacks plant the feet; air attacks keep momentum.
 - Variable jump: releasing jump while rising multiplies gravity.
 - Crouch + jump = drop through one-way platforms.
+- Water: gravity ×0.35, terminal 1.2, free swim-jump (no air-jump spend).
+  `waterWalk` relic + `body.walkOnWater` makes `WaterTop` one-way (hold ↓ to
+  sink). Splash SFX/particles on water entry.
 
 ### Transformations
 
@@ -242,8 +251,9 @@ calls `becomeHuman()`.
   | spell  | player | flat bolt           | pierces | Soul Lance |
   | fire   | player | shallow arc         | pierces | Hellfire (3x spread) |
   | bone   | enemy  | arc                 | pierces | hurts player on touch |
+  | spit   | enemy  | flat, slow          | stops   | Fishman blob |
 
-  Enemy shots: `Game.spawnHostile("bone", x, y, dir, power, vyBoost)`.
+  Enemy shots: `Game.spawnHostile("bone"|"spit", x, y, dir, power, vyBoost?)`.
 - **Enemy base** (`enemies/enemy.ts`): `takeDamage(game, DamageResult, fromX)`
   handles flash/knockback/hitstop/shake/floating number/death; `die()` grants
   EXP + rolls gold/heart drops. Override `onHit` (knockback) and `die`.

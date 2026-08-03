@@ -11,6 +11,8 @@ export interface Body {
   vy: number;
   onGround: boolean;
   dropThrough?: boolean; // set for a few ticks to fall through one-way platforms
+  /** When true, WaterTop tiles act as one-way platforms (Water Walking relic). */
+  walkOnWater?: boolean;
 }
 
 /**
@@ -52,7 +54,13 @@ export function moveBody(body: Body, map: Tilemap): void {
         !body.dropThrough &&
         map.isOneWay(c, row) &&
         wasBottom <= row * TILE + 0.5;
-      if (solid || oneWay) {
+      // Water Walking: same one-way rule on the surface (hold ↓ to sink).
+      const waterTop =
+        !!body.walkOnWater &&
+        !body.dropThrough &&
+        map.isWaterTop(c, row) &&
+        wasBottom <= row * TILE + 0.5;
+      if (solid || oneWay || waterTop) {
         body.y = row * TILE - body.h - 0.001;
         body.vy = 0;
         body.onGround = true;

@@ -11,7 +11,8 @@ type SfxName =
   | "throw"
   | "levelup"
   | "die"
-  | "spell";
+  | "spell"
+  | "splash";
 
 /**
  * Tiny chiptune-style synthesizer: each SFX is a short envelope-shaped
@@ -81,6 +82,10 @@ class AudioEngine {
       case "spell":
         this.blip(ctx, t, "triangle", 300, 900, 0.25, 0.1);
         this.blip(ctx, t + 0.05, "triangle", 450, 1200, 0.25, 0.08);
+        break;
+      case "splash":
+        this.noise(ctx, t, 0.08, 0.08);
+        this.blip(ctx, t, "triangle", 280, 90, 0.12, 0.07);
         break;
     }
   }

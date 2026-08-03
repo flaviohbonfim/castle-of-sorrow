@@ -73,4 +73,9 @@ export const PAL = {
 
   spellCyan: "#60d0ff",
   spellWhite: "#e0f8ff",
+
+  // Water (Underground Lake)
+  waterDeep: "#142848",
+  waterMid: "#1e4a6e",
+  waterHi: "#3a7a98",
 } as const;

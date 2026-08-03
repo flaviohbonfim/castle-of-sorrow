@@ -81,6 +81,7 @@ export class Player extends Entity {
   activeAttack: AttackInstance | null = null;
   private throwAnim = 0;
   private animTick = 0;
+  private wasInWater = false;
   spawnX: number;
   spawnY: number;
 
@@ -127,12 +128,24 @@ export class Player extends Entity {
       this.body.dropThrough = false;
     }
 
+    // Water Walking: surface is solid unless holding ↓ to sink on purpose.
+    const canWalkWater =
+      this.relics.has("waterWalk") &&
+      (this.form === "human" || this.form === "wolf") &&
+      !game.input.held("down");
+    this.body.walkOnWater = canWalkWater;
+
     const next = this.state.update(this, game);
     if (next) this.setState(next, game);
 
     moveBody(this.body, game.map);
     this.coyote = this.body.onGround ? PHYS.coyoteTicks : Math.max(0, this.coyote - 1);
     if (this.body.onGround) this.airJumpsLeft = 1;
+
+    // Splash FX when first entering a flooded cell.
+    const wet = this.inWater(game);
+    if (wet && !this.wasInWater) this.waterSplash(game);
+    this.wasInWater = wet;
 
     // Quick-use potion.
     if (game.input.pressed("potion")) {
@@ -141,11 +154,35 @@ export class Player extends Entity {
     }
   }
 
+  /** True when the body center sits in a Water / WaterTop tile. */
+  inWater(game: Game): boolean {
+    const col = Math.floor(this.centerX / TILE);
+    const row = Math.floor(this.centerY / TILE);
+    return game.map.isWater(col, row);
+  }
+
   /** Gravity with variable jump height: releasing jump while rising cuts the arc. */
   applyGravity(game: Game): void {
+    const wet = this.inWater(game);
     let grav = PHYS.gravity;
-    if (this.body.vy < 0 && !game.input.held("jump")) grav *= PHYS.shortHopGravityMult;
-    this.body.vy = Math.min(this.body.vy + grav, PHYS.terminalVel);
+    if (wet) grav *= 0.35;
+    else if (this.body.vy < 0 && !game.input.held("jump")) grav *= PHYS.shortHopGravityMult;
+    const terminal = wet ? 1.2 : PHYS.terminalVel;
+    this.body.vy = Math.min(this.body.vy + grav, terminal);
+  }
+
+  waterSplash(game: Game): void {
+    audio.play("splash");
+    const y = this.body.y + this.body.h;
+    for (let i = 0; i < 8; i++) {
+      game.spawnParticle(this.centerX + (Math.random() * 14 - 7), y, {
+        vx: Math.random() * 1.6 - 0.8,
+        vy: -Math.random() * 1.4 - 0.3,
+        life: 14 + Math.floor(Math.random() * 10),
+        color: i % 2 === 0 ? PAL.waterHi : PAL.waterMid,
+        size: i % 3 === 0 ? 2 : 1,
+      });
+    }
   }
 
   setCrouchHitbox(crouched: boolean): void {

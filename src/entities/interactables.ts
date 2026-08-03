@@ -5,6 +5,7 @@ import { rectsOverlap } from "../engine/math";
 import { buildInteractableSprites, buildShopkeeperSprites, type SpriteSet } from "../gfx/sprites";
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
+import { ITEMS } from "../rpg/items";
 
 let SPRITES: ReturnType<typeof buildInteractableSprites> | null = null;
 
@@ -13,6 +14,7 @@ export const RELIC_NAMES: Record<string, string> = {
   batForm: "Soul of the Bat",
   wolfForm: "Skin of the Wolf",
   mistForm: "Power of the Mist",
+  waterWalk: "Mermaid Statue",
 };
 
 const RELIC_DESCS: Record<string, string> = {
@@ -20,6 +22,7 @@ const RELIC_DESCS: Record<string, string> = {
   batForm: "Bat Form [1]!",
   wolfForm: "Wolf Form [2]!",
   mistForm: "Mist Form [3]!",
+  waterWalk: "Water Walking!",
 };
 
 /** Floating relic pickup — grants a permanent ability on touch. */
@@ -65,6 +68,58 @@ export class RelicPickup extends Entity {
     ctx.fillRect(x - 8, y - 9, 24, 24);
     ctx.restore();
     ctx.drawImage(SPRITES!.relic, x, y);
+  }
+}
+
+/**
+ * One-shot world item (chest-style). Flag `item:<roomId>:<n>` prevents respawn.
+ * Touch to collect into inventory.
+ */
+export class ItemPickup extends Entity {
+  private age = 0;
+
+  constructor(
+    readonly itemId: string,
+    readonly flagKey: string,
+    x: number,
+    y: number,
+  ) {
+    super(x - 5, y - 12, 10, 12);
+    SPRITES ??= buildInteractableSprites();
+  }
+
+  update(game: Game): void {
+    this.age++;
+    if (!rectsOverlap(this.body, game.player.body)) return;
+    this.dead = true;
+    game.flags.add(this.flagKey);
+    game.player.inventory.add(this.itemId);
+    const name = ITEMS[this.itemId]?.name ?? this.itemId;
+    game.texts.push(noticeText(this.centerX, this.body.y - 10, name, PAL.textGold));
+    audio.play("levelup");
+    game.camera.addShake(0.2);
+  }
+
+  draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, _alpha: number): void {
+    const bob = Math.sin(this.age * 0.1) * 2;
+    const x = Math.round(this.centerX - 4 - camX);
+    const y = Math.round(this.body.y - camY + bob);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const grad = ctx.createRadialGradient(x + 4, y + 4, 1, x + 4, y + 4, 10);
+    grad.addColorStop(0, "rgba(232, 192, 64, 0.45)");
+    grad.addColorStop(1, "rgba(232, 192, 64, 0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - 6, y - 6, 20, 20);
+    ctx.restore();
+    // Small treasure chest glyph
+    ctx.fillStyle = PAL.goldShade;
+    ctx.fillRect(x, y + 4, 8, 6);
+    ctx.fillStyle = PAL.gold;
+    ctx.fillRect(x, y + 2, 8, 3);
+    ctx.fillStyle = PAL.goldHi;
+    ctx.fillRect(x + 3, y + 1, 2, 2);
+    ctx.fillRect(x + 1, y + 5, 6, 1);
   }
 }
 

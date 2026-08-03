@@ -13,10 +13,17 @@ import { IdleState } from "./entities/player/states";
 import { Enemy } from "./entities/enemies/enemy";
 import { Skeleton } from "./entities/enemies/skeleton";
 import { Bat } from "./entities/enemies/bat";
+import { Fishman } from "./entities/enemies/fishman";
 import { Candle } from "./entities/candle";
 import { Pickup, type PickupKind } from "./entities/pickup";
 import { Projectile } from "./entities/projectile";
-import { RelicPickup, SavePoint, Shopkeeper, WarpPad } from "./entities/interactables";
+import {
+  ItemPickup,
+  RelicPickup,
+  SavePoint,
+  Shopkeeper,
+  WarpPad,
+} from "./entities/interactables";
 import { BoneColossus } from "./entities/enemies/boss";
 import { ShopUI } from "./ui/shop";
 import { Minimap } from "./ui/minimap";
@@ -70,7 +77,7 @@ export class Game {
   private candles: Candle[] = [];
   private pickups: Pickup[] = [];
   private projectiles: Projectile[] = [];
-  private interactables: (RelicPickup | WarpPad | SavePoint | Shopkeeper)[] = [];
+  private interactables: (RelicPickup | ItemPickup | WarpPad | SavePoint | Shopkeeper)[] = [];
   private particles: Particle[] = [];
   private hud = new Hud();
   private menu = new Menu();
@@ -111,12 +118,22 @@ export class Game {
       switch (s.kind) {
         case "skeleton": this.enemies.push(new Skeleton(s.x, s.y)); break;
         case "bat": this.enemies.push(new Bat(s.x, s.y)); break;
+        case "fishman": this.enemies.push(new Fishman(s.x, s.y)); break;
         case "candle": this.candles.push(new Candle(s.x, s.y)); break;
         case "relic":
           if (s.id && !this.flags.has(`relic:${s.id}`)) {
             this.interactables.push(new RelicPickup(s.id, s.x, s.y));
           }
           break;
+        case "item": {
+          if (!s.id) break;
+          const n = s.n ?? 0;
+          const flag = `item:${id}:${n}`;
+          if (!this.flags.has(flag)) {
+            this.interactables.push(new ItemPickup(s.id, flag, s.x, s.y));
+          }
+          break;
+        }
         case "warp": this.interactables.push(new WarpPad(s.x, s.y)); break;
         case "save": this.interactables.push(new SavePoint(s.x, s.y)); break;
         case "shopkeeper": this.interactables.push(new Shopkeeper(s.x, s.y)); break;
@@ -281,8 +298,15 @@ export class Game {
     }
   }
 
-  /** Enemy-fired projectile (e.g. the Colossus' bone toss). */
-  spawnHostile(kind: "bone", x: number, y: number, dir: 1 | -1, power: number, vyBoost = 0): void {
+  /** Enemy-fired projectile (e.g. the Colossus' bone toss, Fishman spit). */
+  spawnHostile(
+    kind: "bone" | "spit",
+    x: number,
+    y: number,
+    dir: 1 | -1,
+    power: number,
+    vyBoost = 0,
+  ): void {
     this.projectiles.push(new Projectile(kind, x, y, dir, power, true, vyBoost));
   }
 
