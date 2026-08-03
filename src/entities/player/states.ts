@@ -381,9 +381,13 @@ export class MistFormState extends PlayerState {
   private drain = 0;
   enter(p: Player, g: Game): void {
     p.form = "mist";
+    p.body.phaseThrough = true;
     p.setHitboxSize(12, 16);
     p.transformPoof(g);
     audio.play("spell");
+  }
+  exit(p: Player): void {
+    p.body.phaseThrough = false;
   }
   update(p: Player, g: Game): PlayerState | null {
     const f = formPressed(p, g);
@@ -391,11 +395,11 @@ export class MistFormState extends PlayerState {
     if (f === "bat") return new BatFormState();
     if (f === "wolf") return new WolfFormState();
 
-    // Slow intangible drift.
+    // Slow intangible drift — phases through gates/walls via body.phaseThrough.
     const dx = (g.input.held("right") ? 1 : 0) - (g.input.held("left") ? 1 : 0);
     const dy = (g.input.held("down") ? 1 : 0) - (g.input.held("up") ? 1 : 0);
-    p.body.vx += (dx * 1.0 - p.body.vx) * 0.15;
-    p.body.vy += (dy * 1.0 - p.body.vy) * 0.15;
+    p.body.vx += (dx * 1.15 - p.body.vx) * 0.18;
+    p.body.vy += (dy * 1.15 - p.body.vy) * 0.18;
 
     if (++this.drain >= 15) {
       this.drain = 0;

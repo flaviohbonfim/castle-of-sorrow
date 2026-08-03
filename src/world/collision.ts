@@ -13,6 +13,12 @@ export interface Body {
   dropThrough?: boolean; // set for a few ticks to fall through one-way platforms
   /** When true, WaterTop tiles act as one-way platforms (Water Walking relic). */
   walkOnWater?: boolean;
+  /**
+   * Mist form: skip solid / one-way / water-top collision so the body can
+   * drift through gates, cracked walls and platforms (still clamped by room
+   * bounds via the outer brick frame unless those cells are Empty).
+   */
+  phaseThrough?: boolean;
 }
 
 /**
@@ -21,9 +27,11 @@ export interface Body {
  * falling onto them from above and not dropping through.
  */
 export function moveBody(body: Body, map: Tilemap): void {
+  const phase = !!body.phaseThrough;
+
   // --- horizontal ---
   body.x += body.vx;
-  if (body.vx !== 0) {
+  if (body.vx !== 0 && !phase) {
     const dir = Math.sign(body.vx);
     const edge = dir > 0 ? body.x + body.w : body.x;
     const col = Math.floor(edge / TILE);
@@ -42,6 +50,10 @@ export function moveBody(body: Body, map: Tilemap): void {
   const wasBottom = body.y + body.h;
   body.y += body.vy;
   body.onGround = false;
+  if (phase) {
+    // No ground while phasing — pure free drift.
+    return;
+  }
   if (body.vy > 0) {
     const bottom = body.y + body.h;
     const row = Math.floor(bottom / TILE);

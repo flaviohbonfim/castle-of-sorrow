@@ -134,6 +134,8 @@ export class Player extends Entity {
       (this.form === "human" || this.form === "wolf") &&
       !game.input.held("down");
     this.body.walkOnWater = canWalkWater;
+    // Mist drifts through solids (boss portcullis, cracked walls, platforms).
+    this.body.phaseThrough = this.form === "mist";
 
     const next = this.state.update(this, game);
     if (next) this.setState(next, game);
