@@ -57,6 +57,12 @@ export class Tilemap {
     return this.at(col, row) === TileId.WaterTop;
   }
 
+  /** Door / Gate stacks — top / mid / bot for vertical arch drawing. */
+  private isPassage(col: number, row: number): boolean {
+    const t = this.at(col, row);
+    return t === TileId.Door || t === TileId.Gate;
+  }
+
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, viewW: number, viewH: number): void {
     const c0 = Math.max(0, Math.floor(camX / TILE));
     const c1 = Math.min(this.cols - 1, Math.ceil((camX + viewW) / TILE));
@@ -84,11 +90,18 @@ export class Tilemap {
           const under = bgWall[(c * 7 + r * 13) % bgWall.length];
           ctx.drawImage(under, dx, dy);
         }
-        // WaterTop alternates by column for a static ripple strip.
-        const img =
-          t === TileId.WaterTop
-            ? variants[c % variants.length]
-            : variants[(c * 7 + r * 13) % variants.length];
+        let img: HTMLCanvasElement;
+        if (t === TileId.Door && variants.length >= 3) {
+          // 0=arch top, 1=mid, 2=threshold — pick from vertical neighbors.
+          const above = this.isPassage(c, r - 1);
+          const below = this.isPassage(c, r + 1);
+          const vi = !above && below ? 0 : above && !below ? 2 : 1;
+          img = variants[vi];
+        } else if (t === TileId.WaterTop) {
+          img = variants[c % variants.length];
+        } else {
+          img = variants[(c * 7 + r * 13) % variants.length];
+        }
         ctx.drawImage(img, dx, dy);
       }
     }

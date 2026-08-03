@@ -237,31 +237,87 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
     }),
   );
 
-  // Side-door passage: opaque dark recess so exits read as "next room"
-  // instead of a hole punched into the outdoor parallax.
+  /**
+   * Gothic side-door stack (3 variants used by Tilemap.draw):
+   *  0 = arch crown   1 = mid passage   2 = threshold sill
+   * Stone jambs match the brick ramp so the exit reads as carved stone,
+   * not a black hole or outdoor sky cutout.
+   */
   tiles.set(
     TileId.Door,
-    variants(2, (ctx, s) => {
-      // Deep interior shadow
-      ctx.fillStyle = "#0a0812";
-      ctx.fillRect(0, 0, TILE, TILE);
-      // Slightly lighter recess
-      ctx.fillStyle = "#14101c";
-      ctx.fillRect(2, 1, TILE - 4, TILE - 2);
-      // Arch shadow at top of the cell (stacked doors form an archway)
-      ctx.fillStyle = ramp.dark;
-      ctx.fillRect(0, 0, TILE, 2);
-      ctx.fillRect(0, 0, 2, 4);
-      ctx.fillRect(TILE - 2, 0, 2, 4);
-      // Faint "next room" warm glint (candlelight beyond)
-      ctx.fillStyle = s % 2 === 0 ? "rgba(200, 140, 60, 0.12)" : "rgba(180, 120, 50, 0.08)";
-      ctx.fillRect(5, 6, 6, 8);
-      // Floor lip at bottom cells reads as threshold when door meets FloorTop
+    variants(3, (ctx, s) => {
+      // Outer stone frame (matches wall)
       ctx.fillStyle = ramp.mid;
-      ctx.fillRect(1, TILE - 2, TILE - 2, 1);
+      ctx.fillRect(0, 0, TILE, TILE);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(0, 0, 1, TILE);
       ctx.fillRect(TILE - 1, 0, 1, TILE);
+
+      // Deep passage interior
+      const voidCol = "#0c0a14";
+      const voidHi = "#1a1428";
+      if (s === 0) {
+        // --- arch crown ---
+        ctx.fillStyle = voidCol;
+        ctx.fillRect(3, 6, 10, 10);
+        ctx.fillStyle = voidHi;
+        ctx.fillRect(4, 8, 8, 8);
+        // Stone arch
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(2, 4, 12, 3);
+        ctx.fillRect(3, 2, 10, 2);
+        ctx.fillRect(5, 1, 6, 1);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(6, 1, 4, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(2, 4, 1, 3);
+        ctx.fillRect(13, 4, 1, 3);
+        // Warm glow from the next room
+        ctx.fillStyle = "rgba(220, 160, 70, 0.22)";
+        ctx.fillRect(6, 10, 4, 5);
+      } else if (s === 1) {
+        // --- mid passage ---
+        ctx.fillStyle = voidCol;
+        ctx.fillRect(3, 0, 10, TILE);
+        ctx.fillStyle = voidHi;
+        ctx.fillRect(4, 0, 8, TILE);
+        // Inner jambs
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(3, 0, 1, TILE);
+        ctx.fillRect(12, 0, 1, TILE);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(2, 0, 1, TILE);
+        ctx.fillRect(13, 0, 1, TILE);
+        // Candlelight from beyond
+        ctx.fillStyle = "rgba(230, 170, 80, 0.28)";
+        ctx.fillRect(6, 4, 4, 8);
+        ctx.fillStyle = "rgba(255, 210, 120, 0.18)";
+        ctx.fillRect(7, 6, 2, 4);
+      } else {
+        // --- threshold sill ---
+        ctx.fillStyle = voidCol;
+        ctx.fillRect(3, 0, 10, 10);
+        ctx.fillStyle = voidHi;
+        ctx.fillRect(4, 0, 8, 9);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(3, 0, 1, 10);
+        ctx.fillRect(12, 0, 1, 10);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(2, 0, 1, 10);
+        ctx.fillRect(13, 0, 1, 10);
+        // Stone sill you step over
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(1, 10, 14, 3);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(1, 10, 14, 1);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 13, TILE, 3);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(0, 15, TILE, 1);
+        // Glow just above the sill
+        ctx.fillStyle = "rgba(220, 160, 70, 0.2)";
+        ctx.fillRect(6, 4, 4, 5);
+      }
     }),
   );
 

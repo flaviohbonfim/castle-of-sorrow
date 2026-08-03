@@ -132,11 +132,15 @@ class RoomBuilder {
   }
 
   /**
-   * Side-wall doorway into another room. Uses Door tiles (dark arch) so the
-   * exit reads as a passage, not a missing chunk of wall over the night sky.
+   * Side-wall doorway (gothic arch stack). Tilemap picks arch/mid/sill art
+   * from vertical neighbors so a 3-cell door reads as one passage.
    */
   door(c: number, r0: number, r1: number): void {
     for (let r = r0; r <= r1; r++) this.set(c, r, TileId.Door);
+    // Stone cap above the arch so it doesn't sit under flat brick only.
+    if (r0 > 0 && this.tiles[(r0 - 1) * this.cols + c] === TileId.Brick) {
+      this.set(c, r0 - 1, TileId.FloorTop);
+    }
   }
 
   /** Spawn marker: cell coords, y resolves to the surface below the cell. */
