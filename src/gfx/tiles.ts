@@ -17,6 +17,8 @@ export const enum TileId {
   Gate = 10,
   Water = 11,
   WaterTop = 12,
+  /** Dark archway passage — non-solid exit that does NOT show the sky. */
+  Door = 13,
 }
 
 export type ZoneId = "castle" | "tower";
@@ -232,6 +234,34 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
       ctx.fillStyle = ramp.light;
       ctx.fillRect(3, 4, 1, 12);
       ctx.fillRect(12, 4, 1, 12);
+    }),
+  );
+
+  // Side-door passage: opaque dark recess so exits read as "next room"
+  // instead of a hole punched into the outdoor parallax.
+  tiles.set(
+    TileId.Door,
+    variants(2, (ctx, s) => {
+      // Deep interior shadow
+      ctx.fillStyle = "#0a0812";
+      ctx.fillRect(0, 0, TILE, TILE);
+      // Slightly lighter recess
+      ctx.fillStyle = "#14101c";
+      ctx.fillRect(2, 1, TILE - 4, TILE - 2);
+      // Arch shadow at top of the cell (stacked doors form an archway)
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(0, 0, TILE, 2);
+      ctx.fillRect(0, 0, 2, 4);
+      ctx.fillRect(TILE - 2, 0, 2, 4);
+      // Faint "next room" warm glint (candlelight beyond)
+      ctx.fillStyle = s % 2 === 0 ? "rgba(200, 140, 60, 0.12)" : "rgba(180, 120, 50, 0.08)";
+      ctx.fillRect(5, 6, 6, 8);
+      // Floor lip at bottom cells reads as threshold when door meets FloorTop
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(1, TILE - 2, TILE - 2, 1);
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(0, 0, 1, TILE);
+      ctx.fillRect(TILE - 1, 0, 1, TILE);
     }),
   );
 

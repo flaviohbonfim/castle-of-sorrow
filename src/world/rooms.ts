@@ -126,9 +126,17 @@ class RoomBuilder {
     this.set(c, rTop + 2, TileId.PillarBase);
   }
 
-  /** Punch a doorway (Empty tiles) through a wall. */
+  /** Punch a true hole (ceiling/floor shafts) — shows through to parallax. */
   punch(c: number, r0: number, r1: number): void {
     for (let r = r0; r <= r1; r++) this.set(c, r, TileId.Empty);
+  }
+
+  /**
+   * Side-wall doorway into another room. Uses Door tiles (dark arch) so the
+   * exit reads as a passage, not a missing chunk of wall over the night sky.
+   */
+  door(c: number, r0: number, r1: number): void {
+    for (let r = r0; r <= r1; r++) this.set(c, r, TileId.Door);
   }
 
   /** Spawn marker: cell coords, y resolves to the surface below the cell. */
@@ -169,7 +177,7 @@ function buildEntrance(): BuiltRoom {
   b.pillar(50, 17);
 
   // Doorway to the Marble Gallery (above the right step).
-  b.punch(63, 15, 17);
+  b.door(63, 15, 17);
 
   // Pit to Underground Cavern (RIGHT side). Ledges on both sides so you can
   // climb back up when returning through the same shaft.
@@ -210,8 +218,8 @@ function buildCorridor(): BuiltRoom {
   b.pillar(27, 8);
   b.pillar(41, 8);
 
-  b.punch(0, 8, 10); // to Entrance
-  b.punch(47, 8, 10); // to Sanctuary
+  b.door(0, 8, 10); // to Entrance
+  b.door(47, 8, 10); // to Sanctuary
 
   // Double-jump shaft up to the Clock Tower (ceiling hole + climb platforms).
   b.hline(7, 22, 27, TileId.Platform);
@@ -307,7 +315,7 @@ function buildTowerHall(): BuiltRoom {
     b.set(c, 14, TileId.Empty);
     b.set(c, 15, TileId.Empty);
   }
-  b.punch(39, 10, 12); // to towerTop boss
+  b.door(39, 10, 12); // to towerTop boss
 
   // Warp sits on solid floor to the right of the hole.
   b.at("warp", 10, 12);
@@ -328,7 +336,7 @@ function buildTowerTop(): BuiltRoom {
   b.fill(1, 12, 30, 12, TileId.Brick);
   b.pillar(5, 8);
   b.pillar(26, 8);
-  b.punch(0, 8, 10); // from towerHall
+  b.door(0, 8, 10); // from towerHall
   // Right wall sealed as Gate by default; Game opens it when throne is unlocked.
   for (let r = 8; r <= 10; r++) b.set(31, r, TileId.Gate);
   b.at("boss", 20, 10, "wraith");
@@ -345,7 +353,7 @@ function buildThrone(): BuiltRoom {
   b.fill(1, 12, 34, 12, TileId.Brick);
   b.pillar(6, 8);
   b.pillar(29, 8);
-  b.punch(0, 8, 10); // from towerTop
+  b.door(0, 8, 10); // from towerTop
   b.at("boss", 22, 10, "sovereign");
   b.at("candle", 10, 10);
   b.at("candle", 26, 10);
@@ -359,7 +367,7 @@ function buildSaveRoom(): BuiltRoom {
   b.hline(9, 1, 18, TileId.FloorTop);
   b.fill(1, 10, 18, 10, TileId.Brick);
 
-  b.punch(0, 6, 8); // to Corridor
+  b.door(0, 6, 8); // to Corridor
 
   // Secret alcove behind a breakable wall, hiding the double-jump relic.
   for (let r = 6; r <= 8; r++) b.set(12, r, TileId.Cracked);
@@ -385,7 +393,7 @@ function buildCavern(): BuiltRoom {
   b.fill(1, 17, 46, 18, TileId.Brick);
   b.pillar(8, 13);
   b.pillar(30, 13);
-  b.punch(47, 13, 15); // right door to the Hermit's Den
+  b.door(47, 13, 15); // right door to the Hermit's Den
 
   // --- CEILING SHAFT back up to Entrance (right side) ---
   // Open ceiling so a full jump from the ledge triggers the top exit.
@@ -408,7 +416,7 @@ function buildCavern(): BuiltRoom {
   b.hline(7, 6, 12, TileId.Platform);
 
   // Lower-left door: walk connection to Sunken Gallery stairs.
-  b.punch(0, 13, 15);
+  b.door(0, 13, 15);
 
   // --- FLOOR SHAFT down to Lake (LEFT side, above the left door) ---
   // Aligns with lake's right-ceiling shaft geographically (lake is to the left).
@@ -485,8 +493,8 @@ function buildLake(): BuiltRoom {
   b.hline(3, 48, 51, TileId.Platform); // high enough to jump back to cavern
   b.hline(6, 48, 52, TileId.Platform);
 
-  b.punch(55, 11, 13); // right door → cavern lower-left
-  b.punch(0, 15, 17); // left door → lakeDepths (underwater)
+  b.door(55, 11, 13); // right door → cavern lower-left
+  b.door(0, 15, 17); // left door → lakeDepths (underwater)
 
   b.at("relic", 4, 14, "waterWalk");
   b.at("fishman", 18, 17);
@@ -514,7 +522,7 @@ function buildLakeDepths(): BuiltRoom {
   b.hline(11, 30, 34, TileId.FloorTop);
   b.fill(30, 12, 34, 13, TileId.Brick);
 
-  b.punch(39, 11, 13); // right door → lake left
+  b.door(39, 11, 13); // right door → lake left
 
   b.at("fishman", 10, 13);
   b.at("fishman", 18, 13);
@@ -531,8 +539,8 @@ function buildShop(): BuiltRoom {
   b.frame();
   b.hline(9, 1, 18, TileId.FloorTop);
   b.fill(1, 10, 18, 10, TileId.Brick);
-  b.punch(0, 6, 8); // from Cavern
-  b.punch(19, 6, 8); // to the Boss hall
+  b.door(0, 6, 8); // from Cavern
+  b.door(19, 6, 8); // to the Boss hall
   b.at("shopkeeper", 9, 8);
   b.at("candle", 4, 8);
   b.at("candle", 14, 8);
@@ -546,9 +554,9 @@ function buildBossRoom(): BuiltRoom {
   b.fill(1, 12, 38, 12, TileId.Brick);
   b.pillar(4, 8);
   b.pillar(35, 8);
-  // Doorway hole (left wall). While the Colossus lives, Game fills these
+  // Doorway (left wall). While the Colossus lives, Game fills these
   // exact cells with Gate so the portcullis sits ON the exit.
-  b.punch(0, 8, 10); // from the shop
+  b.door(0, 8, 10); // from the shop
   b.at("boss", 28, 10, "colossus");
   b.at("candle", 8, 10);
   b.at("candle", 32, 10);

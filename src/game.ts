@@ -206,7 +206,7 @@ export class Game {
     if (id === "towerTop") {
       const open = canEnterThrone(this.flags);
       for (let r = 8; r <= 10; r++) {
-        this.map.setTile(31, r, open ? TileId.Empty : TileId.Gate);
+        this.map.setTile(31, r, open ? TileId.Door : TileId.Gate);
       }
     }
     this.flags.add(`visited:${id}`);
@@ -268,9 +268,9 @@ export class Game {
     const cy = this.boss?.body.y ?? this.player.body.y;
     this.boss = null;
     if (this.room.boss) {
-      // Restore doorway holes (Empty), not BgWall — gate sat on the exit.
+      // Restore dark doorway tiles (not Empty — Empty would show outdoor sky).
       for (const [c, r] of this.room.boss.gateCells) {
-        this.map.setTile(c, r, TileId.Empty);
+        this.map.setTile(c, r, TileId.Door);
       }
     }
     music.setTrack("castle");
@@ -286,7 +286,7 @@ export class Game {
     }
     // Unlock the spire's right gate if the player now qualifies.
     if (this.roomId === "towerTop" && canEnterThrone(this.flags)) {
-      for (let r = 8; r <= 10; r++) this.map.setTile(31, r, TileId.Empty);
+      for (let r = 8; r <= 10; r++) this.map.setTile(31, r, TileId.Door);
     }
   }
 
