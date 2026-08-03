@@ -546,6 +546,8 @@ function buildBossRoom(): BuiltRoom {
   b.fill(1, 12, 38, 12, TileId.Brick);
   b.pillar(4, 8);
   b.pillar(35, 8);
+  // Doorway hole (left wall). While the Colossus lives, Game fills these
+  // exact cells with Gate so the portcullis sits ON the exit.
   b.punch(0, 8, 10); // from the shop
   b.at("boss", 28, 10, "colossus");
   b.at("candle", 8, 10);
@@ -661,10 +663,11 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 7, gy: -4, gw: 2, gh: 1 },
     boss: {
       id: "wraith",
+      // Left doorway (col 0) — seals the exit while the Wraith lives.
       gateCells: [
-        [2, 8],
-        [2, 9],
-        [2, 10],
+        [0, 8],
+        [0, 9],
+        [0, 10],
       ],
       rewards: [{ relic: "highJump", x: 256, y: 176 }],
     },
@@ -683,9 +686,9 @@ export const ROOMS: Record<string, RoomDef> = {
     boss: {
       id: "sovereign",
       gateCells: [
-        [2, 8],
-        [2, 9],
-        [2, 10],
+        [0, 8],
+        [0, 9],
+        [0, 10],
       ],
       rewards: [],
     },
@@ -779,10 +782,12 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 7, gy: 2, gw: 2, gh: 2 },
     boss: {
       id: "colossus",
+      // Gate tiles fill the left doorway (same cells as punch(0, 8, 10)).
+      // Human/wolf blocked; mist phases through; defeat clears to Empty.
       gateCells: [
-        [2, 8],
-        [2, 9],
-        [2, 10],
+        [0, 8],
+        [0, 9],
+        [0, 10],
       ],
       rewards: [
         { relic: "batForm", x: 368, y: 176 },

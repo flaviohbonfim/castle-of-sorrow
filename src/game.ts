@@ -268,8 +268,9 @@ export class Game {
     const cy = this.boss?.body.y ?? this.player.body.y;
     this.boss = null;
     if (this.room.boss) {
+      // Restore doorway holes (Empty), not BgWall — gate sat on the exit.
       for (const [c, r] of this.room.boss.gateCells) {
-        this.map.setTile(c, r, TileId.BgWall);
+        this.map.setTile(c, r, TileId.Empty);
       }
     }
     music.setTrack("castle");
