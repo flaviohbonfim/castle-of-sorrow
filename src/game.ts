@@ -41,7 +41,12 @@ import { ShopUI } from "./ui/shop";
 import { Minimap } from "./ui/minimap";
 import { music } from "./engine/music";
 import { Swing } from "./combat/hitbox";
-import { computeDamage, type FloatingText } from "./combat/damage";
+import { computeDamage, noticeText, type FloatingText } from "./combat/damage";
+import { defaultPlayerSave } from "./rpg/defaultSave";
+import { writeSlot } from "./rpg/saveSlots";
+import { SlotScreen } from "./ui/slots";
+import { CutsceneUI } from "./ui/cutscene";
+import { pickEnding, type EndingId } from "./data/endings";
 import { SUBWEAPONS, type SubweaponId } from "./rpg/subweapons";
 import { Hud } from "./ui/hud";
 import { Menu } from "./ui/menu";
@@ -63,7 +68,7 @@ interface Particle extends ParticleOpts {
   maxLife: number;
 }
 
-interface SaveFile {
+export interface SaveFile {
   version?: number;
   room: string;
   x: number;
@@ -72,13 +77,13 @@ interface SaveFile {
   player: PlayerSave;
   playTicks?: number;
   deaths?: number;
+  /** Epoch ms of the write — orders the slot list. Missing on legacy saves. */
+  savedAt?: number;
 }
-
-const SAVE_KEY = "castle-of-sorrow-save";
 
 /** Central game world: rooms, entities, simulation tick and frame drawing. */
 export class Game {
-  readonly input = new Input();
+  readonly input: Input;
   readonly player: Player;
   readonly parallax = new ParallaxBackground();
   readonly texts: FloatingText[] = [];
@@ -107,6 +112,8 @@ export class Game {
   private warpUI = new WarpUI();
   private dialogueUI = new DialogueUI();
   private victoryUI = new VictoryUI();
+  private slotUI = new SlotScreen();
+  private cutsceneUI = new CutsceneUI();
   private minimap = new Minimap();
   /** Active boss (any fight that shows the HP bar). */
   boss: (Enemy & { displayName: string; maxHp: number }) | null = null;
@@ -120,10 +127,29 @@ export class Game {
   /** Simulation ticks spent in active play (for victory timer). */
   playTicks = 0;
   deaths = 0;
+  /** Slot this run reads/writes; null until the player picks one. */
+  currentSlot: number | null = null;
+  /** Set by the results screen; the App swaps back to the title next tick. */
+  exitToTitle = false;
 
-  constructor() {
+  /**
+   * `init` restores a save; omitting it starts a fresh run. The Game never
+   * touches localStorage on its own — the App decides what to load.
+   */
+  constructor(input: Input, init?: SaveFile | null, slot: number | null = null) {
+    this.input = input;
+    this.currentSlot = slot;
     this.player = new Player(START.x, START.y);
-    if (!this.tryLoadSave()) this.loadRoom(START.room, START.x, START.y);
+    if (init) this.restoreFrom(init);
+    else this.loadRoom(START.room, START.x, START.y);
+  }
+
+  private restoreFrom(data: SaveFile): void {
+    this.flags = new Set(data.flags ?? []);
+    this.player.restore(data.player);
+    this.playTicks = data.playTicks ?? 0;
+    this.deaths = data.deaths ?? 0;
+    this.loadRoom(data.room, data.x, data.y);
   }
 
   /* ---------------------------- room loading ---------------------------- */
@@ -280,9 +306,11 @@ export class Game {
     for (let i = 0; i < 6; i++) {
       this.spawnPickup("gold", cx + (Math.random() * 60 - 30), cy + 10);
     }
-    // Throne clear → victory.
+    // Throne clear → ending cutscene, then the results screen.
     if (bossId === "sovereign") {
-      this.victoryUI.show();
+      const ending = pickEnding(this.flags);
+      this.flags.add(`ending:${ending}`);
+      this.cutsceneUI.play(this, ending);
     }
     // Unlock the spire's right gate if the player now qualifies.
     if (this.roomId === "towerTop" && canEnterThrone(this.flags)) {
@@ -333,9 +361,10 @@ export class Game {
 
   /* ---------------------------- persistence ---------------------------- */
 
-  saveGame(): void {
+  /** Serialize the run as it stands right now. */
+  snapshot(): SaveFile {
     const p = this.player;
-    const data: SaveFile = {
+    return {
       version: 1,
       room: this.roomId,
       x: p.centerX,
@@ -344,66 +373,49 @@ export class Game {
       player: p.serialize(),
       playTicks: this.playTicks,
       deaths: this.deaths,
+      savedAt: Date.now(),
     };
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    } catch {
-      // Storage unavailable (private mode) — play on without saving.
-    }
   }
 
-  private tryLoadSave(): boolean {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return false;
-      const data = JSON.parse(raw) as SaveFile;
-      this.flags = new Set(data.flags);
-      this.player.restore(data.player);
-      this.playTicks = data.playTicks ?? 0;
-      this.deaths = data.deaths ?? 0;
-      this.loadRoom(data.room, data.x, data.y);
-      return true;
-    } catch {
-      return false;
-    }
+  /** Write to `slot` (default: the slot this run is bound to). */
+  saveGame(slot?: number): boolean {
+    const target = slot ?? this.currentSlot ?? 0;
+    const ok = writeSlot(target, this.snapshot());
+    if (ok) this.currentSlot = target;
+    return ok;
   }
 
-  /** Fresh run at the entrance (keeps nothing). */
+  /** Save pedestal → slot picker (heals only once a slot is written). */
+  openSaveSlots(): void {
+    this.slotUI.openPicker("save", (slot) => {
+      const p = this.player;
+      p.res.hp = p.res.maxHp;
+      p.res.mp = p.res.maxMp;
+      const ok = this.saveGame(slot);
+      this.texts.push(
+        noticeText(
+          p.centerX,
+          p.body.y - 10,
+          ok ? `Saved to slot ${slot + 1}` : "Save failed",
+          ok ? PAL.textGold : PAL.dmgPlayer,
+        ),
+      );
+      audio.play(ok ? "heart" : "hurt");
+    });
+  }
+
+  /** Results screen → back to the title (the App picks this up). */
+  requestExitToTitle(): void {
+    this.exitToTitle = true;
+  }
+
+  /** Fresh run at the entrance (keeps nothing; leaves save slots alone). */
   startFreshRun(): void {
     this.flags = new Set();
     this.playTicks = 0;
     this.deaths = 0;
-    // Mirror Player constructor loadout (equipped pieces are not also in items).
-    this.player.restore({
-      attrs: { str: 6, con: 6, int: 6, lck: 5 },
-      res: { hp: 70, maxHp: 70, mp: 20, maxMp: 20, hearts: 10, maxHearts: 50 },
-      levelState: { level: 1, exp: 0 },
-      relics: [],
-      subweapon: "dagger",
-      inventory: {
-        items: [
-          { itemId: "leatherWhip", count: 1 },
-          { itemId: "nobleRapier", count: 1 },
-          { itemId: "potion", count: 3 },
-        ],
-        gold: 0,
-        equipment: {
-          rightHand: "shortSword",
-          leftHand: null,
-          head: null,
-          body: "travelerTunic",
-          cloak: "wornCloak",
-          accessory1: null,
-          accessory2: null,
-        },
-      },
-    });
+    this.player.restore(defaultPlayerSave());
     this.loadRoom(START.room, START.x, START.y);
-    try {
-      localStorage.removeItem(SAVE_KEY);
-    } catch {
-      /* ignore */
-    }
   }
 
   /** NG+: keep player power, mark harder enemies, soft at entrance. */
@@ -535,14 +547,28 @@ export class Game {
 
   /* ------------------------------ update ------------------------------ */
 
+  /** Called by CutsceneUI when the last panel closes. */
+  showResults(ending: EndingId): void {
+    this.victoryUI.show(ending);
+  }
+
   update(): void {
-    this.input.beginTick();
+    // NOTE: input.beginTick() is driven by the App (one call per tick for
+    // the whole app), not here — calling it again would double-fire presses.
     this.tick++;
 
-    // Dialogue, shop, warp picker, victory and pause menu freeze the world.
+    // Cutscene, results, dialogue, shop, pickers and pause menu freeze the world.
     setNpcQuestHint(!this.flags.has("quest:coral:done"));
+    if (this.cutsceneUI.open) {
+      this.cutsceneUI.update(this);
+      return;
+    }
     if (this.victoryUI.open) {
       this.victoryUI.update(this);
+      return;
+    }
+    if (this.slotUI.open) {
+      this.slotUI.update(this.input);
       return;
     }
     if (this.dialogueUI.open) {
@@ -795,6 +821,8 @@ export class Game {
     if (this.shopUI.open) this.shopUI.draw(ctx, this);
     if (this.warpUI.open) this.warpUI.draw(ctx);
     if (this.dialogueUI.open) this.dialogueUI.draw(ctx);
+    if (this.slotUI.open) this.slotUI.draw(ctx);
     if (this.victoryUI.open) this.victoryUI.draw(ctx, this);
+    if (this.cutsceneUI.open) this.cutsceneUI.draw(ctx);
   }
 }

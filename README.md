@@ -39,6 +39,9 @@ npm run typecheck  # strict TS check
 | 1 / 2 / 3 | Transform: Bat / Wolf / Mist — each needs its relic |
 | Gamepad | A jump · X attack · B backdash · Y sub · Start menu · LB/RB/LT forms · RT potion · Select swap sub |
 
+On the title / save-slot screens: **↑↓** choose · **X** confirm · **Z** back ·
+**C** delete a slot. The save pedestal asks which of the 3 slots to write to.
+
 ## Architecture
 
 - `src/engine/` — fixed-timestep loop, tick-buffered input with directional
@@ -95,7 +98,6 @@ enemies respawn on room entry, classic style.
 
 ## Next milestones
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–8 (through endgame / NG+)
-are in. Next is **Phase 8.5**: title screen, 3 save slots (picked when
-loading *and* saving), and an illustrated ending cutscene with two endings
-by completeness. Phase 9 (real-asset pipeline + packaging) follows.
+See [docs/ROADMAP.md](docs/ROADMAP.md) — Phases 4–8.5 are in (endgame, NG+,
+title screen, 3 save slots and the illustrated ending). Next is Phase 9:
+real-asset pipeline + packaging.

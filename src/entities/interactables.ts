@@ -298,12 +298,9 @@ export class SavePoint extends Entity {
     if (this.playerNear && this.cooldown === 0 && game.input.pressed("up")) {
       game.input.consume("up");
       this.cooldown = 60;
-      const p = game.player;
-      p.res.hp = p.res.maxHp;
-      p.res.mp = p.res.maxMp;
-      game.saveGame();
-      game.texts.push(noticeText(this.centerX, this.body.y - 10, "Game saved", PAL.textGold));
-      audio.play("heart");
+      // Opens the 3-slot picker; healing + the write happen once a slot is
+      // actually chosen (see Game.openSaveSlots).
+      game.openSaveSlots();
     }
   }
 

@@ -1,7 +1,6 @@
 # Castle of Sorrow — Development Roadmap (Phases 4–9)
 
-> **Status:** Phases 4–8 are implemented. **Phase 8.5 (front end, save
-> slots, ending cutscene) is the current work** and comes before Phase 9.
+> **Status:** Phases 4–8.5 are implemented. **Phase 9 is the current work.**
 
 > Execution plan for the next milestones. Written so that any developer or
 > AI model can pick up a phase independently. **Prerequisite reading:**
@@ -255,7 +254,7 @@ Full playthrough from clean save to victory possible; completion reaches
 
 ---
 
-## Phase 8.5 — Front end, save slots & ending cutscene
+## Phase 8.5 — Front end, save slots & ending cutscene  ✅ DONE
 
 **Goal:** give the game a real front door and a real ending. Today the app
 boots straight into a loaded save, there is exactly one save file, and

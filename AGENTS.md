@@ -40,12 +40,17 @@ suspends requestAnimationFrame when hidden, so never test with sleeps —
 drive the simulation synchronously:
 
 ```js
-const g = window.__game;
+const app = window.__app;   // pump the App, NOT game.update()
 const down = c => window.dispatchEvent(new KeyboardEvent('keydown', {code: c}));
 const up   = c => window.dispatchEvent(new KeyboardEvent('keyup',   {code: c}));
-const pump = n => { for (let i = 0; i < n; i++) g.update(); };
+const pump = n => { for (let i = 0; i < n; i++) app.update(); };
 const tap  = (c, held = 4) => { down(c); pump(held); up(c); pump(8); };
 ```
+
+The App owns the tick and calls `input.beginTick()`; looping on
+`game.update()` advances the world with frozen input. `window.__game` is the
+live Game (null on the title screen). The app boots on the title screen — use
+`tap('KeyX')` to pick New Game, then a slot, before expecting a world.
 
 Never `up(key)` and `down(key)` without a `pump()` between them — presses are
 applied before releases in a tick, so they cancel out and the key is not held.

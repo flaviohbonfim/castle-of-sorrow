@@ -21,7 +21,8 @@ sprites, tiles, SFX and music are generated procedurally at boot.
 
 ```
 src/
-├── main.ts                  # boot: Renderer + Game + startLoop; DEV exposes __game / __validateMap
+├── main.ts                  # boot: Renderer + App + startLoop; DEV exposes __app / __game / __validateMap
+├── app.ts                   # screen state machine (title | slots | playing); owns Input
 ├── dev/
 │   └── validateMap.ts       # static castle-topology audit (see §14.1)
 ├── game.ts                  # Game class: world orchestration (THE central file)
@@ -191,17 +192,69 @@ classic behavior), then:
 
 ## 7. Persistence
 
-- `localStorage` key: **`castle-of-sorrow-save`** (do not rename without a
-  migration). Written by `Game.saveGame()` (SavePoint pedestal → Up).
-- Shape (`SaveFile`): `{ room, x, y, flags: string[], player: PlayerSave }`
-  where `PlayerSave = { attrs, res, levelState, relics, subweapon,
-  inventory: { items, gold, equipment } }`.
+- **Three slots**, keys `castle-of-sorrow-save:0..2`. `src/rpg/saveSlots.ts`
+  is the ONLY module that touches localStorage for saves — go through
+  `readSlot / writeSlot / deleteSlot / slotSummary / anySlotUsed`, all of
+  which swallow their own errors (private mode must not crash the game).
+  The pre-slot key `castle-of-sorrow-save` is migrated into slot 0 once by
+  `migrateLegacy()` at App boot, then removed. **Keys are append-only.**
+- Shape (`SaveFile`, exported from `game.ts`): `{ version, room, x, y,
+  flags: string[], player: PlayerSave, playTicks, deaths, savedAt }` where
+  `PlayerSave = { attrs, res, levelState, relics, subweapon,
+  inventory: { items, gold, equipment } }`. Readers must tolerate missing
+  `playTicks` / `deaths` / `savedAt` (legacy files).
+- `Game.saveGame(slot?)` writes `Game.snapshot()` to `slot ?? currentSlot`.
+  The SavePoint pedestal calls `Game.openSaveSlots()` — healing and the
+  write happen only once a slot is actually chosen.
+- The starting loadout lives in `src/rpg/defaultSave.ts`
+  (`defaultPlayerSave()`), used by both the `Player` constructor and
+  `startFreshRun()` — never re-inline it.
 - **`Game.flags` namespaces** (extend, never repurpose):
   - `wall:<roomId>:<col>:<row>` — broken cracked tile
   - `relic:<relicId>` — collected/purchased relic (suppresses respawn)
   - `visited:<roomId>` — minimap reveal
-  - `boss:colossus` — boss slain (no respawn, no gate)
+  - `boss:<bossId>` — boss slain (no respawn, no gate)
+  - `item:<roomId>:<n>` — unique world item taken
+  - `quest:<id>:done` — quest resolved
+  - `ending:<id>` — ending the player has seen
+  - `ng+:1` — New Game+ multiplier active
 - Death → `respawn()`: full heal + reload `lastEntry` room/position.
+
+### 7.1 App shell & screens (Phase 8.5)
+
+`src/app.ts` owns a screen state machine — `"title" | "slots" | "playing"` —
+plus the single `Input` and the active `Game` (null on the title).
+
+- **The App calls `input.beginTick()` exactly once per tick for the whole
+  application.** `Game.update()` must never call it again or every press
+  fires twice. This is the easiest thing to break here.
+- `new Game(input, init?, slot?)` — `init` is a `SaveFile` to restore, or
+  omitted for a fresh run. The Game never reads localStorage itself.
+- Returning to the title: the results screen calls
+  `Game.requestExitToTitle()`, which sets `exitToTitle`; the App polls it
+  and swaps screens (keeps App and Game free of a circular import).
+- `src/ui/title.ts` — parallax backdrop + logotype + New Game / Load Game
+  (Load is dimmed when no slot is used).
+- `src/ui/slots.ts` — one `SlotScreen` reused by the App (load / new) and
+  the Game (save pedestal): `openPicker(mode, onPick, onCancel)`, with
+  overwrite and delete confirmations.
+
+### 7.2 Ending cutscene (Phase 8.5)
+
+- `src/gfx/scenes.ts` — full-screen procedural panels, each a pure
+  `(ctx, age) => void`. **Compose above `STAGE_FLOOR`**: the cutscene
+  letterboxes the top 18px and everything below `VIEW_H - 62`, so anything
+  drawn lower is hidden behind the narration box.
+- `src/data/endings.ts` — all ending prose plus `pickEnding(flags)`.
+  Two endings: `"true"` when every relic and unique item was collected,
+  else `"short"`. Never bake narration into UI code.
+- `src/ui/cutscene.ts` — fades, typewriter narration, one panel at a time;
+  calls `Game.showResults(ending)` at the end.
+- **Input lockout (`LOCK_TICKS = 45`)**: the final boss dies with `attack`
+  still buffered, which used to dismiss the whole ending on the same frame.
+  Both `CutsceneUI` and the results screen clear the buffer on open and
+  ignore confirms for the lockout. A confirm during typing completes the
+  line instead of skipping the panel. Keep both behaviors.
 
 ## 8. Player
 
@@ -374,13 +427,19 @@ first-frame crash once — see §14).
   for gameplay tests.** Drive the sim synchronously:
 
   ```js
-  const g = window.__game;
+  const app = window.__app;                 // drives the whole app
   const down = c => window.dispatchEvent(new KeyboardEvent('keydown', {code: c}));
   const up   = c => window.dispatchEvent(new KeyboardEvent('keyup',   {code: c}));
-  const pump = n => { for (let i = 0; i < n; i++) g.update(); };
+  const pump = n => { for (let i = 0; i < n; i++) app.update(); };
   const tap  = (c, held = 4) => { down(c); pump(held); up(c); pump(8); };
-  // e.g.: tap('KeyX'); pump(30); check g.player / g.enemies / g.flags ...
+  // e.g.: tap('KeyX'); pump(30); check app.game.player / .enemies / .flags ...
   ```
+
+  **Pump the App, not the Game.** Since Phase 8.5 the App owns the tick and
+  calls `input.beginTick()`; `game.update()` no longer does. Looping on
+  `game.update()` advances the world with frozen input, so nothing you type
+  registers. `window.__game` still points at the live Game (null on the
+  title screen) for inspecting state.
 
   **Gotcha:** never `up(key)` and `down(key)` without a `pump()` between
   them. `beginTick` applies presses before releases, so both landing in the

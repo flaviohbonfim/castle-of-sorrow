@@ -1,4 +1,4 @@
-type TrackName = "castle" | "boss";
+type TrackName = "castle" | "boss" | "title";
 
 interface Track {
   bpm: number;
@@ -9,6 +9,21 @@ interface Track {
 
 const D = 38; // D2
 const TRACKS: Record<TrackName, Track> = {
+  // Title: slow, sparse and mournful — long held bass, few lead notes.
+  title: {
+    bpm: 68,
+    bass: [
+      D, 0, 0, 0, D, 0, 0, 0, D - 5, 0, 0, 0, D - 5, 0, 0, 0,
+      D - 2, 0, 0, 0, D - 2, 0, 0, 0, D - 4, 0, 0, 0, D - 4, 0, 0, 0,
+    ],
+    lead: [
+      74, 0, 0, 0, 0, 0, 72, 0, 70, 0, 0, 0, 0, 0, 0, 0,
+      69, 0, 0, 0, 0, 0, 67, 0, 65, 0, 0, 0, 0, 0, 0, 0,
+      62, 0, 0, 0, 65, 0, 69, 0, 70, 0, 0, 0, 69, 0, 0, 0,
+      67, 0, 0, 0, 0, 0, 0, 0, 62, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    hatEvery: 8,
+  },
   castle: {
     bpm: 96,
     bass: [
@@ -46,7 +61,7 @@ const midiFreq = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 class MusicEngine {
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
-  private track: TrackName = "castle";
+  private track: TrackName = "title";
   private step = 0;
   private nextTime = 0;
   private timer: ReturnType<typeof setInterval> | null = null;

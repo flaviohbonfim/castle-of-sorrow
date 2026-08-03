@@ -16,6 +16,7 @@ import { deriveCombat, type Attributes, type CombatStats, type Resources } from 
 import { grantExp } from "../../rpg/leveling";
 import { SUBWEAPONS, type SubweaponId } from "../../rpg/subweapons";
 import type { EquipSlot } from "../../rpg/items";
+import { defaultPlayerSave } from "../../rpg/defaultSave";
 import { computeDamage } from "../../combat/damage";
 import { noticeText } from "../../combat/damage";
 import type { AttackInstance } from "./attacks";
@@ -89,18 +90,9 @@ export class Player extends Entity {
     super(x - 6, y - STAND_H, 12, STAND_H);
     this.spawnX = x;
     this.spawnY = y;
-
-    // Starting loadout — the combat engine reads gear through the inventory.
-    this.inventory.add("shortSword");
-    this.inventory.add("leatherWhip");
-    this.inventory.add("nobleRapier");
-    this.inventory.add("travelerTunic");
-    this.inventory.add("wornCloak");
-    this.inventory.add("potion", 3);
-    this.inventory.equip("shortSword");
-    this.inventory.equip("travelerTunic");
-    this.inventory.equip("wornCloak");
-    this.inventory.gold = 0;
+    // Starting loadout comes from the shared default so a fresh Player and
+    // Game.startFreshRun() can never disagree.
+    this.restore(defaultPlayerSave());
   }
 
   combatStats(): CombatStats {
