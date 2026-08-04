@@ -1284,14 +1284,14 @@ export function buildDraculaSprites(): {
   beast: SpriteSet;
 } {
   const H = {
-    c: "#1a1018", // cape/coat
-    d: "#0c080e",
-    s: "#e0b898", // skin
-    h: "#e8e0c8", // white hair
+    c: PAL.dracCape,
+    d: PAL.dracCapeDark,
+    s: PAL.skin,
+    h: PAL.dracHair,
     r: PAL.eyeRed,
     g: PAL.coatTrim,
-    b: "#801028", // blood / sash
-    w: "#f0e8d8",
+    b: PAL.dracSash,
+    w: PAL.dracHairShade,
   };
   // Human idle A/B, cast, lunge
   const humanIdleA = pixelMap(
@@ -1388,14 +1388,14 @@ export function buildDraculaSprites(): {
   );
 
   const B = {
-    c: "#280818",
-    d: "#14040c",
-    s: "#c09070",
-    h: "#d0c8b0",
-    r: "#ff2020",
+    c: PAL.dracBeastDark,
+    d: PAL.dracBeast,
+    s: PAL.skinShade,
+    h: PAL.dracHair,
+    r: PAL.batEye,
     g: PAL.coatTrim,
-    f: "#401020",
-    w: "#f0e0d0",
+    f: PAL.dracBeastMid,
+    w: PAL.dracHairShade,
   };
   const beastIdleA = pixelMap(
     [

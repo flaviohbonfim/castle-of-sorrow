@@ -1072,6 +1072,87 @@
         "bladeHi",
         "waterHi"
       ]
+    },
+    {
+      "_note": "Fase 2 FINAL BOSS \u2014 Dracula human: idle0-5 + cast + lunge. Maior que outros bosses. Hitbox 28x44. Registro per-frame + height fixo: cast/lunge nao alongam o boss.",
+      "key": "dracula.human",
+      "out": "dracula-human.png",
+      "frameW": 60,
+      "frameH": 52,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 48,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/dracula-human-sheet.png",
+        "cols": 8,
+        "rows": 1
+      },
+      "palette": [
+        "dracCape",
+        "dracCapeMid",
+        "dracCapeDark",
+        "dracCapeHi",
+        "dracSash",
+        "dracSashHi",
+        "dracHair",
+        "dracHairShade",
+        "skin",
+        "skinShade",
+        "linen",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "coatTrim",
+        "eyeRed",
+        "batEye",
+        "hpRed",
+        "bladeHi"
+      ]
+    },
+    {
+      "_note": "Fase 2 FINAL BOSS \u2014 Dracula beast: idle0-5 + cast + lunge. Hitbox 28x44. Registro per-frame + height fixo: cast/lunge nao alongam o boss.",
+      "key": "dracula.beast",
+      "out": "dracula-beast.png",
+      "frameW": 52,
+      "frameH": 52,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 48,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/dracula-beast-sheet.png",
+        "cols": 8,
+        "rows": 1
+      },
+      "palette": [
+        "dracBeast",
+        "dracBeastMid",
+        "dracBeastDark",
+        "dracCape",
+        "dracCapeDark",
+        "dracSash",
+        "dracSashHi",
+        "dracHair",
+        "dracHairShade",
+        "skin",
+        "skinShade",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "coatTrim",
+        "eyeRed",
+        "batEye",
+        "hpRed",
+        "hpRedHi",
+        "bladeHi"
+      ]
     }
   ]
 }

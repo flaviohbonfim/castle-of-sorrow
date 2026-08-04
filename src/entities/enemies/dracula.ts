@@ -29,7 +29,8 @@ export class Dracula extends Enemy {
   readonly bossId = "dracula";
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 12, y - 36, 24, 36, statsFor("dracula", flags), "dracula");
+    // Larger than wing bosses — final lord presence (sprite ~40×50).
+    super(x - 14, y - 44, 28, 44, statsFor("dracula", flags), "dracula");
     this.maxHp = this.stats.hp;
     Dracula.sprites ??= resolveDraculaSprites();
     this.facing = -1;
@@ -195,11 +196,14 @@ export class Dracula extends Enemy {
     const s = Dracula.sprites!;
     const sheet = this.phase === "beast" ? s.beast : s.human;
     const set = this.facing > 0 ? sheet.right : sheet.left;
-    // Sheet: [idleA, idleB, cast, lunge]
-    let idx = Math.floor(this.animTick / 14) % 2;
-    if (this.mode === "cast") idx = 2;
-    else if (this.mode === "lunge") idx = 3;
-    const frame = set[Math.min(idx, set.length - 1)];
+    // Sheet layout: [idle0..idleN-3, cast, lunge] (procedural: idleA, idleB, cast, lunge).
+    const n = set.length;
+    const idleCount = Math.max(1, n - 2);
+    let idx: number;
+    if (this.mode === "cast") idx = Math.max(0, n - 2);
+    else if (this.mode === "lunge") idx = Math.max(0, n - 1);
+    else idx = Math.floor(this.animTick / 14) % idleCount;
+    const frame = set[Math.min(idx, n - 1)];
     const x = this.renderX(alpha) + this.body.w / 2 - frame.width / 2 - camX;
     const y = this.renderY(alpha) + this.body.h - frame.height - camY;
 

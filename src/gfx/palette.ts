@@ -119,6 +119,18 @@ export const PAL = {
   wraithGlow: "#a8d0d8",
   wraithCyan: "#68a0b0",
   wraithGear: "#c8a038",
+  // Dracula final boss (human cape + beast crimson)
+  dracCape: "#1a1018",
+  dracCapeMid: "#2a1830",
+  dracCapeDark: "#0c080e",
+  dracCapeHi: "#403050",
+  dracSash: "#801028",
+  dracSashHi: "#c02838",
+  dracHair: "#e8e0c8",
+  dracHairShade: "#b0a888",
+  dracBeast: "#401020",
+  dracBeastMid: "#601030",
+  dracBeastDark: "#280818",
 
   // Candles & pickups
   candleBrass: "#a08030",

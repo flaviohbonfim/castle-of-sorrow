@@ -108,7 +108,7 @@ back to procedural art automatically.
 | `medusaHead.fly` | 8 | 12×12 |
 | `fleaMan.hop` | 8 | 12×16 |
 | `boss.walk`, `boss.windup` | 8, 4 | 26×40 |
-| `dracula.human`, `dracula.beast` | — | 24×36 |
+| `dracula.human`, `dracula.beast` | 8 each | 28×44 |
 
 ### NPCs, props and UI
 

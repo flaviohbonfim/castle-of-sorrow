@@ -186,6 +186,18 @@
       "frameW": 32,
       "frameH": 40,
       "frames": 8
+    },
+    "dracula.human": {
+      "file": "dracula-human.png",
+      "frameW": 60,
+      "frameH": 52,
+      "frames": 8
+    },
+    "dracula.beast": {
+      "file": "dracula-beast.png",
+      "frameW": 52,
+      "frameH": 52,
+      "frames": 8
     }
   }
 }
