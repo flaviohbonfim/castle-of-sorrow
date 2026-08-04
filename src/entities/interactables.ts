@@ -9,6 +9,7 @@ import {
   buildShopkeeperSprites,
   type SpriteSet,
 } from "../gfx/sprites";
+import { resolveSpriteSet } from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
 import { ITEMS } from "../rpg/items";
@@ -174,7 +175,7 @@ export class WarpPad extends Entity {
 export class Shopkeeper extends Entity {
   private age = 0;
   private playerNear = false;
-  private sprites: SpriteSet = buildShopkeeperSprites();
+  private sprites: SpriteSet = resolveSpriteSet("shopkeeper.idle", buildShopkeeperSprites);
 
   constructor(x: number, y: number) {
     super(x - 8, y - 32, 16, 32);
@@ -229,7 +230,9 @@ export class Npc extends Entity {
   ) {
     super(x - 7, y - 32, 14, 32);
     this.sprites =
-      npcId === "demon" ? buildDemonSprites() : buildGhostSprites();
+      npcId === "demon"
+        ? resolveSpriteSet("demon.idle", buildDemonSprites)
+        : resolveSpriteSet("ghost.idle", buildGhostSprites);
   }
 
   update(game: Game): void {

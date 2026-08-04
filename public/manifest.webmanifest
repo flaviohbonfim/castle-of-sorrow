@@ -1,0 +1,18 @@
+{
+  "name": "Castle of Sorrow",
+  "short_name": "Sorrow",
+  "description": "A SotN-inspired metroidvania — procedural 16-bit gothic.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0a0810",
+  "theme_color": "#0a0810",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

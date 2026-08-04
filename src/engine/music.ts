@@ -1,3 +1,5 @@
+import { getMusicUrl } from "../gfx/assets";
+
 type TrackName = "castle" | "boss" | "title";
 
 interface Track {
@@ -55,8 +57,9 @@ const TRACKS: Record<TrackName, Track> = {
 const midiFreq = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 
 /**
- * Procedural chiptune loop: a lookahead scheduler places square-wave bass,
- * triangle lead and noise hats on an 8th-note grid. No audio assets.
+ * Procedural chiptune loop + optional .ogg override (Phase 9).
+ * If `/assets/manifest.json` lists a track file and it loads, the sequencer
+ * stays silent for that track; on failure the chiptune continues.
  */
 class MusicEngine {
   private ctx: AudioContext | null = null;
@@ -64,30 +67,36 @@ class MusicEngine {
   private track: TrackName = "title";
   private step = 0;
   private nextTime = 0;
-  private timer: ReturnType<typeof setInterval> | null = null;
   private master = 0.16;
   private muted = false;
+  private external: HTMLAudioElement | null = null;
+  private usingExternal = false;
+  private started = false;
 
   /** Must be called from a user-gesture handler (audio autoplay policy). */
   start(): void {
-    if (this.timer) return;
+    if (this.started) return;
+    this.started = true;
     try {
       this.ctx = new AudioContext();
     } catch {
-      return;
+      // Still try HTMLAudio for ogg-only path.
     }
-    this.gain = this.ctx.createGain();
-    this.applyGain();
-    this.gain.connect(this.ctx.destination);
-    this.nextTime = this.ctx.currentTime + 0.1;
-    this.timer = setInterval(() => this.schedule(), 40);
+    if (this.ctx) {
+      this.gain = this.ctx.createGain();
+      this.applyGain();
+      this.gain.connect(this.ctx.destination);
+      this.nextTime = this.ctx.currentTime + 0.1;
+      setInterval(() => this.schedule(), 40);
+    }
+    void this.bindExternal(this.track);
   }
 
   setTrack(name: TrackName): void {
-    if (this.track !== name) {
-      this.track = name;
-      this.step = 0;
-    }
+    if (this.track === name) return;
+    this.track = name;
+    this.step = 0;
+    if (this.started) void this.bindExternal(name);
   }
 
   /** 0..1 master volume multiplier (default level is baked into the base). */
@@ -111,10 +120,42 @@ class MusicEngine {
 
   private applyGain(): void {
     if (this.gain) this.gain.gain.value = this.muted ? 0 : this.master;
+    if (this.external) this.external.volume = this.muted ? 0 : 0.4;
+  }
+
+  /** Prefer optional ogg; fall back to chiptune on any failure. */
+  private async bindExternal(name: TrackName): Promise<void> {
+    this.stopExternal();
+    const url = getMusicUrl(name);
+    if (!url || !this.started) {
+      this.usingExternal = false;
+      return;
+    }
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = this.muted ? 0 : 0.4;
+    try {
+      await audio.play();
+      this.external = audio;
+      this.usingExternal = true;
+    } catch {
+      this.usingExternal = false;
+      this.external = null;
+    }
+  }
+
+  private stopExternal(): void {
+    if (this.external) {
+      this.external.pause();
+      this.external.src = "";
+      this.external = null;
+    }
+    this.usingExternal = false;
   }
 
   private schedule(): void {
-    const ctx = this.ctx!;
+    if (this.usingExternal || !this.ctx || !this.gain) return;
+    const ctx = this.ctx;
     if (ctx.state === "suspended") void ctx.resume();
     const t = TRACKS[this.track];
     const spb = 60 / t.bpm / 2; // seconds per 8th step

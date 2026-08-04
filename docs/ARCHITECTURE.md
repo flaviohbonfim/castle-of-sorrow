@@ -32,11 +32,15 @@ src/
 │   ├── renderer.ts          # 480x270 backbuffer, integer scaling, makeSurface()
 │   ├── camera.ts            # deadzone follow, bounds clamp, trauma shake
 │   ├── audio.ts             # SFX synth (audio.play(name))
-│   ├── music.ts             # chiptune sequencer (music.start()/setTrack())
+│   ├── music.ts             # chiptune sequencer + optional ogg override
+│   ├── settings.ts          # localStorage prefs (language, scanlines)
 │   └── math.ts              # Vec2/Rect, rectsOverlap, clamp, lerp, chance...
 ├── gfx/
 │   ├── palette.ts           # PAL: every color in the game (single source of truth)
 │   ├── sprites.ts           # ALL sprite generation (pixelMap ASCII art + part-based player)
+│   ├── assets.ts            # optional PNG/ogg override loader (Phase 9)
+│   ├── resolveSprites.ts    # getSheet override or procedural fallback
+│   ├── scanlines.ts         # CRT overlay
 │   ├── tiles.ts             # TILE=16, TileId enum, buildTileset()
 │   └── parallax.ts          # pre-rendered background layers
 ├── world/
@@ -375,7 +379,10 @@ first-frame crash once — see §14).
 
 - **SFX** (`engine/audio.ts`): `audio.play(name)` — envelope-shaped
   oscillator bursts + noise. Add new names to the `SfxName` union + switch.
-- **Music** (`engine/music.ts`): lookahead scheduler (setInterval 40ms,
+- **Assets** (`gfx/assets.ts`): optional `public/assets/manifest.json` overrides
+  for sprite sheets and music; boot awaits `loadAssets()` before the loop.
+- **Music** (`engine/music.ts`): chiptune lookahead scheduler; optional ogg
+  from the manifest silences the sequencer for that track. Lookahead (setInterval 40ms,
   0.15s horizon) placing square bass / triangle lead / noise hats on an
   8th-note grid from midi-note pattern arrays. Tracks: `castle`, `boss`.
   `music.start()` must be called from a user gesture (main.ts does this on

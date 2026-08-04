@@ -1,5 +1,7 @@
 import { Input } from "./engine/input";
 import { music } from "./engine/music";
+import { getSettings } from "./engine/settings";
+import { drawScanlines } from "./gfx/scanlines";
 import { Game } from "./game";
 import { TitleScreen } from "./ui/title";
 import { SlotScreen } from "./ui/slots";
@@ -110,5 +112,7 @@ export class App {
         this.game?.draw(ctx, alpha);
         break;
     }
+    // CRT scanlines over every screen when enabled (Phase 9).
+    if (getSettings().scanlines) drawScanlines(ctx);
   }
 }

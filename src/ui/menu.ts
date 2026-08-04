@@ -8,7 +8,7 @@ import { ROOMS, WARP_PADS } from "../world/rooms";
 import { computeCompletion, formatPlayTime } from "../rpg/completion";
 import { buildPickupSprites } from "../gfx/sprites";
 import { localeLabel, relicName, t, toggleLocale } from "../data/i18n";
-import { saveSettings } from "../engine/settings";
+import { getSettings, saveSettings } from "../engine/settings";
 import {
   BESTIARY,
   BESTIARY_META,
@@ -40,8 +40,8 @@ const TAB_KEYS = [
 ] as const;
 type Panel = 0 | 1 | 2 | 3 | 4 | 5;
 
-/** SYS rows: music, language, save, title */
-const SYS_COUNT = 4;
+/** SYS rows: music, language, scanlines, save, title */
+const SYS_COUNT = 5;
 
 let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
 
@@ -216,11 +216,18 @@ export class Menu {
         this.flash(t("menu.flash.lang", { lang: localeLabel(loc) }));
         break;
       }
-      case 2:
+      case 2: {
+        const next = !getSettings().scanlines;
+        saveSettings({ scanlines: next });
+        audio.play("pickup");
+        this.flash(next ? t("menu.flash.scanOn") : t("menu.flash.scanOff"));
+        break;
+      }
+      case 3:
         this.open = false;
         game.openSaveSlots();
         break;
-      case 3:
+      case 4:
         this.open = false;
         game.requestExitToTitle();
         break;
@@ -882,26 +889,28 @@ export class Menu {
     ctx.fillStyle = PAL.textGold;
     ctx.fillText(t("menu.sys"), x + 10, y + 16);
 
+    const scan = getSettings().scanlines;
     const rows = [
       music.isMuted() ? t("menu.sys.musicOff") : t("menu.sys.musicOn"),
       `${t("menu.sys.lang")}: ${localeLabel()}`,
+      scan ? t("menu.sys.scanOn") : t("menu.sys.scanOff"),
       t("menu.sys.save"),
       t("menu.sys.title"),
     ];
     rows.forEach((line, i) => {
       const sel = this.cursor === i;
-      const rowY = y + 40 + i * 20;
+      const rowY = y + 36 + i * 18;
       if (sel) {
         ctx.fillStyle = "rgba(80, 60, 120, 0.45)";
-        ctx.fillRect(x + 6, rowY - 12, w - 12, 18);
+        ctx.fillRect(x + 6, rowY - 12, w - 12, 16);
       }
       ctx.fillStyle = sel ? PAL.textGold : PAL.textWhite;
       ctx.fillText(`${sel ? "» " : "  "}${line}`, x + 14, rowY);
     });
 
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText(t("tip.3"), x + 14, y + 140);
-    ctx.fillText(t("tip.4"), x + 14, y + 154);
+    ctx.fillText(t("tip.3"), x + 14, y + 148);
+    ctx.fillText(t("tip.4"), x + 14, y + 160);
   }
 
   private bar(

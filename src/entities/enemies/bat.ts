@@ -1,6 +1,7 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { buildBatSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { statsFor } from "../../rpg/bestiary";
 
 /**
@@ -17,7 +18,7 @@ export class Bat extends Enemy {
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 7, y - 4, 14, 8, statsFor("bat", flags), "bat");
     this.baseY = y - 4;
-    Bat.sprites ??= buildBatSprites();
+    Bat.sprites ??= resolveSpriteSet("bat.fly", buildBatSprites);
   }
 
   protected override onHit(fromX: number): void {

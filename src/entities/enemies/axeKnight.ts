@@ -2,6 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildAxeKnightSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { audio } from "../../engine/audio";
 import { statsFor } from "../../rpg/bestiary";
 
@@ -18,7 +19,7 @@ export class AxeKnight extends Enemy {
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 8, y - 32, 16, 32, statsFor("axeKnight", flags), "axeKnight");
-    AxeKnight.sprites ??= buildAxeKnightSprites();
+    AxeKnight.sprites ??= resolveSpriteSet("axeKnight.walk", buildAxeKnightSprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
 

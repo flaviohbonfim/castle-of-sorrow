@@ -2,6 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildFishmanSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { TILE } from "../../gfx/tiles";
 import { PAL } from "../../gfx/palette";
 import { statsFor } from "../../rpg/bestiary";
@@ -37,7 +38,7 @@ export class Fishman extends Enemy {
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 7, y - 32, 14, 32, statsFor("fishman", flags), "fishman");
-    Fishman.sprites ??= buildFishmanSprites();
+    Fishman.sprites ??= resolveSpriteSet("fishman.walk", buildFishmanSprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
 

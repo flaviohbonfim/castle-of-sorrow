@@ -1,7 +1,7 @@
 # Castle of Sorrow — Development Roadmap (Phases 4–9)
 
-> **Status:** Phases 4–8.6 are implemented. **Next: Phase 9** (art/audio
-> pipeline & packaging).
+> **Status:** Phases 4–9 are implemented (including content expansion:
+> forms skills, new rooms, Dracula, i18n, enemy book).
 
 > Execution plan for the next milestones. Written so that any developer or
 > AI model can pick up a phase independently. **Prerequisite reading:**
@@ -546,30 +546,19 @@ Pump-driven (ARCHITECTURE §14 — remember: pump `app.update()`).
 
 ---
 
-## Phase 9 — Art/audio pipeline & release packaging
+## Phase 9 — Art/audio pipeline & release packaging  ✅ DONE
 
 **Goal:** allow real hand-made assets WITHOUT breaking the procedural
 fallback, then ship.
 
-- **Asset override layer:** **Create `src/gfx/assets.ts`** — an async
-  loader that, at boot, tries `fetch('/assets/manifest.json')`; if present,
-  loads named PNG sprite sheets and REPLACES the corresponding procedural
-  frames (same names/frame counts as the builders return — document the
-  contract in the manifest: `{ "player.idle": {file, frameW, frameH, frames} }`).
-  If absent (the default), everything stays procedural. Never make
-  procedural generation depend on assets existing.
-- Same for music: optional `.ogg` loop per track via an `<audio>` element
-  with the sequencer as fallback.
-- **Rendering polish:** optional CRT-ish scanline overlay toggle (draw a
-  pre-made 2px-period alpha stripe canvas over the frame; menu option).
-- **Packaging:** `vite build` output is static — deploy to any static host
-  (GitHub Pages/itch.io zip). Add `npm run package` script producing a zip
-  of `dist/`. PWA manifest (installable, offline cache via a minimal
-  service worker) optional.
-- Final QA: run the full regression checklist (ARCHITECTURE §14) plus a
-  fresh-profile playthrough on Chromium and Firefox; verify localStorage
-  save versioning (add `version: 1` to SaveFile now if not present when
-  this phase starts — migrate by defaulting missing fields).
+- **Asset override layer:** `src/gfx/assets.ts` + `resolveSprites.ts`. Boot
+  calls `loadAssets()`; entities use `resolveSpriteSet(key, builder)`.
+  Contract documented in `public/assets/README.md`.
+- **Music:** optional `.ogg` via manifest; sequencer is the fallback.
+- **CRT scanlines:** SYS toggle, persisted in settings, drawn in `App.draw`.
+- **Packaging:** `npm run package` builds and zips `dist/` →
+  `castle-of-sorrow.zip`. PWA: `manifest.webmanifest`, `sw.js`, `icon.svg`.
+- **Save versioning:** `SaveFile.version` is `1`; readers reject `version > 1`.
 
 ---
 

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "package": "npm run build && cd dist && zip -r ../castle-of-sorrow.zip . && cd .. && echo \"Wrote castle-of-sorrow.zip\""
   },
   "devDependencies": {
     "typescript": "^5.6.0",
