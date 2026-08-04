@@ -73,6 +73,13 @@ export const PAL = {
   fleaSkinMid: "#584068",
   fleaSkinDark: "#302038",
   fleaSkinHi: "#9080a8",
+  // Merman / Fishman green scale ramp (lake enemy)
+  fishScale: "#3e8a6e",
+  fishScaleMid: "#2a6a58",
+  fishScaleDark: "#1a4038",
+  fishScaleHi: "#5aad88",
+  fishBelly: "#a8d8c0",
+  fishFin: "#c8a060",
 
   // Candles & pickups
   candleBrass: "#a08030",

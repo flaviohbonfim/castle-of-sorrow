@@ -98,7 +98,7 @@ back to procedural art automatically.
 | --- | --- | --- |
 | `skeleton.walk` | 2 | 14×32 |
 | `zombie.walk` | 2 | 14×32 |
-| `fishman.walk` | 2 | 14×32 |
+| `fishman.walk` | 8 | 14×32 |
 | `axeKnight.walk` | 2 | 16×32 |
 | `spearGuard.walk` | 2 | 16×32 |
 | `wraith.float` | 2 | 20×34 |

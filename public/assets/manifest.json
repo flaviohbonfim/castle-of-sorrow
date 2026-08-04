@@ -90,6 +90,12 @@
       "frameW": 18,
       "frameH": 18,
       "frames": 8
+    },
+    "fishman.walk": {
+      "file": "fishman.png",
+      "frameW": 20,
+      "frameH": 32,
+      "frames": 8
     }
   }
 }

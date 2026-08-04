@@ -348,12 +348,12 @@ export function buildBatSprites(): SpriteSet {
 }
 
 const FISH = {
-  g: "#2a6a58",
-  m: "#3e8a6e",
-  d: "#1a4038",
-  s: PAL.skin,
+  g: PAL.fishScaleMid,
+  m: PAL.fishScale,
+  d: PAL.fishScaleDark,
+  s: PAL.fishBelly,
   r: PAL.eyeRed,
-  f: "#c8a060",
+  f: PAL.fishFin,
 };
 
 /** Classic merman: green body, fins, facing right (~16x24). */

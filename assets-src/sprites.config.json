@@ -254,6 +254,22 @@
         "coatMid", "coatLight", "pants",
         "eyeRed", "batEye", "bladeHi"
       ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Fishman/Merman walk 8 frames (generate + animate). Hitbox 14x32; codigo cicla set.length (animTick/rate). Paleta verde-escamas dedicada.",
+      "key": "fishman.walk",
+      "out": "fishman.png",
+      "frameW": 20,
+      "frameH": 32,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 4,
+      "resize": { "height": 30, "mode": "majority" },
+      "source": { "file": "raw/fishman-walk-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "fishScale", "fishScaleMid", "fishScaleDark", "fishScaleHi", "fishBelly", "fishFin",
+        "eyeRed", "batEye", "skin", "bladeHi", "waterHi"
+      ]
     }
   ]
 }
