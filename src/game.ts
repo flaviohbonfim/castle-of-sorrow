@@ -520,8 +520,10 @@ export class Game {
     dir: 1 | -1,
     power: number,
     vyBoost = 0,
-  ): void {
-    this.projectiles.push(new Projectile(kind, x, y, dir, power, true, vyBoost));
+  ): Projectile {
+    const p = new Projectile(kind, x, y, dir, power, true, vyBoost);
+    this.projectiles.push(p);
+    return p;
   }
 
   /** Freeze the simulation briefly on impact for 16-bit crunch. */

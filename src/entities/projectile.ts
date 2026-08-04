@@ -2,9 +2,14 @@ import { Entity } from "./entity";
 import type { Game } from "../game";
 import { TILE } from "../gfx/tiles";
 import { Swing } from "../combat/hitbox";
-import { resolveSubweaponSprites, resolveBoneSprites } from "../gfx/resolveSprites";
+import {
+  resolveSubweaponSprites,
+  resolveBoneSprites,
+  resolveAxeThrowSprites,
+} from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 import { rectsOverlap } from "../engine/math";
+import type { Frame } from "../gfx/sprites";
 
 export type ProjectileKind =
   | "dagger"
@@ -19,6 +24,7 @@ export type ProjectileKind =
 
 let SPRITES: ReturnType<typeof resolveSubweaponSprites> | null = null;
 let BONES: HTMLCanvasElement[] | null = null;
+let AXE_THROW: Frame[] | null = null;
 
 /**
  * Thrown sub-weapons, spells and enemy shots.
@@ -49,14 +55,16 @@ export class Projectile extends Entity {
     const isSpell = kind === "spell";
     const isTiny = kind === "spit" || kind === "blood";
     const isBat = kind === "batFire";
+    const isKnightAxe = kind === "axeThrow";
     super(
-      x - (isSpell ? 8 : isTiny ? 3 : isBat ? 4 : 5),
-      y - (isSpell ? 4 : isTiny ? 2 : isBat ? 4 : 3),
-      isSpell ? 16 : isTiny ? 6 : isBat ? 10 : 10,
-      isSpell ? 8 : isTiny ? 4 : isBat ? 8 : 6,
+      x - (isSpell ? 8 : isTiny ? 3 : isBat ? 4 : isKnightAxe ? 7 : 5),
+      y - (isSpell ? 4 : isTiny ? 2 : isBat ? 4 : isKnightAxe ? 7 : 3),
+      isSpell ? 16 : isTiny ? 6 : isBat ? 10 : isKnightAxe ? 14 : 10,
+      isSpell ? 8 : isTiny ? 4 : isBat ? 8 : isKnightAxe ? 14 : 6,
     );
     SPRITES ??= resolveSubweaponSprites();
     BONES ??= resolveBoneSprites();
+    AXE_THROW ??= resolveAxeThrowSprites();
     this.facing = dir;
     this.power = power;
     switch (kind) {
@@ -135,6 +143,18 @@ export class Projectile extends Entity {
       }
     }
 
+    // Knight axe: despawn when it "lands" (falling into solid) so the
+    // thrower's empty-hand pose ends as the weapon hits the floor.
+    if (this.kind === "axeThrow" && this.body.vy > 0) {
+      const col = Math.floor(this.centerX / TILE);
+      const row = Math.floor((this.body.y + this.body.h) / TILE);
+      if (map.isSolid(col, row)) {
+        this.dead = true;
+        this.impactSparks(game, PAL.bladeHi);
+        return;
+      }
+    }
+
     if (this.hostile) {
       // Enemy shot: hurts the player on contact.
       if (rectsOverlap(this.body, game.player.body) && game.player.form !== "mist") {
@@ -200,7 +220,14 @@ export class Projectile extends Entity {
     if (this.kind === "dagger") {
       const frame = this.facing > 0 ? s.dagger.right[0] : s.dagger.left[0];
       ctx.drawImage(frame, Math.round(x - camX), Math.round(y - camY));
-    } else if (this.kind === "axe" || this.kind === "axeThrow") {
+    } else if (this.kind === "axeThrow") {
+      // Knight double-bit spin — not the player subweapon strip.
+      const frames = AXE_THROW!;
+      const frame = frames[Math.floor(this.age / 3) % frames.length];
+      const dx = Math.round(x + this.body.w / 2 - frame.width / 2 - camX);
+      const dy = Math.round(y + this.body.h / 2 - frame.height / 2 - camY);
+      ctx.drawImage(frame, dx, dy);
+    } else if (this.kind === "axe") {
       const frame = s.axe[Math.floor(this.age / 4) % s.axe.length];
       ctx.drawImage(frame, Math.round(x - camX), Math.round(y - camY));
     } else if (this.kind === "bone") {

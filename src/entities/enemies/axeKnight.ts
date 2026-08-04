@@ -1,7 +1,12 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
+import type { Projectile } from "../projectile";
 import { moveBody, groundAhead } from "../../world/collision";
-import { buildAxeKnightSprites, type SpriteSet } from "../../gfx/sprites";
+import {
+  buildAxeKnightEmptySprites,
+  buildAxeKnightSprites,
+  type SpriteSet,
+} from "../../gfx/sprites";
 import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { audio } from "../../engine/audio";
 import { statsFor } from "../../rpg/bestiary";
@@ -12,15 +17,29 @@ const THROW_CD = 110;
 
 /** Armored walker that hurls arcing axes at the player. */
 export class AxeKnight extends Enemy {
-  private static sprites: SpriteSet | null = null;
+  private static armed: SpriteSet | null = null;
+  private static empty: SpriteSet | null = null;
   private animTick = 0;
   private turnCooldown = 0;
   private throwCooldown = 50 + Math.floor(Math.random() * 40);
+  /** Live thrown axe — empty hands only while this is still in flight. */
+  private thrown: Projectile | null = null;
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 8, y - 32, 16, 32, statsFor("axeKnight", flags), "axeKnight");
-    AxeKnight.sprites ??= resolveSpriteSet("axeKnight.walk", buildAxeKnightSprites);
+    AxeKnight.armed ??= resolveSpriteSet("axeKnight.walk", buildAxeKnightSprites);
+    AxeKnight.empty ??= resolveSpriteSet("axeKnight.empty", buildAxeKnightEmptySprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
+  }
+
+  /** True while the thrown axe still exists (not yet dead / despawned). */
+  private get axeInFlight(): boolean {
+    if (!this.thrown) return false;
+    if (this.thrown.dead) {
+      this.thrown = null;
+      return false;
+    }
+    return true;
   }
 
   update(game: Game): void {
@@ -28,6 +47,8 @@ export class AxeKnight extends Enemy {
     this.animTick++;
     if (this.turnCooldown > 0) this.turnCooldown--;
     if (this.throwCooldown > 0) this.throwCooldown--;
+    // Drop the ref as soon as the projectile dies so the held axe returns.
+    void this.axeInFlight;
 
     this.body.vy = Math.min(this.body.vy + GRAVITY, 6);
     if (Math.abs(this.body.vx) <= WALK + 0.01) {
@@ -51,20 +72,28 @@ export class AxeKnight extends Enemy {
     const dx = p.centerX - this.centerX;
     if (
       this.throwCooldown === 0 &&
+      !this.axeInFlight &&
       p.state.name !== "die" &&
       Math.abs(dx) < 180 &&
       Math.abs(p.centerY - this.centerY) < 50
     ) {
       const dir = (dx >= 0 ? 1 : -1) as 1 | -1;
       this.facing = dir;
-      game.spawnHostile("axeThrow", this.centerX + dir * 10, this.body.y + 6, dir, 12);
+      // Spawn from the hand/shoulder so the held axe appears to leave the body.
+      this.thrown = game.spawnHostile(
+        "axeThrow",
+        this.centerX + dir * 12,
+        this.body.y + 8,
+        dir,
+        12,
+      );
       audio.play("throw");
       this.throwCooldown = THROW_CD;
     }
   }
 
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, alpha: number): void {
-    const sprites = AxeKnight.sprites!;
+    const sprites = this.axeInFlight ? AxeKnight.empty! : AxeKnight.armed!;
     const set = this.facing > 0 ? sprites.right : sprites.left;
     const frame = set[Math.floor(this.animTick / 14) % set.length];
     const x = this.renderX(alpha) + this.body.w / 2 - frame.width / 2 - camX;

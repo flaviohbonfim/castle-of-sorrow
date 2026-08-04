@@ -390,16 +390,18 @@ export function buildMedusaHeadSprites(): SpriteSet {
   return makeSet([a, b]);
 }
 
+const AXE_ARMOR = {
+  a: PAL.armor,
+  m: PAL.armorMid,
+  s: PAL.skin,
+  r: PAL.eyeRed,
+  g: PAL.gold,
+  d: PAL.armorDark,
+};
+
 export function buildAxeKnightSprites(): SpriteSet {
-  const A = {
-    a: "#5a6068",
-    m: "#3a4048",
-    s: PAL.skin,
-    r: PAL.eyeRed,
-    g: PAL.gold,
-    d: PAL.stoneDark,
-  };
-  // 16×32 armored walker
+  const A = AXE_ARMOR;
+  // 16×32 armored walker (procedural has no held axe — AI override adds one)
   const walkA = pixelMap(
     [
       "    aaaa    ",
@@ -477,14 +479,20 @@ export function buildAxeKnightSprites(): SpriteSet {
   return makeSet([walkA, walkB]);
 }
 
+/** Same armor walker with empty hands (used while the thrown axe is out). */
+export function buildAxeKnightEmptySprites(): SpriteSet {
+  // Procedural walk already has empty hands — reuse as empty-set fallback.
+  return buildAxeKnightSprites();
+}
+
 export function buildWraithSprites(): SpriteSet {
   const W = {
-    c: "#4a6870",
-    d: "#2a4048",
-    h: "#a8d0d8",
+    c: PAL.wraithBody,
+    d: PAL.wraithBodyDark,
+    h: PAL.wraithGlow,
     r: PAL.eyeRed,
-    g: PAL.gold,
-    s: "#68a0b0",
+    g: PAL.wraithGear,
+    s: PAL.wraithCyan,
   };
   // 16×34 ethereal humanoid (slightly taller than player)
   const a = pixelMap(
@@ -1489,11 +1497,11 @@ export function buildDraculaSprites(): {
 }
 
 const BOSS = {
-  b: PAL.bone,
-  s: PAL.boneShade,
-  d: PAL.boneDark,
+  b: PAL.bossBone,
+  s: PAL.bossBoneShade,
+  d: PAL.bossBoneDark,
   r: PAL.eyeRed,
-  g: PAL.coatTrim,
+  g: PAL.gold,
 };
 
 export function buildBossSprites(): { walk: SpriteSet; windup: SpriteSet } {
@@ -1596,8 +1604,10 @@ export function buildPortraitSprites(): {
       "  c   c  c   c  ",
     ],
     {
-      c: "rgba(180, 200, 220, 0.9)",
-      w: "#e8f0f8",
+      // Solid colors only — rgba faded against the dialogue barBack
+      // and looked like an empty portrait frame.
+      c: PAL.ghostCloak,
+      w: PAL.ghostHi,
       r: PAL.eyeRed,
     },
   );
@@ -2031,4 +2041,66 @@ export function buildSubweaponSprites(): { dagger: SpriteSet; axe: Frame[] } {
     SUBW,
   );
   return { dagger: makeSet([dagger]), axe: [axeA, axeB, axeC, axeD] };
+}
+
+const AXE_THROW = {
+  a: PAL.armorHi,
+  m: PAL.armor,
+  d: PAL.armorDark,
+  g: PAL.gold,
+  h: PAL.goldHi,
+  w: PAL.boots,
+};
+
+/** Hostile double-bit axe spin (Axe Knight). Larger than the player subweapon. */
+export function buildAxeThrowSprites(): Frame[] {
+  const a = pixelMap(
+    [
+      "  aaha  ",
+      " aaggha ",
+      "aam  maa",
+      "  wwww  ",
+      "  wwww  ",
+      "  wwww  ",
+      "   ww   ",
+    ],
+    AXE_THROW,
+  );
+  const b = pixelMap(
+    [
+      "     aah",
+      "   aaggh",
+      " wwwamaa",
+      "wwww    ",
+      "www     ",
+      "        ",
+      "        ",
+    ],
+    AXE_THROW,
+  );
+  const c = pixelMap(
+    [
+      "   ww   ",
+      "  wwww  ",
+      "  wwww  ",
+      "  wwww  ",
+      "aam  maa",
+      " aaggha ",
+      "  aaha  ",
+    ],
+    AXE_THROW,
+  );
+  const d = pixelMap(
+    [
+      "haa     ",
+      "hggaa   ",
+      "aama www",
+      "    wwww",
+      "     www",
+      "        ",
+      "        ",
+    ],
+    AXE_THROW,
+  );
+  return [a, b, c, d];
 }

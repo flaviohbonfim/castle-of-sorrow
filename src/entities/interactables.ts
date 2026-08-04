@@ -192,7 +192,8 @@ export class Shopkeeper extends Entity {
 
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, _alpha: number): void {
     const set = this.facing > 0 ? this.sprites.right : this.sprites.left;
-    const frame = set[Math.floor(this.age / 40) % 2];
+    // Procedural idle is 2 frames; AI strips are longer — cycle full set.
+    const frame = set[Math.floor(this.age / 40) % set.length];
     const x = Math.round(this.centerX - frame.width / 2 - camX);
     const y = Math.round(this.body.y + this.body.h - frame.height - camY);
     ctx.drawImage(frame, x, y);
@@ -257,25 +258,27 @@ export class Npc extends Entity {
       ctx.restore();
     } else {
       ctx.drawImage(frame, x, y);
-      // Cage bars for the imp — frame the body, not a tall empty cell
+      // Cage bars for the imp — closed cell: verticals include both side posts.
       const cageH = Math.min(frame.height, 26);
       const cageTop = y + Math.max(0, frame.height - cageH - 2);
+      const cageLeft = x - 2;
+      const cageRight = x + frame.width + 2;
       ctx.strokeStyle = PAL.stoneHi;
       ctx.lineWidth = 1;
-      const barStep = Math.max(4, Math.floor((frame.width + 4) / 4));
-      for (let i = 0; i < 4; i++) {
-        const bx = x - 2 + i * barStep;
+      const barCount = 5; // left post + 3 bars + right post
+      for (let i = 0; i < barCount; i++) {
+        const bx = Math.round(cageLeft + (i * (cageRight - cageLeft)) / (barCount - 1));
         ctx.beginPath();
         ctx.moveTo(bx, cageTop);
         ctx.lineTo(bx, cageTop + cageH);
         ctx.stroke();
       }
-      // top + bottom rails
+      // top + bottom rails (span the side posts)
       ctx.beginPath();
-      ctx.moveTo(x - 2, cageTop);
-      ctx.lineTo(x + frame.width + 2, cageTop);
-      ctx.moveTo(x - 2, cageTop + cageH);
-      ctx.lineTo(x + frame.width + 2, cageTop + cageH);
+      ctx.moveTo(cageLeft, cageTop);
+      ctx.lineTo(cageRight, cageTop);
+      ctx.moveTo(cageLeft, cageTop + cageH);
+      ctx.lineTo(cageRight, cageTop + cageH);
       ctx.stroke();
     }
     if (this.playerNear) {

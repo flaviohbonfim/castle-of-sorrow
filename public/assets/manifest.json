@@ -120,6 +120,72 @@
       "frameW": 28,
       "frameH": 32,
       "frames": 8
+    },
+    "axeKnight.empty": {
+      "file": "axeknight-empty.png",
+      "frameW": 24,
+      "frameH": 32,
+      "frames": 8
+    },
+    "projectile.axeThrow": {
+      "file": "axethrow.png",
+      "frameW": 16,
+      "frameH": 16,
+      "frames": 8
+    },
+    "ghost.idle": {
+      "file": "ghost.png",
+      "frameW": 28,
+      "frameH": 32,
+      "frames": 8
+    },
+    "demon.idle": {
+      "file": "demon.png",
+      "frameW": 20,
+      "frameH": 28,
+      "frames": 8
+    },
+    "shopkeeper.idle": {
+      "file": "shopkeeper.png",
+      "frameW": 22,
+      "frameH": 32,
+      "frames": 8
+    },
+    "portrait.ghost": {
+      "file": "portrait-ghost.png",
+      "frameW": 32,
+      "frameH": 32,
+      "frames": 1
+    },
+    "portrait.demon": {
+      "file": "portrait-demon.png",
+      "frameW": 32,
+      "frameH": 32,
+      "frames": 1
+    },
+    "portrait.hermit": {
+      "file": "portrait-hermit.png",
+      "frameW": 32,
+      "frameH": 32,
+      "frames": 1
+    },
+    "boss.walk": {
+      "file": "boss-walk.png",
+      "frameW": 40,
+      "frameH": 48,
+      "frames": 8
+    },
+    "boss.windup": {
+      "file": "boss-windup.png",
+      "frameW": 44,
+      "frameH": 48,
+      "frames": 4
+    },
+    "wraith.float": {
+      "file": "wraith.png",
+      "frameW": 32,
+      "frameH": 40,
+      "frames": 8
     }
   }
 }

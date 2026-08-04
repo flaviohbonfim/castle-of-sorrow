@@ -17,6 +17,7 @@ import {
   buildPickupSprites,
   buildPlayerSprites,
   buildPortraitSprites,
+  buildAxeThrowSprites,
   buildSubweaponSprites,
   type Frame,
   type PlayerSprites,
@@ -125,6 +126,11 @@ export function resolveSubweaponSprites(): ReturnType<typeof buildSubweaponSprit
 
 export function resolveBoneSprites(): Frame[] {
   return resolveFrames("projectile.bone", buildBoneSprites);
+}
+
+/** Axe Knight thrown axe — separate from the player subweapon strip. */
+export function resolveAxeThrowSprites(): Frame[] {
+  return resolveFrames("projectile.axeThrow", buildAxeThrowSprites);
 }
 
 export function resolvePortraitSprites(): ReturnType<typeof buildPortraitSprites> {

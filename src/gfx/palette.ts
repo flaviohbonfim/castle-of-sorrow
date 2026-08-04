@@ -91,6 +91,34 @@ export const PAL = {
   armorDark: "#383848",
   armorHi: "#a0a8b8",
   armorShade: "#282030",
+  // Pale Knight (ghost NPC) — ethereal blue-steel
+  ghostCloak: "#8aa0b8",
+  ghostCloakMid: "#6a8098",
+  ghostCloakDark: "#4a6078",
+  ghostHi: "#c8d8e8",
+  // Caged Imp (demon NPC)
+  demonSkin: "#703848",
+  demonSkinDark: "#502030",
+  demonSkinHi: "#a04058",
+  demonHorn: "#c02838",
+  demonTunic: "#383048",
+  demonTunicDark: "#282038",
+  // Hermit shopkeeper robes
+  hermitRobe: "#302040",
+  hermitRobeMid: "#403050",
+  hermitRobeDark: "#201828",
+  // Bosses — Colossus bone + Wraith clockwork
+  bossBone: "#d8d0b8",
+  bossBoneMid: "#b0a888",
+  bossBoneShade: "#989078",
+  bossBoneDark: "#585048",
+  bossBoneDeep: "#3a3428",
+  wraithBody: "#4a6870",
+  wraithBodyMid: "#3a5860",
+  wraithBodyDark: "#2a4048",
+  wraithGlow: "#a8d0d8",
+  wraithCyan: "#68a0b0",
+  wraithGear: "#c8a038",
 
   // Candles & pickups
   candleBrass: "#a08030",

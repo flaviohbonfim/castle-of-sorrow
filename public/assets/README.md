@@ -100,25 +100,27 @@ back to procedural art automatically.
 | `zombie.walk` | 8 | 14×32 |
 | `fishman.walk` | 8 | 14×32 |
 | `axeKnight.walk` | 8 | 16×32 |
+| `axeKnight.empty` | 8 | 16×32 |
+| `projectile.axeThrow` | 8 | 14×14 |
 | `spearGuard.walk` | 8 | 16×32 |
-| `wraith.float` | 2 | 20×34 |
+| `wraith.float` | 8 | 20×34 |
 | `bat.fly` | 8 | 14×8 |
 | `medusaHead.fly` | 8 | 12×12 |
 | `fleaMan.hop` | 8 | 12×16 |
-| `boss.walk`, `boss.windup` | 2, 1 | 26×40 |
+| `boss.walk`, `boss.windup` | 8, 4 | 26×40 |
 | `dracula.human`, `dracula.beast` | — | 24×36 |
 
 ### NPCs, props and UI
 
 | Key | Frames |
 | --- | --- |
-| `ghost.idle`, `demon.idle`, `shopkeeper.idle` | 2 |
+| `ghost.idle`, `demon.idle`, `shopkeeper.idle` | 8 each |
 | `candle.lit`, `candle.broken` | flame cycle, 1 |
 | `pickup.heart`, `pickup.bigHeart`, `pickup.gold`, `pickup.potion` | 1 each |
 | `interactable.relic`, `interactable.warp`, `interactable.save` | 1, cycle, cycle |
 | `subweapon.dagger`, `subweapon.axe` | 1, 4 (spin) |
 | `projectile.bone` | spin cycle |
-| `portrait.hermit`, `portrait.ghost`, `portrait.demon` | 1 each |
+| `portrait.hermit`, `portrait.ghost`, `portrait.demon` | 1 each (32×32) |
 
 ### Tiles
 
