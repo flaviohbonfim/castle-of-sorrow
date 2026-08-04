@@ -45,7 +45,22 @@ export class FleaMan extends Enemy {
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, alpha: number): void {
     const sprites = FleaMan.sprites!;
     const set = this.facing > 0 ? sprites.right : sprites.left;
-    const frame = set[this.body.onGround ? 0 : 1];
+    const frames = set.length;
+    // Procedural sheet is [ground, air]. AI hop strips are 8 frames
+    // (crouch → leap → mid-air → land); map ground vs air onto that.
+    let idx: number;
+    if (frames <= 2) {
+      idx = this.body.onGround ? 0 : Math.min(1, frames - 1);
+    } else if (this.body.onGround) {
+      idx = 0; // crouched ready pose
+    } else {
+      // Mid-air cluster (indices ~2..5 on an 8-frame hop strip).
+      const lo = Math.min(frames - 1, Math.floor(frames * 0.3));
+      const hi = Math.min(frames - 1, Math.floor(frames * 0.7));
+      const span = Math.max(1, hi - lo + 1);
+      idx = lo + (Math.floor(this.animTick / 3) % span);
+    }
+    const frame = set[idx];
     const x = this.renderX(alpha) + this.body.w / 2 - frame.width / 2 - camX;
     const y = this.renderY(alpha) + this.body.h - frame.height - camY;
     this.drawFrame(ctx, frame, x, y);

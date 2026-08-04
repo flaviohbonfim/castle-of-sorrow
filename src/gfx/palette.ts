@@ -68,6 +68,11 @@ export const PAL = {
   batWing: "#302040",
   batEye: "#ff4040",
   eyeRed: "#d02020",
+  // Flea Man violet ramp (small jumper)
+  fleaSkin: "#706088",
+  fleaSkinMid: "#584068",
+  fleaSkinDark: "#302038",
+  fleaSkinHi: "#9080a8",
 
   // Candles & pickups
   candleBrass: "#a08030",

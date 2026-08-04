@@ -237,6 +237,23 @@
         "zombieRag", "zombieRagDark",
         "eyeRed", "batEye", "bone", "boneShade", "bladeHi"
       ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Flea Man hop 8 frames (generate + animate). Hitbox 12x16. Codigo: chao=frame 0, ar=frames mid-air. maxFeetDrift alto (pulo).",
+      "key": "fleaMan.hop",
+      "out": "fleaman.png",
+      "frameW": 18,
+      "frameH": 18,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 10,
+      "resize": { "height": 16, "mode": "majority" },
+      "source": { "file": "raw/fleaman-hop-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "fleaSkin", "fleaSkinMid", "fleaSkinDark", "fleaSkinHi",
+        "coatMid", "coatLight", "pants",
+        "eyeRed", "batEye", "bladeHi"
+      ]
     }
   ]
 }

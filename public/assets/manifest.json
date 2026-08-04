@@ -84,6 +84,12 @@
       "frameW": 20,
       "frameH": 32,
       "frames": 8
+    },
+    "fleaMan.hop": {
+      "file": "fleaman.png",
+      "frameW": 18,
+      "frameH": 18,
+      "frames": 8
     }
   }
 }
