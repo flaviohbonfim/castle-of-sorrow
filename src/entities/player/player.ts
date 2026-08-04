@@ -393,12 +393,14 @@ export class Player extends Entity {
     const set = (s: SpriteSet) => (this.facing > 0 ? s.right : s.left);
     if (this.form === "bat") {
       this.batSprites ??= buildPlayerBatSprites();
-      return set(this.batSprites)[Math.floor(this.animTick / 8) % 2];
+      // 3-frame wing cycle (up / open / down)
+      return set(this.batSprites)[Math.floor(this.animTick / 4) % 3];
     }
     if (this.form === "wolf") {
       this.wolfSprites ??= buildPlayerWolfSprites();
-      const moving = Math.abs(this.body.vx) > 0.3;
-      return set(this.wolfSprites)[moving ? Math.floor(this.animTick / 7) % 2 : 0];
+      const moving = Math.abs(this.body.vx) > 0.25;
+      // [0]=idle, [1..3]=run cycle
+      return set(this.wolfSprites)[moving ? 1 + (Math.floor(this.animTick / 5) % 3) : 0];
     }
     const s = this.sprites;
     const atk = this.activeAttack;

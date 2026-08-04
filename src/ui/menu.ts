@@ -9,6 +9,14 @@ import { computeCompletion, formatPlayTime } from "../rpg/completion";
 import { buildPickupSprites } from "../gfx/sprites";
 import { localeLabel, relicName, t, toggleLocale } from "../data/i18n";
 import { saveSettings } from "../engine/settings";
+import {
+  BESTIARY,
+  BESTIARY_META,
+  BESTIARY_ORDER,
+  isBestiaryUnlocked,
+  unlockedBestiaryCount,
+  type BestiaryId,
+} from "../rpg/bestiary";
 import type { Game } from "../game";
 import type { Player } from "../entities/player/player";
 
@@ -27,9 +35,10 @@ const TAB_KEYS = [
   "menu.tab.equip",
   "menu.tab.items",
   "menu.tab.map",
+  "menu.tab.book",
   "menu.tab.sys",
 ] as const;
-type Panel = 0 | 1 | 2 | 3 | 4;
+type Panel = 0 | 1 | 2 | 3 | 4 | 5;
 
 /** SYS rows: music, language, save, title */
 const SYS_COUNT = 4;
@@ -126,6 +135,8 @@ export class Menu {
       case 3:
         return 0; // map read-only
       case 4:
+        return BESTIARY_ORDER.length; // enemy book
+      case 5:
         return SYS_COUNT;
       default:
         return 0;
@@ -186,7 +197,7 @@ export class Menu {
       this.cursor = Math.min(this.cursor, Math.max(0, p.inventory.items.length - 1));
       return;
     }
-    if (this.panel === 4) {
+    if (this.panel === 5) {
       this.confirmSys(game);
     }
   }
@@ -265,6 +276,7 @@ export class Menu {
     else if (this.panel === 1) this.drawEquip(ctx, p, rx, ry, rw, rh);
     else if (this.panel === 2) this.drawItems(ctx, p, rx, ry, rw, rh);
     else if (this.panel === 3) this.drawMap(ctx, game, rx, ry, rw, rh);
+    else if (this.panel === 4) this.drawBook(ctx, game, rx, ry, rw, rh);
     else this.drawSys(ctx, rx, ry, rw, rh);
 
     // Footer — solid bar so it never collides with plate text
@@ -301,6 +313,8 @@ export class Menu {
       case 3:
         return t("menu.hint.map");
       case 4:
+        return t("menu.hint.book");
+      case 5:
         return t("menu.hint.sys");
       default:
         return "Tab";
@@ -308,10 +322,11 @@ export class Menu {
   }
 
   private drawTabs(ctx: CanvasRenderingContext2D): void {
-    const tabW = 68;
+    // Six tabs — slightly tighter so they fit the 480px frame.
+    const tabW = 58;
     const startX = CHROME.pad + 2;
     TAB_KEYS.forEach((key, i) => {
-      const x = startX + i * (tabW + 3);
+      const x = startX + i * (tabW + 2);
       const active = this.panel === i;
       ctx.fillStyle = active ? "rgba(40, 28, 64, 0.95)" : "rgba(16, 10, 28, 0.9)";
       ctx.fillRect(x, CHROME.tabY, tabW, CHROME.tabH);
@@ -732,6 +747,129 @@ export class Menu {
       x + 10,
       legendY + 12,
     );
+  }
+
+  /**
+   * SotN-style enemy book: list every catalog entry; locked ones show ????.
+   * Unlock flag `bestiary:<id>` on first hit/kill.
+   */
+  private drawBook(
+    ctx: CanvasRenderingContext2D,
+    game: Game,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): void {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.clip();
+
+    const unlocked = unlockedBestiaryCount(game.flags);
+    const total = BESTIARY_ORDER.length;
+    ctx.fillStyle = PAL.textGold;
+    ctx.fillText(t("menu.book"), x + 10, y + 14);
+    ctx.fillStyle = PAL.uiFrame;
+    ctx.fillText(t("menu.book.count", { n: unlocked, total }), x + 10, y + 26);
+
+    // Left list
+    const listX = x + 8;
+    const listTop = y + 38;
+    const rowH = 14;
+    const listW = Math.floor(w * 0.42);
+    const maxRows = Math.max(1, Math.floor((h - 50) / rowH));
+    const start = Math.max(
+      0,
+      Math.min(this.cursor - maxRows + 1, BESTIARY_ORDER.length - maxRows),
+    );
+
+    for (let vi = 0; vi < maxRows && start + vi < BESTIARY_ORDER.length; vi++) {
+      const i = start + vi;
+      const id = BESTIARY_ORDER[i];
+      const known = isBestiaryUnlocked(game.flags, id);
+      const meta = BESTIARY_META[id];
+      const sel = this.cursor === i;
+      const rowY = listTop + vi * rowH;
+      if (sel) {
+        ctx.fillStyle = "rgba(80, 60, 120, 0.5)";
+        ctx.fillRect(listX - 2, rowY - 10, listW, 13);
+      }
+      ctx.fillStyle = !known
+        ? PAL.uiFrameDark
+        : sel
+          ? PAL.textGold
+          : meta.boss
+            ? PAL.spellCyan
+            : PAL.textWhite;
+      const label = known ? t(meta.nameKey) : t("menu.book.unknown");
+      const mark = sel ? "» " : "  ";
+      ctx.fillText(`${mark}${label}`, listX, rowY);
+    }
+
+    // Detail panel
+    const dx = x + listW + 10;
+    const dw = w - listW - 18;
+    ctx.strokeStyle = PAL.uiFrameDark;
+    ctx.strokeRect(dx - 4 + 0.5, listTop - 14 + 0.5, dw + 6, h - 48);
+
+    const id = BESTIARY_ORDER[this.cursor] as BestiaryId;
+    const known = isBestiaryUnlocked(game.flags, id);
+    const meta = BESTIARY_META[id];
+    const stats = BESTIARY[id];
+
+    if (!known) {
+      ctx.fillStyle = PAL.uiFrameDark;
+      ctx.font = "16px 'Courier New', monospace";
+      ctx.fillText("?", dx + dw / 2 - 6, listTop + 30);
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.fillText(t("menu.book.unknown"), dx + 6, listTop + 50);
+      ctx.fillStyle = PAL.uiFrame;
+      const tip = t("menu.book.hint");
+      this.wrapText(ctx, tip, dx + 6, listTop + 70, dw - 10, 11);
+    } else {
+      ctx.fillStyle = meta.boss ? PAL.textGold : PAL.textWhite;
+      ctx.fillText(t(meta.nameKey), dx + 6, listTop);
+      if (meta.boss) {
+        ctx.fillStyle = PAL.spellCyan;
+        ctx.fillText(t("menu.book.boss"), dx + 6, listTop + 12);
+      }
+      const statY = listTop + (meta.boss ? 28 : 16);
+      ctx.fillStyle = PAL.textWhite;
+      ctx.fillText(`${t("menu.book.hp")}  ${stats.hp}`, dx + 6, statY);
+      ctx.fillText(`${t("menu.book.atk")} ${stats.touchPower}`, dx + 6, statY + 12);
+      ctx.fillText(`${t("menu.book.def")} ${stats.defense}`, dx + 6, statY + 24);
+      ctx.fillText(`${t("menu.book.exp")} ${stats.exp}`, dx + 6, statY + 36);
+
+      ctx.fillStyle = PAL.uiFrame;
+      this.wrapText(ctx, t(meta.descKey), dx + 6, statY + 54, dw - 10, 11);
+    }
+
+    ctx.restore();
+  }
+
+  private wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxW: number,
+    lineH: number,
+  ): void {
+    const words = text.split(" ");
+    let line = "";
+    let yy = y;
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, yy);
+        line = word;
+        yy += lineH;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, x, yy);
   }
 
   private drawSys(

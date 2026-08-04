@@ -15,7 +15,7 @@ export class Bat extends Enemy {
   private mode: "hover" | "swoop" = "hover";
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 7, y - 4, 14, 8, statsFor("bat", flags));
+    super(x - 7, y - 4, 14, 8, statsFor("bat", flags), "bat");
     this.baseY = y - 4;
     Bat.sprites ??= buildBatSprites();
   }

@@ -17,7 +17,7 @@ export class AxeKnight extends Enemy {
   private throwCooldown = 50 + Math.floor(Math.random() * 40);
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 8, y - 32, 16, 32, statsFor("axeKnight", flags));
+    super(x - 8, y - 32, 16, 32, statsFor("axeKnight", flags), "axeKnight");
     AxeKnight.sprites ??= buildAxeKnightSprites();
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }

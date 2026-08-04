@@ -4,6 +4,7 @@ import { audio } from "../../engine/audio";
 import { chance, randInt } from "../../engine/math";
 import { PAL } from "../../gfx/palette";
 import { damageText, type DamageResult } from "../../combat/damage";
+import type { BestiaryId } from "../../rpg/bestiary";
 
 export interface EnemyStats {
   hp: number;
@@ -17,6 +18,8 @@ export interface EnemyStats {
 export abstract class Enemy extends Entity {
   hp: number;
   hurtFlash = 0;
+  /** When set, first kill (and first hit) unlocks the enemy book entry. */
+  readonly bestiaryId: BestiaryId | null;
 
   constructor(
     x: number,
@@ -24,13 +27,17 @@ export abstract class Enemy extends Entity {
     w: number,
     h: number,
     readonly stats: EnemyStats,
+    bestiaryId: BestiaryId | null = null,
   ) {
     super(x, y, w, h);
     this.hp = stats.hp;
+    this.bestiaryId = bestiaryId;
   }
 
   /** Apply an already-computed damage roll (crit decided by the attacker). */
   takeDamage(game: Game, result: DamageResult, fromX: number): void {
+    // Encounter unlock — you've struck this foe at least once.
+    if (this.bestiaryId) game.flags.add(`bestiary:${this.bestiaryId}`);
     this.hp -= result.amount;
     this.hurtFlash = 8;
     game.texts.push(damageText(this.centerX, this.body.y - 4, result));
@@ -48,6 +55,7 @@ export abstract class Enemy extends Entity {
 
   protected die(game: Game): void {
     this.dead = true;
+    if (this.bestiaryId) game.flags.add(`bestiary:${this.bestiaryId}`);
     game.player.gainExp(game, this.stats.exp);
     // Death burst
     for (let i = 0; i < 10; i++) {

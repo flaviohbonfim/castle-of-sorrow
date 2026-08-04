@@ -29,7 +29,7 @@ export class BoneColossus extends Enemy {
     flags?: Set<string>,
   ) {
     const id: BestiaryId = kind;
-    super(x - 13, y - 40, 26, 40, statsFor(id, flags));
+    super(x - 13, y - 40, 26, 40, statsFor(id, flags), id);
     this.maxHp = this.stats.hp;
     this.bossId = kind;
     this.displayName = kind === "sovereign" ? "ETERNAL SOVEREIGN" : "BONE COLOSSUS";

@@ -14,7 +14,7 @@ export class MedusaHead extends Enemy {
   private baseY: number;
 
   constructor(x: number, y: number, dir: 1 | -1 = 1, flags?: Set<string>) {
-    super(x - 6, y - 6, 12, 12, statsFor("medusaHead", flags));
+    super(x - 6, y - 6, 12, 12, statsFor("medusaHead", flags), "medusaHead");
     this.facing = dir;
     this.baseY = y;
     this.body.vx = dir * 1.35;

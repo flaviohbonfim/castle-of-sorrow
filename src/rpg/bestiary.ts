@@ -1,10 +1,12 @@
 import type { EnemyStats } from "../entities/enemies/enemy";
 
 /**
- * Single source of truth for enemy combat stats.
+ * Single source of truth for enemy combat stats + enemy-book metadata.
  * Target feel (LV1 short sword ~ ATK 11):
  *  - entrance fodder dies in 2–3 hits
  *  - tower elites need ~5 hits or better gear
+ *
+ * Unlock flag: `bestiary:<id>` (set on first hit / kill).
  */
 export const BESTIARY = {
   skeleton: {
@@ -75,6 +77,81 @@ export const BESTIARY = {
 } as const satisfies Record<string, EnemyStats>;
 
 export type BestiaryId = keyof typeof BESTIARY;
+
+/** Display order in the enemy book (menu). */
+export const BESTIARY_ORDER: readonly BestiaryId[] = [
+  "skeleton",
+  "bat",
+  "fishman",
+  "medusaHead",
+  "axeKnight",
+  "colossus",
+  "wraith",
+  "sovereign",
+] as const;
+
+export interface BestiaryEntryMeta {
+  id: BestiaryId;
+  /** i18n keys */
+  nameKey: string;
+  descKey: string;
+  /** Boss entries get a gold label in the book. */
+  boss?: boolean;
+}
+
+export const BESTIARY_META: Record<BestiaryId, BestiaryEntryMeta> = {
+  skeleton: {
+    id: "skeleton",
+    nameKey: "enemy.skeleton.name",
+    descKey: "enemy.skeleton.desc",
+  },
+  bat: {
+    id: "bat",
+    nameKey: "enemy.bat.name",
+    descKey: "enemy.bat.desc",
+  },
+  fishman: {
+    id: "fishman",
+    nameKey: "enemy.fishman.name",
+    descKey: "enemy.fishman.desc",
+  },
+  medusaHead: {
+    id: "medusaHead",
+    nameKey: "enemy.medusaHead.name",
+    descKey: "enemy.medusaHead.desc",
+  },
+  axeKnight: {
+    id: "axeKnight",
+    nameKey: "enemy.axeKnight.name",
+    descKey: "enemy.axeKnight.desc",
+  },
+  colossus: {
+    id: "colossus",
+    nameKey: "enemy.colossus.name",
+    descKey: "enemy.colossus.desc",
+    boss: true,
+  },
+  wraith: {
+    id: "wraith",
+    nameKey: "enemy.wraith.name",
+    descKey: "enemy.wraith.desc",
+    boss: true,
+  },
+  sovereign: {
+    id: "sovereign",
+    nameKey: "enemy.sovereign.name",
+    descKey: "enemy.sovereign.desc",
+    boss: true,
+  },
+};
+
+export function isBestiaryUnlocked(flags: Set<string>, id: BestiaryId): boolean {
+  return flags.has(`bestiary:${id}`);
+}
+
+export function unlockedBestiaryCount(flags: Set<string>): number {
+  return BESTIARY_ORDER.filter((id) => isBestiaryUnlocked(flags, id)).length;
+}
 
 /** Apply NG+ multiplier when flag `ng+:1` is set. */
 export function statsFor(id: BestiaryId, flags?: Set<string>): EnemyStats {

@@ -628,10 +628,12 @@ export class Game {
 
     // Enemy contact damage (mist form is intangible).
     // Medusa Heads petrify (SotN) instead of a normal knockback hurt.
+    // Contact also unlocks the enemy book entry (you've met this foe).
     const body = this.player.body;
     if (this.player.form !== "mist") {
       for (const e of this.enemies) {
         if (!e.dead && rectsOverlap(e.body, body)) {
+          if (e.bestiaryId) this.flags.add(`bestiary:${e.bestiaryId}`);
           if (e instanceof MedusaHead) {
             this.player.petrify(this, e.stats.touchPower, e.centerX);
           } else {

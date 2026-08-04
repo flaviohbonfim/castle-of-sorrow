@@ -780,70 +780,298 @@ const SUBW = {
 
 /* ------------------- transformation forms & NPCs ------------------- */
 
-const FORM = {
-  f: PAL.coat,
-  w: PAL.coatShade,
-  g: PAL.coatTrim,
-  r: PAL.eyeRed,
-  h: PAL.hair,
-  s: PAL.stoneLight,
-};
+/**
+ * Player bat/wolf — part-based (same technique as the human hero) so silhouettes
+ * stay clean. Distinct from enemy fodder bats.
+ *
+ * Bat canvas 40×22, feet-ish at bottom. Wolf canvas 40×20, paws on bottom row.
+ */
 
-export function buildPlayerBatSprites(): SpriteSet {
-  const up = pixelMap(
-    [
-      "ww          ww",
-      "www   gg   www",
-      "wwww ffff wwww",
-      " wwwwfrffwwww ",
-      "  wwwffffwww  ",
-      "     ffff     ",
-      "      ff      ",
-    ],
-    FORM,
-  );
-  const down = pixelMap(
-    [
-      "      gg      ",
-      "  ww ffff ww  ",
-      " wwwwfrffwwww ",
-      "wwwwwffffwwwww",
-      "www   ff   www",
-      "w     ff     w",
-    ],
-    FORM,
-  );
-  return makeSet([up, down]);
+const BAT_WING = "#503868";
+const BAT_WING_D = "#281430";
+const BAT_WING_H = "#785898";
+const BAT_BODY = PAL.coat;
+const BAT_BODY_D = PAL.coatShade;
+const BAT_BELLY = "#3a3450";
+
+/**
+ * Scalloped membrane wing. `side` +1 = right, -1 = left.
+ * phase 0 raised / 1 open / 2 down.
+ */
+function drawBatWing(
+  px: (x: number, y: number, w: number, h: number, col: string) => void,
+  ox: number,
+  oy: number,
+  side: 1 | -1,
+  phase: 0 | 1 | 2,
+): void {
+  const s = side;
+  // Leading edge height and outer span per phase
+  const top = phase === 0 ? oy - 5 : phase === 1 ? oy - 2 : oy + 1;
+  const span = phase === 0 ? 11 : phase === 1 ? 15 : 13;
+  const bottom = phase === 0 ? oy + 3 : phase === 1 ? oy + 8 : oy + 12;
+
+  // Soft membrane fill (horizontal bands that taper)
+  const bands = bottom - top;
+  for (let i = 0; i < bands; i++) {
+    const t = i / Math.max(1, bands - 1);
+    const y = top + i;
+    // Taper: widest mid-open, shorter near tip row
+    const widen = phase === 0 ? 0.55 + t * 0.35 : phase === 1 ? 0.7 + t * 0.3 : 0.5 + t * 0.45;
+    const w = Math.max(3, Math.round(span * widen) - Math.floor(t * 2));
+    const x = s > 0 ? ox : ox - w;
+    const col = i < 2 ? BAT_WING_H : i > bands - 3 ? BAT_WING_D : BAT_WING;
+    px(x, y, w, 1, col);
+  }
+
+  // Finger bones radiating from shoulder
+  const fingers = phase === 0 ? 3 : 4;
+  for (let f = 0; f < fingers; f++) {
+    const ft = f / (fingers - 1);
+    const endX = s > 0 ? ox + Math.round(span * (0.55 + ft * 0.45)) : ox - Math.round(span * (0.55 + ft * 0.45));
+    const endY = top + Math.round((bottom - top) * (0.25 + ft * 0.7));
+    const steps = 8;
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps;
+      const x = Math.round(ox + (endX - ox) * u);
+      const y = Math.round(oy + (endY - oy) * u);
+      px(x, y, 1, 1, BAT_WING_D);
+    }
+  }
+  // Wing tip claw
+  const tipX = s > 0 ? ox + span : ox - span - 1;
+  px(tipX, top + 1, 2, 2, BAT_WING_H);
+  px(tipX + (s > 0 ? 1 : 0), top, 1, 1, PAL.coatTrim);
 }
 
+function drawPlayerBatFrame(phase: 0 | 1 | 2): Frame {
+  const W = 42;
+  const H = 24;
+  const [c, ctx] = makeSurface(W, H);
+  const px = (x: number, y: number, w: number, h: number, col: string) => {
+    ctx.fillStyle = col;
+    ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  };
+
+  const cx = 17;
+  const cy = 9 + (phase === 2 ? 1 : phase === 0 ? -1 : 0);
+
+  // Wings behind body
+  drawBatWing(px, cx + 1, cy + 3, -1, phase);
+  drawBatWing(px, cx + 7, cy + 3, 1, phase);
+
+  // Torso (compact humanoid-bat)
+  px(cx + 1, cy + 2, 8, 9, BAT_BODY);
+  px(cx + 2, cy + 4, 6, 5, BAT_BELLY);
+  px(cx + 1, cy + 10, 8, 2, BAT_BODY_D);
+  // Gold collar band
+  px(cx + 1, cy + 2, 8, 2, PAL.coatTrim);
+  px(cx + 2, cy + 2, 6, 1, PAL.goldHi);
+  // Shoulder pads
+  px(cx, cy + 3, 2, 3, BAT_BODY_D);
+  px(cx + 8, cy + 3, 2, 3, BAT_BODY_D);
+
+  // Legs tucked under
+  px(cx + 2, cy + 11, 2, 3, BAT_BODY_D);
+  px(cx + 6, cy + 11, 2, 3, BAT_BODY_D);
+  px(cx + 2, cy + 13, 2, 1, PAL.boots);
+  px(cx + 6, cy + 13, 2, 1, PAL.boots);
+
+  // Head
+  px(cx + 2, cy - 3, 7, 6, BAT_BODY);
+  px(cx + 3, cy - 2, 5, 4, "#403850");
+  // Blonde hair (Alucard tell) — longer back locks
+  px(cx + 2, cy - 5, 6, 3, PAL.hair);
+  px(cx + 1, cy - 4, 2, 4, PAL.hair);
+  px(cx + 1, cy - 1, 2, 2, PAL.hairShade);
+  px(cx + 6, cy - 5, 2, 2, PAL.hairShade);
+  // Pointed ears
+  px(cx + 1, cy - 5, 2, 4, BAT_BODY_D);
+  px(cx + 8, cy - 5, 2, 4, BAT_BODY_D);
+  px(cx + 1, cy - 7, 1, 3, BAT_WING_H);
+  px(cx + 9, cy - 7, 1, 3, BAT_WING_H);
+  // Face
+  px(cx + 4, cy - 1, 1, 1, "#ff6060");
+  px(cx + 6, cy - 1, 1, 1, PAL.eyeRed);
+  px(cx + 4, cy + 1, 3, 1, "#e8d0b0");
+  // Fangs
+  px(cx + 4, cy + 2, 1, 2, PAL.textWhite);
+  px(cx + 6, cy + 2, 1, 2, PAL.textWhite);
+
+  // Short cape tip
+  px(cx + 3, cy + 12, 4, 2, BAT_BODY_D);
+  px(cx + 2, cy + 14, 6, 1, BAT_WING_D);
+
+  return c;
+}
+
+/** Large Alucard-style bat — 3-frame wing flap, not the enemy bat. */
+export function buildPlayerBatSprites(): SpriteSet {
+  return makeSet([drawPlayerBatFrame(0), drawPlayerBatFrame(1), drawPlayerBatFrame(2)]);
+}
+
+const WOLF_FUR = "#403850";
+const WOLF_FUR_D = "#201828";
+const WOLF_FUR_L = "#686078";
+const WOLF_BELLY = "#504868";
+const WOLF_MUZZLE = "#d0c4a8";
+
+type WolfLeg = { footX: number; raised: number };
+
+type WolfPose = {
+  bob: number;
+  headDip: number;
+  tailTipY: number;
+  /** Side-view: one hind + one fore leg (classic 16-bit silhouette). */
+  hind: WolfLeg;
+  fore: WolfLeg;
+  /** Ghost far-side legs (darker, offset) for volume. */
+  hindFar: WolfLeg;
+  foreFar: WolfLeg;
+};
+
+function drawPlayerWolfFrame(pose: WolfPose): Frame {
+  const W = 40;
+  const H = 18;
+  const [c, ctx] = makeSurface(W, H);
+  const px = (x: number, y: number, w: number, h: number, col: string) => {
+    ctx.fillStyle = col;
+    ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, w), Math.max(1, h));
+  };
+
+  const ground = H - 1;
+  const by = 3 + pose.bob;
+
+  // Far-side legs first (darker, behind body)
+  const farLeg = (hipX: number, footX: number, raised: number, dark: boolean) => {
+    const footY = ground - raised;
+    const col = dark ? "#16101c" : WOLF_FUR_D;
+    const midY = by + 9 - Math.floor(raised / 2);
+    px(hipX, by + 7, 2, 3, col);
+    px(Math.round((hipX + footX) / 2), midY, 2, 3, col);
+    px(footX, footY - 2, 2, 2, col);
+    px(footX - 1, footY, 3, 1, col);
+  };
+  farLeg(10, 10 + pose.hindFar.footX, pose.hindFar.raised, true);
+  farLeg(20, 20 + pose.foreFar.footX, pose.foreFar.raised, true);
+
+  // --- Tail ---
+  const ty = by + 5 + pose.tailTipY;
+  px(1, ty + 1, 2, 2, WOLF_FUR_L);
+  px(3, ty, 3, 3, WOLF_FUR);
+  px(5, ty, 3, 3, WOLF_FUR_D);
+  px(6, by + 4, 2, 2, WOLF_FUR_D);
+
+  // --- Body mass (clean sausage + chest) ---
+  px(7, by + 3, 16, 7, WOLF_FUR);
+  px(8, by + 4, 14, 5, WOLF_FUR_L);
+  px(9, by + 6, 12, 3, WOLF_BELLY);
+  px(7, by + 9, 16, 1, WOLF_FUR_D);
+  // shoulder hump
+  px(18, by + 2, 6, 3, WOLF_FUR);
+  px(19, by + 2, 4, 1, WOLF_FUR_L);
+  // pale chest blaze
+  px(17, by + 5, 3, 3, "#b8b090");
+  // gold collar
+  px(21, by + 3, 4, 4, PAL.coatTrim);
+  px(22, by + 3, 2, 1, PAL.goldHi);
+  px(21, by + 6, 4, 1, "#a08028");
+
+  // --- Neck + head ---
+  const hy = by + 1 + pose.headDip;
+  px(23, hy + 2, 4, 5, WOLF_FUR);
+  px(24, hy + 3, 3, 3, WOLF_FUR_L);
+  // skull
+  px(26, hy, 7, 6, WOLF_FUR);
+  px(27, hy + 1, 5, 4, WOLF_FUR_L);
+  // ear
+  px(27, hy - 3, 3, 4, WOLF_FUR);
+  px(28, hy - 2, 1, 2, WOLF_MUZZLE);
+  px(27, hy - 4, 2, 2, WOLF_FUR_D);
+  // snout + nose
+  px(31, hy + 2, 5, 3, WOLF_FUR);
+  px(32, hy + 3, 4, 2, WOLF_MUZZLE);
+  px(35, hy + 3, 2, 2, WOLF_FUR_D);
+  px(36, hy + 3, 1, 1, "#08060c");
+  // eye + brow
+  px(29, hy + 2, 2, 1, "#1a1018");
+  px(29, hy + 2, 1, 1, "#ff4040");
+  px(30, hy + 2, 1, 1, PAL.eyeRed);
+  // mouth + fang
+  px(32, hy + 5, 3, 1, WOLF_FUR_D);
+  px(33, hy + 5, 1, 1, PAL.textWhite);
+
+  // Near-side legs (readable)
+  const nearLeg = (hipX: number, footX: number, raised: number) => {
+    const footY = ground - raised;
+    const midX = Math.round((hipX + footX) / 2);
+    const midY = by + 9 - Math.floor(raised * 0.4);
+    // upper thigh
+    px(hipX, by + 7, 3, 3, WOLF_FUR_D);
+    px(hipX, by + 8, 3, 2, WOLF_FUR);
+    // shin
+    px(midX, midY, 2, 3, WOLF_FUR);
+    px(midX, midY + 1, 2, 2, WOLF_FUR_D);
+    // paw
+    px(footX - 1, footY - 1, 4, 2, WOLF_FUR_D);
+    px(footX, footY, 3, 1, "#0a0810");
+    // claw ticks
+    px(footX, footY, 1, 1, "#2a2438");
+    px(footX + 2, footY, 1, 1, "#2a2438");
+  };
+  nearLeg(9, 9 + pose.hind.footX, pose.hind.raised);
+  nearLeg(19, 19 + pose.fore.footX, pose.fore.raised);
+
+  // Spine highlight
+  px(9, by + 3, 12, 1, WOLF_FUR_L);
+
+  return c;
+}
+
+/** Detailed wolf form — idle + 3-step run cycle. */
 export function buildPlayerWolfSprites(): SpriteSet {
-  const runA = pixelMap(
-    [
-      "                    hh    ",
-      "  ff ffffffffffff  fhh    ",
-      " ffffffffffffffffffffr    ",
-      " fwffffffffffffffffff     ",
-      "  wwfffffffffffffffgg     ",
-      "   ff          fff        ",
-      "  ff            fff       ",
-      " ff              ff       ",
-    ],
-    FORM,
-  );
-  const runB = pixelMap(
-    [
-      "                    hh    ",
-      "  ff ffffffffffff  fhh    ",
-      " ffffffffffffffffffffr    ",
-      " fwffffffffffffffffff     ",
-      "  wwfffffffffffffffgg     ",
-      "    fff        ff         ",
-      "   fff        ff          ",
-      "   ff          ff         ",
-    ],
-    FORM,
-  );
-  return makeSet([runA, runB]);
+  const idle: WolfPose = {
+    bob: 0,
+    headDip: 0,
+    tailTipY: 1,
+    hind: { footX: 0, raised: 0 },
+    fore: { footX: 0, raised: 0 },
+    hindFar: { footX: 2, raised: 0 },
+    foreFar: { footX: -2, raised: 0 },
+  };
+  const runA: WolfPose = {
+    bob: -1,
+    headDip: 0,
+    tailTipY: 0,
+    hind: { footX: -4, raised: 0 },
+    fore: { footX: 4, raised: 1 },
+    hindFar: { footX: 2, raised: 2 },
+    foreFar: { footX: -3, raised: 0 },
+  };
+  const runB: WolfPose = {
+    bob: -2,
+    headDip: -1,
+    tailTipY: -1,
+    hind: { footX: 1, raised: 3 },
+    fore: { footX: -1, raised: 3 },
+    hindFar: { footX: -2, raised: 2 },
+    foreFar: { footX: 2, raised: 2 },
+  };
+  const runC: WolfPose = {
+    bob: -1,
+    headDip: 0,
+    tailTipY: 0,
+    hind: { footX: 4, raised: 1 },
+    fore: { footX: -4, raised: 0 },
+    hindFar: { footX: -3, raised: 0 },
+    foreFar: { footX: 2, raised: 2 },
+  };
+  return makeSet([
+    drawPlayerWolfFrame(idle),
+    drawPlayerWolfFrame(runA),
+    drawPlayerWolfFrame(runB),
+    drawPlayerWolfFrame(runC),
+  ]);
 }
 
 const BOSS = {

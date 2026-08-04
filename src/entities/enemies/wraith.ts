@@ -25,7 +25,7 @@ export class ClockworkWraith extends Enemy {
   readonly bossId = "wraith";
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 10, y - 34, 20, 34, statsFor("wraith", flags));
+    super(x - 10, y - 34, 20, 34, statsFor("wraith", flags), "wraith");
     this.maxHp = this.stats.hp;
     ClockworkWraith.sprites ??= buildWraithSprites();
     this.facing = -1;

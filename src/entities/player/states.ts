@@ -318,7 +318,8 @@ export class BatFormState extends PlayerState {
   private drain = 0;
   enter(p: Player, g: Game): void {
     p.form = "bat";
-    p.setHitboxSize(12, 10);
+    // Matches the part-based bat silhouette (~body + wings).
+    p.setHitboxSize(18, 14);
     p.transformPoof(g);
     audio.play("spell");
   }
@@ -349,7 +350,8 @@ export class WolfFormState extends PlayerState {
   readonly name = "wolf";
   enter(p: Player, g: Game): void {
     p.form = "wolf";
-    p.setHitboxSize(22, 14);
+    // Matches the part-based wolf (~40×20 sprite, paws on ground).
+    p.setHitboxSize(28, 16);
     p.transformPoof(g);
     audio.play("spell");
   }
