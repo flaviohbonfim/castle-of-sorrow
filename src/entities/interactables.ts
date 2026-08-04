@@ -182,7 +182,7 @@ export class Shopkeeper extends Entity {
   private sprites: SpriteSet = buildShopkeeperSprites();
 
   constructor(x: number, y: number) {
-    super(x - 8, y - 28, 16, 28);
+    super(x - 8, y - 32, 16, 32);
   }
 
   update(game: Game): void {
@@ -232,7 +232,7 @@ export class Npc extends Entity {
     x: number,
     y: number,
   ) {
-    super(x - 7, y - 28, 14, 28);
+    super(x - 7, y - 32, 14, 32);
     this.sprites =
       npcId === "demon" ? buildDemonSprites() : buildGhostSprites();
   }

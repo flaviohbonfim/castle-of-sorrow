@@ -14,7 +14,7 @@ export class Skeleton extends Enemy {
   private turnCooldown = 0;
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    super(x - 6, y - 28, 12, 28, statsFor("skeleton", flags));
+    super(x - 7, y - 32, 14, 32, statsFor("skeleton", flags));
     Skeleton.sprites ??= buildSkeletonSprites();
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
