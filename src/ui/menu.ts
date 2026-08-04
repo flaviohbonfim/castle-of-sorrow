@@ -30,13 +30,13 @@ let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
 
 /** Shared chrome metrics for the pause menu. */
 const CHROME = {
-  pad: 10,
-  tabY: 16,
-  tabH: 14,
-  bodyTop: 36,
-  footerY: VIEW_H - 16,
-  leftW: 148,
-  gap: 6,
+  pad: 8,
+  tabY: 12,
+  tabH: 13,
+  bodyTop: 30,
+  footerY: VIEW_H - 14,
+  leftW: 156,
+  gap: 5,
 } as const;
 
 /**
@@ -252,12 +252,14 @@ export class Menu {
     else if (this.panel === 3) this.drawMap(ctx, game, rx, ry, rw, rh);
     else this.drawSys(ctx, rx, ry, rw, rh);
 
-    // Footer
-    ctx.fillStyle = "rgba(8, 4, 16, 0.9)";
-    ctx.fillRect(CHROME.pad, CHROME.footerY - 4, VIEW_W - CHROME.pad * 2, 14);
+    // Footer — solid bar so it never collides with plate text
+    ctx.fillStyle = "rgba(6, 3, 12, 0.98)";
+    ctx.fillRect(CHROME.pad, CHROME.footerY - 2, VIEW_W - CHROME.pad * 2, 12);
+    ctx.strokeStyle = PAL.uiFrameDark;
+    ctx.strokeRect(CHROME.pad + 0.5, CHROME.footerY - 1.5, VIEW_W - CHROME.pad * 2 - 1, 11);
     ctx.fillStyle = PAL.uiFrame;
     const hint = this.hintForPanel();
-    ctx.fillText(hint, CHROME.pad + 4, CHROME.footerY + 6);
+    ctx.fillText(hint, CHROME.pad + 4, CHROME.footerY + 7);
 
     // Toast
     if (this.notice.life > 0) {
@@ -291,10 +293,10 @@ export class Menu {
   }
 
   private drawTabs(ctx: CanvasRenderingContext2D): void {
-    const tabW = 70;
-    const startX = CHROME.pad + 4;
+    const tabW = 68;
+    const startX = CHROME.pad + 2;
     TABS.forEach((t, i) => {
-      const x = startX + i * (tabW + 4);
+      const x = startX + i * (tabW + 3);
       const active = this.panel === i;
       ctx.fillStyle = active ? "rgba(40, 28, 64, 0.95)" : "rgba(16, 10, 28, 0.9)";
       ctx.fillRect(x, CHROME.tabY, tabW, CHROME.tabH);
@@ -308,7 +310,7 @@ export class Menu {
         ctx.stroke();
       }
       ctx.fillStyle = active ? PAL.textGold : PAL.uiFrame;
-      ctx.fillText(t, x + 8, CHROME.tabY + 10);
+      ctx.fillText(t, x + 6, CHROME.tabY + 9);
     });
   }
 
@@ -335,76 +337,106 @@ export class Menu {
     const x = CHROME.pad;
     const y = CHROME.bodyTop;
     const w = CHROME.leftW;
-    const h = CHROME.footerY - y - 8;
+    const h = CHROME.footerY - y - 6;
     this.plate(ctx, x, y, w, h);
 
+    // Clip all status text to the plate so nothing bleeds into the footer.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.clip();
+
+    let row = y + 12;
+    const left = x + 6;
+    const right = x + w - 6;
+    const barW = w - 48;
+
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("STATUS", x + 8, y + 14);
+    ctx.fillText("STATUS", left, row);
+    row += 12;
 
     const stats = p.combatStats();
     const attrs = p.inventory.effectiveAttributes(p.attrs);
     const comp = computeCompletion(game.flags);
+    const need = expToNext(p.levelState.level);
 
-    // HP / MP bars
+    // HP
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText("HP", x + 8, y + 30);
-    this.bar(ctx, x + 24, y + 24, 80, 5, p.res.hp / Math.max(1, p.res.maxHp), PAL.hpRed, PAL.hpRedHi);
+    ctx.fillText("HP", left, row);
+    this.bar(ctx, left + 18, row - 6, barW, 5, p.res.hp / Math.max(1, p.res.maxHp), PAL.hpRed, PAL.hpRedHi);
     ctx.textAlign = "right";
-    ctx.fillText(`${p.res.hp}/${p.res.maxHp}`, x + w - 8, y + 30);
+    ctx.fillText(`${p.res.hp}/${p.res.maxHp}`, right, row);
     ctx.textAlign = "left";
+    row += 11;
 
-    ctx.fillText("MP", x + 8, y + 44);
-    this.bar(ctx, x + 24, y + 38, 80, 4, p.res.mp / Math.max(1, p.res.maxMp), PAL.mpBlue, PAL.mpBlueHi);
+    // MP
+    ctx.fillText("MP", left, row);
+    this.bar(ctx, left + 18, row - 5, barW, 4, p.res.mp / Math.max(1, p.res.maxMp), PAL.mpBlue, PAL.mpBlueHi);
     ctx.textAlign = "right";
     ctx.fillStyle = PAL.mpBlueHi;
-    ctx.fillText(`${Math.floor(p.res.mp)}/${p.res.maxMp}`, x + w - 8, y + 44);
+    ctx.fillText(`${Math.floor(p.res.mp)}/${p.res.maxMp}`, right, row);
     ctx.textAlign = "left";
+    row += 11;
 
-    // Level + exp bar
+    // LV + exp
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`LV ${p.levelState.level}`, x + 8, y + 60);
-    const need = expToNext(p.levelState.level);
-    this.bar(ctx, x + 48, y + 54, 56, 3, p.levelState.exp / Math.max(1, need), PAL.spellCyan, PAL.textWhite);
+    ctx.fillText(`LV ${p.levelState.level}`, left, row);
+    this.bar(ctx, left + 36, row - 5, barW - 18, 3, p.levelState.exp / Math.max(1, need), PAL.spellCyan, PAL.textWhite);
+    row += 10;
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText(`${p.levelState.exp}/${need}`, x + 8, y + 72);
+    ctx.fillText(`EXP ${p.levelState.exp}/${need}`, left, row);
+    row += 12;
 
-    // Combat
+    // Combat block (compact 2-col)
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("COMBAT", x + 8, y + 90);
+    ctx.fillText("COMBAT", left, row);
+    row += 11;
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`ATK  ${stats.attack}`, x + 8, y + 104);
-    ctx.fillText(`DEF  ${stats.defense}`, x + 72, y + 104);
-
+    ctx.fillText(`ATK ${stats.attack}`, left, row);
+    ctx.fillText(`DEF ${stats.defense}`, left + 70, row);
+    row += 10;
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText(`STR ${attrs.str}`, x + 8, y + 118);
-    ctx.fillText(`CON ${attrs.con}`, x + 72, y + 118);
-    ctx.fillText(`INT ${attrs.int}`, x + 8, y + 130);
-    ctx.fillText(`LCK ${attrs.lck}`, x + 72, y + 130);
+    ctx.fillText(`STR ${attrs.str}`, left, row);
+    ctx.fillText(`CON ${attrs.con}`, left + 70, row);
+    row += 10;
+    ctx.fillText(`INT ${attrs.int}`, left, row);
+    ctx.fillText(`LCK ${attrs.lck}`, left + 70, row);
+    row += 11;
 
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`♥ ${p.res.hearts}/${p.res.maxHearts}`, x + 8, y + 146);
+    ctx.fillText(`♥${p.res.hearts}/${p.res.maxHearts}`, left, row);
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText(`$ ${p.inventory.gold}`, x + 72, y + 146);
-
+    ctx.fillText(`$${p.inventory.gold}`, left + 70, row);
+    row += 10;
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText(`Clear ${comp.percent}%`, x + 8, y + 162);
-    ctx.fillText(formatPlayTime(game.playTicks), x + 80, y + 162);
+    ctx.fillText(`${comp.percent}%`, left, row);
+    ctx.fillText(formatPlayTime(game.playTicks), left + 70, row);
+    row += 12;
 
-    // Relics
+    // Relics — fill remaining plate height (all 6 fit with 9px lines)
     ctx.fillStyle = PAL.spellCyan;
-    ctx.fillText("RELICS", x + 8, y + 180);
-    ctx.fillStyle = PAL.textWhite;
+    ctx.fillText("RELICS", left, row);
+    row += 10;
     const relics = [...p.relics];
     if (relics.length === 0) {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("(none)", x + 8, y + 194);
+      ctx.fillText("(none)", left, row);
     } else {
-      relics.slice(0, 6).forEach((r, i) => {
+      const lineH = 9;
+      const maxLines = Math.max(1, Math.floor((y + h - 4 - row) / lineH));
+      relics.slice(0, maxLines).forEach((r, i) => {
         const name = RELIC_NAMES[r] ?? r;
-        const short = name.length > 16 ? name.slice(0, 15) + "…" : name;
-        ctx.fillText(`· ${short}`, x + 8, y + 194 + i * 11);
+        const short = name.length > 18 ? name.slice(0, 17) + "…" : name;
+        ctx.fillStyle = PAL.textWhite;
+        ctx.fillText(`·${short}`, left, row + i * lineH);
       });
+      if (relics.length > maxLines) {
+        ctx.fillStyle = PAL.uiFrame;
+        ctx.fillText(`+${relics.length - maxLines} more`, left, row + maxLines * lineH);
+      }
     }
+
+    ctx.restore();
   }
 
   /** STATUS tab: long-form tips in the main plate. */
@@ -445,34 +477,41 @@ export class Menu {
     x: number,
     y: number,
     w: number,
-    _h: number,
+    h: number,
   ): void {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.clip();
+
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— EQUIPMENT —", x + 10, y + 16);
+    ctx.fillText("— EQUIPMENT —", x + 10, y + 14);
 
     const base = p.combatStats();
+    const listTop = y + 28;
+    const rowH = 13;
     SLOTS.forEach(({ slot, label }, i) => {
       const sel = this.cursor === i;
-      const rowY = y + 32 + i * 14;
+      const rowY = listTop + i * rowH;
       if (sel) {
         ctx.fillStyle = "rgba(80, 60, 120, 0.45)";
-        ctx.fillRect(x + 6, rowY - 10, w - 12, 13);
+        ctx.fillRect(x + 6, rowY - 9, w - 12, 12);
       }
       ctx.fillStyle = sel ? PAL.textGold : PAL.textWhite;
       const id = p.inventory.equipment[slot];
       const name = id ? ITEMS[id].name : "— empty —";
-      ctx.fillText(`${label}`, x + 12, rowY);
+      ctx.fillText(label, x + 10, rowY);
       ctx.fillStyle = id ? (sel ? PAL.textWhite : PAL.uiFrame) : PAL.uiFrameDark;
-      ctx.fillText(name, x + 88, rowY);
+      ctx.fillText(name, x + 86, rowY);
     });
 
-    // Preview of selected slot contribution
+    const previewY = listTop + SLOTS.length * rowH + 10;
     const sel = SLOTS[this.cursor];
     const id = p.inventory.equipment[sel.slot];
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— PREVIEW —", x + 10, y + 150);
+    ctx.fillText("— PREVIEW —", x + 10, previewY);
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText(`ATK ${base.attack}   DEF ${base.defense}`, x + 10, y + 166);
+    ctx.fillText(`ATK ${base.attack}   DEF ${base.defense}`, x + 10, previewY + 14);
     if (id) {
       const def = ITEMS[id];
       const bits: string[] = [];
@@ -485,13 +524,14 @@ export class Menu {
       }
       ctx.fillStyle = PAL.spellCyan;
       const label = bits.length > 0 ? bits.join("  ") : ITEMS[id].name;
-      ctx.fillText(label, x + 10, y + 180);
+      ctx.fillText(label, x + 10, previewY + 26);
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("X: unequip to bag", x + 10, y + 196);
+      ctx.fillText("X: unequip to bag", x + 10, previewY + 40);
     } else {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("Equip from ITEMS tab", x + 10, y + 180);
+      ctx.fillText("Equip from ITEMS tab", x + 10, previewY + 26);
     }
+    ctx.restore();
   }
 
   private drawItems(
@@ -500,56 +540,74 @@ export class Menu {
     x: number,
     y: number,
     w: number,
-    _h: number,
+    h: number,
   ): void {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.clip();
+
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— ITEMS —", x + 10, y + 16);
+    ctx.fillText("— ITEMS —", x + 10, y + 14);
 
     if (p.inventory.items.length === 0) {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("(bag empty)", x + 10, y + 40);
+      ctx.fillText("(bag empty)", x + 10, y + 36);
+      ctx.restore();
       return;
     }
 
     const icons = PICKUPS!;
-    p.inventory.items.slice(0, 12).forEach((e, i) => {
+    const rowH = 13;
+    const listTop = y + 30;
+    const detailH = 28;
+    const maxRows = Math.max(1, Math.floor((h - 30 - detailH) / rowH));
+    const start = Math.max(0, Math.min(this.cursor - maxRows + 1, p.inventory.items.length - maxRows));
+    const visible = p.inventory.items.slice(start, start + maxRows);
+
+    visible.forEach((e, vi) => {
+      const i = start + vi;
       const sel = this.cursor === i;
-      const rowY = y + 34 + i * 14;
+      const rowY = listTop + vi * rowH;
       if (sel) {
         ctx.fillStyle = "rgba(80, 60, 120, 0.45)";
-        ctx.fillRect(x + 6, rowY - 10, w - 12, 13);
+        ctx.fillRect(x + 6, rowY - 9, w - 12, 12);
       }
       const def = ITEMS[e.itemId];
-      // Icon when we have a matching pickup sprite
       if (def.kind === "consumable" && e.itemId.includes("potion")) {
-        ctx.drawImage(icons.potion, x + 10, rowY - 9);
+        ctx.drawImage(icons.potion, x + 10, rowY - 8);
       } else if (e.itemId === "coralRing" || def.kind === "armor") {
-        // small gem proxy via gold coin tint area
         ctx.fillStyle = PAL.gold;
-        ctx.fillRect(x + 12, rowY - 6, 5, 5);
+        ctx.fillRect(x + 12, rowY - 5, 5, 5);
       } else if (def.kind === "weapon") {
         ctx.fillStyle = PAL.bladeHi;
-        ctx.fillRect(x + 13, rowY - 8, 2, 8);
+        ctx.fillRect(x + 13, rowY - 7, 2, 8);
       } else {
         ctx.fillStyle = PAL.uiFrame;
-        ctx.fillRect(x + 12, rowY - 5, 5, 5);
+        ctx.fillRect(x + 12, rowY - 4, 5, 5);
       }
       ctx.fillStyle = sel ? PAL.textGold : PAL.textWhite;
       const tag =
-        def.kind === "consumable" ? "use" : def.kind === "weapon" || def.kind === "armor" || def.kind === "shield" ? "eqp" : "";
+        def.kind === "consumable"
+          ? "use"
+          : def.kind === "weapon" || def.kind === "armor" || def.kind === "shield"
+            ? "eqp"
+            : "";
       ctx.fillText(`${def.name}  x${e.count}`, x + 24, rowY);
       ctx.fillStyle = PAL.uiFrame;
-      if (tag) ctx.fillText(tag, x + w - 36, rowY);
+      if (tag) ctx.fillText(tag, x + w - 32, rowY);
     });
 
     const entry = p.inventory.items[this.cursor];
     if (entry) {
       const def = ITEMS[entry.itemId];
+      const dy = y + h - 22;
       ctx.fillStyle = PAL.textGold;
-      ctx.fillText("— DETAIL —", x + 10, y + 210);
+      ctx.fillText("— DETAIL —", x + 10, dy);
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText(this.itemBlurb(def), x + 10, y + 224);
+      ctx.fillText(this.itemBlurb(def), x + 10, dy + 12);
     }
+    ctx.restore();
   }
 
   private itemBlurb(def: ItemDef): string {
