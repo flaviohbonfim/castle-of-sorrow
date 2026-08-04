@@ -78,6 +78,12 @@
       "frameW": 40,
       "frameH": 22,
       "frames": 8
+    },
+    "zombie.walk": {
+      "file": "zombie.png",
+      "frameW": 20,
+      "frameH": 32,
+      "frames": 8
     }
   }
 }

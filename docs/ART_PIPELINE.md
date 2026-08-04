@@ -347,11 +347,11 @@ Presets de workflow + customs com prompt anti-crop:
 | `player.die` | 12 | workflow (death) | avança e segura o último frame |
 
 Formas **bat** e **wolf** via generate + animate (8 frames cada) —
-`player.bat` (wing flap) e `player.wolf` (run cycle). **Skeleton.walk** 8
-frames (import da bible + animate walk).
+`player.bat` (wing flap) e `player.wolf` (run cycle). **Skeleton.walk** e
+**zombie.walk** 8 frames cada (generate/import + animate).
 
-Créditos restantes (aprox.): set humano ~2758; bat ~2680; wolf ~2648;
-skeleton walk ~2628 (adventurer).
+Créditos restantes (aprox.): após skeleton ~2628; após zombie ~2596
+(adventurer).
 
 ## 5.3 Rota alternativa: Grok Imagine (testada, não adotada)
 

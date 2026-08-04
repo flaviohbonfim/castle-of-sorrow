@@ -57,6 +57,13 @@ export const PAL = {
   bone: "#d8d0b8",
   boneShade: "#989078",
   boneDark: "#585048",
+  // Zombie undead ramp (green-grey flesh + rag browns) — kept separate from
+  // the violet stone/coat ramps so quantised AI art stays readable.
+  zombieSkin: "#6a7a58",
+  zombieSkinMid: "#5a6a4a",
+  zombieSkinShade: "#3a4830",
+  zombieRag: "#4a4038",
+  zombieRagDark: "#2a2830",
   batFur: "#483058",
   batWing: "#302040",
   batEye: "#ff4040",
