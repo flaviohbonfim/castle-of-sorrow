@@ -1,5 +1,6 @@
 import type { Game } from "../../game";
 import { audio } from "../../engine/audio";
+import { PAL } from "../../gfx/palette";
 import { AttackInstance, type AttackDir } from "./attacks";
 import type { Player } from "./player";
 import { PHYS } from "./player";
@@ -337,6 +338,20 @@ export class BatFormState extends PlayerState {
     p.body.vy += (dy * speed - p.body.vy) * 0.25;
     if (dx !== 0) p.facing = dx as 1 | -1;
 
+    // SotN-style bat fireball — requires Fire of the Bat relic.
+    if (
+      p.relics.has("batFire") &&
+      g.input.pressed("attack") &&
+      p.batFireCd === 0 &&
+      p.res.mp >= 2
+    ) {
+      g.input.consume("attack");
+      p.res.mp -= 2;
+      p.batFireCd = 18;
+      g.spawnBatFire(p);
+      audio.play("spell");
+    }
+
     if (++this.drain >= 30) {
       this.drain = 0;
       p.res.mp--;
@@ -346,14 +361,26 @@ export class BatFormState extends PlayerState {
   }
 }
 
+/** Hold a direction at full lope to charge; then sonic run: i-frames + body damage. */
+const SONIC_CHARGE = 28; // ticks of sustained run before boost
+const SONIC_SPEED = 5.2;
+const SONIC_MIN_SPEED = 2.0;
+
 export class WolfFormState extends PlayerState {
   readonly name = "wolf";
+  private charge = 0;
+  private sonicTicks = 0;
   enter(p: Player, g: Game): void {
     p.form = "wolf";
     // Matches the part-based wolf (~40×20 sprite, paws on ground).
     p.setHitboxSize(28, 16);
     p.transformPoof(g);
     audio.play("spell");
+    this.charge = 0;
+    this.sonicTicks = 0;
+  }
+  exit(p: Player): void {
+    p.sonicRun = false;
   }
   update(p: Player, g: Game): PlayerState | null {
     const f = formPressed(p, g);
@@ -362,11 +389,74 @@ export class WolfFormState extends PlayerState {
     if (f === "mist") return new MistFormState();
 
     p.applyGravity(g);
-    steer(p, g, 0.5, 2.7); // fast lope (water speed handled inside steer)
+
+    const holding =
+      (g.input.held("right") ? 1 : 0) - (g.input.held("left") ? 1 : 0);
+    const dirHeld = holding !== 0;
+
+    if (this.sonicTicks > 0) {
+      // --- Sonic run active ---
+      this.sonicTicks--;
+      p.sonicRun = true;
+      p.iframes = Math.max(p.iframes, 3);
+      if (dirHeld) p.facing = holding as 1 | -1;
+      p.body.vx = p.facing * SONIC_SPEED;
+      // Dust / speed lines
+      if (p.body.onGround && this.sonicTicks % 2 === 0) {
+        g.spawnParticle(p.centerX - p.facing * 10, p.body.y + p.body.h - 1, {
+          vx: -p.facing * (1 + Math.random()),
+          vy: -Math.random() * 0.8,
+          life: 10,
+          color: Math.random() < 0.5 ? PAL.spellCyan : PAL.stoneLight,
+          size: 1,
+        });
+      }
+      // Wall slam ends the dash
+      const probe = p.facing > 0 ? p.body.x + p.body.w + 2 : p.body.x - 2;
+      const col = Math.floor(probe / 16);
+      const row = Math.floor(p.centerY / 16);
+      if (g.map.isSolid(col, row)) {
+        this.sonicTicks = 0;
+        p.sonicRun = false;
+        p.body.vx = 0;
+        audio.play("hit");
+        g.camera.addShake(0.25);
+      }
+      // Release direction early ends sonic
+      if (!dirHeld) {
+        this.sonicTicks = 0;
+        p.sonicRun = false;
+      }
+    } else {
+      steer(p, g, 0.5, 2.7); // normal lope
+      // Charge while running full-speed on ground (needs Fang of the Gale).
+      if (
+        p.relics.has("wolfDash") &&
+        dirHeld &&
+        p.body.onGround &&
+        Math.abs(p.body.vx) >= SONIC_MIN_SPEED
+      ) {
+        this.charge++;
+        if (this.charge >= SONIC_CHARGE) {
+          this.charge = 0;
+          this.sonicTicks = 48; // ~0.8s of invuln ramming
+          p.sonicRun = true;
+          p.iframes = Math.max(p.iframes, 8);
+          audio.play("backdash");
+          g.camera.addShake(0.2);
+        }
+      } else {
+        this.charge = Math.max(0, this.charge - 2);
+      }
+    }
+
     if (g.input.pressed("jump")) {
       if (p.body.onGround || p.coyote > 0) {
         g.input.consume("jump");
         p.body.vy = PHYS.jumpVel;
+        // Jumping cancels sonic but keeps a few i-frames
+        this.sonicTicks = 0;
+        p.sonicRun = false;
         audio.play("jump");
       } else if (p.inWater(g)) {
         g.input.consume("jump");

@@ -16,7 +16,12 @@ import {
 } from "./world/rooms";
 import type { Tilemap } from "./world/tilemap";
 import { Player, type PlayerSave } from "./entities/player/player";
-import { IdleState } from "./entities/player/states";
+import {
+  BatFormState,
+  IdleState,
+  MistFormState,
+  WolfFormState,
+} from "./entities/player/states";
 import { Enemy } from "./entities/enemies/enemy";
 import { Skeleton } from "./entities/enemies/skeleton";
 import { Bat } from "./entities/enemies/bat";
@@ -37,6 +42,10 @@ import {
 } from "./entities/interactables";
 import { BoneColossus } from "./entities/enemies/boss";
 import { ClockworkWraith } from "./entities/enemies/wraith";
+import { Dracula } from "./entities/enemies/dracula";
+import { Zombie } from "./entities/enemies/zombie";
+import { SpearGuard } from "./entities/enemies/spearGuard";
+import { FleaMan } from "./entities/enemies/fleaMan";
 import { ShopUI } from "./ui/shop";
 import { Minimap } from "./ui/minimap";
 import { music } from "./engine/music";
@@ -180,6 +189,9 @@ export class Game {
         case "bat": this.enemies.push(new Bat(s.x, s.y, this.flags)); break;
         case "fishman": this.enemies.push(new Fishman(s.x, s.y, this.flags)); break;
         case "axeKnight": this.enemies.push(new AxeKnight(s.x, s.y, this.flags)); break;
+        case "zombie": this.enemies.push(new Zombie(s.x, s.y, this.flags)); break;
+        case "spearGuard": this.enemies.push(new SpearGuard(s.x, s.y, this.flags)); break;
+        case "fleaMan": this.enemies.push(new FleaMan(s.x, s.y, this.flags)); break;
         case "medusaSpawner":
           this.medusaSpawners.push({ x: s.x, y: s.y, dir: s.dir ?? 1 });
           break;
@@ -248,13 +260,29 @@ export class Game {
     }
 
     const p = this.player;
-    p.becomeHuman();
-    p.body.x = x - p.body.w / 2;
-    p.body.y = y - p.body.h;
+    // Keep transformation across doors (gates still block non-mist).
+    const keptForm = p.form;
     p.body.vx = 0;
     p.body.vy = 0;
     p.activeAttack = null;
-    p.setState(new IdleState(), this);
+    p.sonicRun = false;
+    if (keptForm === "bat") p.setHitboxSize(18, 14);
+    else if (keptForm === "wolf") p.setHitboxSize(28, 16);
+    else if (keptForm === "mist") p.setHitboxSize(12, 16);
+    else p.setHitboxSize(12, 28);
+    p.form = keptForm;
+    p.body.phaseThrough = keptForm === "mist";
+    p.body.x = x - p.body.w / 2;
+    p.body.y = y - p.body.h;
+    // Human always lands in Idle. Forms keep their state machine (no re-poof).
+    if (keptForm === "human") {
+      p.setState(new IdleState(), this);
+    } else if (p.state.name !== keptForm) {
+      // Safety: state and form out of sync (e.g. after hurt) — re-enter quietly.
+      if (keptForm === "bat") p.setState(new BatFormState(), this);
+      else if (keptForm === "wolf") p.setState(new WolfFormState(), this);
+      else if (keptForm === "mist") p.setState(new MistFormState(), this);
+    }
     this.lastEntry = { room: id, x, y };
     this.banner = { text: def.name, life: 170 };
     this.camera.snapTo(p.centerX, p.centerY);
@@ -264,10 +292,14 @@ export class Game {
     const p = this.player;
     const cx = p.centerX;
     const cy = p.centerY;
+    // Edge thresholds use body extents so wide forms (wolf) can still cross doors.
+    // (Outside map is solid Brick — centerX never gets past ~half-width otherwise.)
+    const leftEdge = p.body.x <= 2;
+    const rightEdge = p.body.x + p.body.w >= this.map.widthPx - 2;
     for (const exit of this.room.exits) {
       const hit =
-        (exit.side === "right" && cx > this.map.widthPx - 8 && cy >= exit.min && cy <= exit.max) ||
-        (exit.side === "left" && cx < 8 && cy >= exit.min && cy <= exit.max) ||
+        (exit.side === "right" && rightEdge && cy >= exit.min && cy <= exit.max) ||
+        (exit.side === "left" && leftEdge && cy >= exit.min && cy <= exit.max) ||
         (exit.side === "bottom" && p.body.y > this.map.heightPx && cx >= exit.min && cx <= exit.max) ||
         // Top: fire as soon as the hitbox crest crosses the ceiling (not only
         // when the whole body is above the room — that felt like a dead end).
@@ -306,8 +338,8 @@ export class Game {
     for (let i = 0; i < 6; i++) {
       this.spawnPickup("gold", cx + (Math.random() * 60 - 30), cy + 10);
     }
-    // Throne clear → ending cutscene, then the results screen.
-    if (bossId === "sovereign") {
+    // Throne clear (Dracula) → ending cutscene, then the results screen.
+    if (bossId === "dracula" || bossId === "sovereign") {
       const ending = pickEnding(this.flags);
       this.flags.add(`ending:${ending}`);
       this.cutsceneUI.play(this, ending);
@@ -336,6 +368,7 @@ export class Game {
       case "colossus": return new BoneColossus(x, y, "colossus", this.flags);
       case "sovereign": return new BoneColossus(x, y, "sovereign", this.flags);
       case "wraith": return new ClockworkWraith(x, y, this.flags);
+      case "dracula": return new Dracula(x, y, this.flags);
       default: return null;
     }
   }
@@ -470,9 +503,18 @@ export class Game {
     }
   }
 
-  /** Enemy-fired projectile (bones, spit, thrown axes, …). */
+  /** Bat form fireball — flat, dies on hit/wall (SotN-style). */
+  spawnBatFire(p: Player): void {
+    const attrs = p.inventory.effectiveAttributes(p.attrs);
+    const power = 10 + Math.floor(attrs.int * 1.2);
+    this.projectiles.push(
+      new Projectile("batFire", p.centerX + p.facing * 12, p.centerY - 2, p.facing, power),
+    );
+  }
+
+  /** Enemy-fired projectile (bones, spit, thrown axes, blood, …). */
   spawnHostile(
-    kind: "bone" | "spit" | "axeThrow",
+    kind: "bone" | "spit" | "axeThrow" | "blood",
     x: number,
     y: number,
     dir: 1 | -1,
@@ -628,17 +670,26 @@ export class Game {
 
     // Enemy contact damage (mist form is intangible).
     // Medusa Heads petrify (SotN) instead of a normal knockback hurt.
+    // Wolf sonic run: player body damages enemies (and takes no contact hit).
     // Contact also unlocks the enemy book entry (you've met this foe).
     const body = this.player.body;
     if (this.player.form !== "mist") {
       for (const e of this.enemies) {
-        if (!e.dead && rectsOverlap(e.body, body)) {
-          if (e.bestiaryId) this.flags.add(`bestiary:${e.bestiaryId}`);
-          if (e instanceof MedusaHead) {
-            this.player.petrify(this, e.stats.touchPower, e.centerX);
-          } else {
-            this.player.takeDamage(this, e.stats.touchPower, e.centerX);
+        if (e.dead || !rectsOverlap(e.body, body)) continue;
+        if (e.bestiaryId) this.flags.add(`bestiary:${e.bestiaryId}`);
+        if (this.player.sonicRun) {
+          // Body-ram: once per enemy until sonic ends (iframes on enemy via hurt flash)
+          if (e.hurtFlash === 0) {
+            const power = 14 + Math.floor(this.player.combatStats().attack * 0.35);
+            e.takeDamage(this, computeDamage(power, e.stats.defense, 0), this.player.centerX);
+            this.camera.addShake(0.15);
           }
+          continue; // invulnerable while sonic
+        }
+        if (e instanceof MedusaHead) {
+          this.player.petrify(this, e.stats.touchPower, e.centerX);
+        } else {
+          this.player.takeDamage(this, e.stats.touchPower, e.centerX);
         }
       }
     }
@@ -694,11 +745,43 @@ export class Game {
 
   /* ------------------------------- draw ------------------------------- */
 
+  /** Red draped backdrop for the Throne of Night (SotN-inspired). */
+  private drawThroneCurtains(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
+    const mapH = this.map.heightPx;
+    const mapW = this.map.widthPx;
+    // Deep crimson wall wash
+    ctx.fillStyle = "#3a0a14";
+    ctx.fillRect(Math.round(-camX), Math.round(-camY), mapW, mapH);
+    // Vertical curtain folds across the back
+    for (let i = 0; i < 14; i++) {
+      const x = 24 + i * 52;
+      const wave = Math.sin(i * 1.7) * 6;
+      ctx.fillStyle = i % 2 === 0 ? "#6a1020" : "#501018";
+      ctx.fillRect(Math.round(x - camX + wave), Math.round(8 - camY), 28, mapH - 48);
+      ctx.fillStyle = "#8a1830";
+      ctx.fillRect(Math.round(x + 4 - camX + wave), Math.round(8 - camY), 4, mapH - 48);
+      ctx.fillStyle = "#2a0810";
+      ctx.fillRect(Math.round(x + 22 - camX + wave), Math.round(8 - camY), 3, mapH - 48);
+    }
+    // Red carpet strip on the floor path
+    ctx.fillStyle = "#5a1018";
+    ctx.fillRect(Math.round(80 - camX), Math.round(mapH - 56 - camY), mapW - 120, 20);
+    ctx.fillStyle = "#7a1828";
+    ctx.fillRect(Math.round(80 - camX), Math.round(mapH - 54 - camY), mapW - 120, 4);
+    // Dark upper valence
+    ctx.fillStyle = "#1a0408";
+    ctx.fillRect(Math.round(-camX), Math.round(-camY), mapW, 20);
+  }
+
   draw(ctx: CanvasRenderingContext2D, alpha: number): void {
     const camX = this.camera.renderX(alpha);
     const camY = this.camera.renderY(alpha);
 
     this.parallax.draw(ctx, camX);
+    // SotN-style red curtains behind the throne hall.
+    if (this.roomId === "throne") {
+      this.drawThroneCurtains(ctx, camX, camY);
+    }
     this.map.draw(ctx, camX, camY, VIEW_W, VIEW_H);
 
     for (const i of this.interactables) i.draw(ctx, camX, camY, alpha);

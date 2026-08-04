@@ -17,7 +17,17 @@ export class Tilemap {
   }
 
   at(col: number, row: number): TileId {
-    if (col < 0 || col >= this.cols) return TileId.Brick; // solid outside horizontally
+    // Outside left/right: solid Brick, EXCEPT at rows where the edge column
+    // is a Door — so wide forms (wolf/bat) can walk through the passage
+    // far enough to trigger room transitions. Gates stay solid (mist only).
+    if (col < 0 || col >= this.cols) {
+      const edge = col < 0 ? 0 : this.cols - 1;
+      if (row >= 0 && row < this.rows) {
+        const edgeTile = this.tiles[row * this.cols + edge] as TileId;
+        if (edgeTile === TileId.Door) return TileId.Empty;
+      }
+      return TileId.Brick;
+    }
     if (row < 0) return TileId.Empty;
     if (row >= this.rows) return TileId.Empty; // open below: room exits fall through
     return this.tiles[row * this.cols + col] as TileId;

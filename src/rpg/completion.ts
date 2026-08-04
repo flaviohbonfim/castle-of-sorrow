@@ -8,9 +8,11 @@ export const COMPLETION_RELICS = [
   "mistForm",
   "waterWalk",
   "highJump",
+  "batFire",
+  "wolfDash",
 ] as const;
 
-export const COMPLETION_BOSSES = ["colossus", "wraith", "sovereign"] as const;
+export const COMPLETION_BOSSES = ["colossus", "wraith", "sovereign", "dracula"] as const;
 
 /** One-off world items (flag `item:<room>:<n>`). */
 export const COMPLETION_ITEMS = ["item:lakeDepths:0"] as const;

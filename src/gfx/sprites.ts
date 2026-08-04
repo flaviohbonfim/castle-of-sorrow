@@ -1074,6 +1074,420 @@ export function buildPlayerWolfSprites(): SpriteSet {
   ]);
 }
 
+/* ------------------- new enemies (zombie / guard / flea) ------------------- */
+
+export function buildZombieSprites(): SpriteSet {
+  const Z = {
+    s: "#6a7a58",
+    d: "#3a4830",
+    r: PAL.eyeRed,
+    t: "#4a4038",
+    p: "#2a2830",
+  };
+  const a = pixelMap(
+    [
+      "   ssss   ",
+      "  ssssss  ",
+      "  srrss   ",
+      "  sssss   ",
+      "   sss    ",
+      "  tttttt  ",
+      " tttttttt ",
+      " t tttt t ",
+      " t tttt t ",
+      "  tttttt  ",
+      "  tttttt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  pp  pp  ",
+      "  pp  pp  ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+      "          ",
+    ],
+    Z,
+  );
+  // Trim to 32 height by only using first 32 - the map is padded; actually use shorter
+  const walkB = pixelMap(
+    [
+      "   ssss   ",
+      "  ssssss  ",
+      "  srrss   ",
+      "  sssss   ",
+      "   sss    ",
+      "  tttttt  ",
+      " tttttttt ",
+      "tt tttt t ",
+      " t tttt t ",
+      "  tttttt  ",
+      "  tttttt  ",
+      "  tt tt   ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      " tt    tt ",
+      " pp    pp ",
+      " pp    pp ",
+    ],
+    Z,
+  );
+  const walkA = pixelMap(
+    [
+      "   ssss   ",
+      "  ssssss  ",
+      "  srrss   ",
+      "  sssss   ",
+      "   sss    ",
+      "  tttttt  ",
+      " tttttttt ",
+      " t tttt t ",
+      " t tttt t ",
+      "  tttttt  ",
+      "  tttttt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  tt  tt  ",
+      "  pp  pp  ",
+      "  pp  pp  ",
+    ],
+    Z,
+  );
+  void a;
+  return makeSet([walkA, walkB]);
+}
+
+export function buildSpearGuardSprites(): SpriteSet {
+  const G = {
+    a: "#686878",
+    d: "#383848",
+    s: PAL.skin,
+    r: PAL.eyeRed,
+    p: "#282030",
+    g: PAL.coatTrim,
+    b: PAL.blade,
+  };
+  // walk + lunge (spear extended)
+  const walk = pixelMap(
+    [
+      "    aaaa    ",
+      "   aaaaaa   ",
+      "   asrrsa   ",
+      "   aaaaaa   ",
+      "    aaaa    ",
+      "  aaaaaaaa  ",
+      " aaaaaaaaaa ",
+      " aa gggg aa ",
+      " aa aaaa aa ",
+      "  aaaaaaaa  ",
+      "  aaaaaaaa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  pp    pp  ",
+      "b           ",
+      "b           ",
+      "b           ",
+      "bb          ",
+    ],
+    G,
+  );
+  const lunge = pixelMap(
+    [
+      "    aaaa    ",
+      "   aaaaaa   ",
+      "   asrrsa   ",
+      "   aaaaaa   ",
+      "    aaaa    ",
+      "  aaaaaaaa  ",
+      " aaaaaaaaaa ",
+      " aa gggg aa ",
+      " aa aaaa aa ",
+      "  aaaaaaaa  ",
+      "  aaaaaaaa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  aa    aa  ",
+      "  pp    pp  ",
+      "          bb",
+      "         bbb",
+      "bbbbbbbbbbb ",
+      "         bb ",
+    ],
+    G,
+  );
+  return makeSet([walk, lunge]);
+}
+
+export function buildFleaManSprites(): SpriteSet {
+  const F = {
+    f: "#584068",
+    d: "#302038",
+    r: PAL.eyeRed,
+    l: "#706088",
+  };
+  const ground = pixelMap(
+    [
+      "  ffff  ",
+      " frrff  ",
+      " fffff  ",
+      "ffffffff",
+      "ff ff ff",
+      " f    f ",
+      "ff    ff",
+      "d      d",
+    ],
+    F,
+  );
+  const air = pixelMap(
+    [
+      "  ffff  ",
+      " frrff  ",
+      " fffff  ",
+      "ffffffff",
+      "f f  f f",
+      "f      f",
+      " f    f ",
+      "d      d",
+    ],
+    F,
+  );
+  return makeSet([ground, air]);
+}
+
+/** Dracula human + beast forms. */
+export function buildDraculaSprites(): {
+  human: SpriteSet;
+  beast: SpriteSet;
+} {
+  const H = {
+    c: "#1a1018", // cape/coat
+    d: "#0c080e",
+    s: "#e0b898", // skin
+    h: "#e8e0c8", // white hair
+    r: PAL.eyeRed,
+    g: PAL.coatTrim,
+    b: "#801028", // blood / sash
+    w: "#f0e8d8",
+  };
+  // Human idle A/B, cast, lunge
+  const humanIdleA = pixelMap(
+    [
+      "    hhhhhh    ",
+      "   hhhhhhhh   ",
+      "   hhsssshh   ",
+      "   hhsrrshh   ",
+      "    ssssss    ",
+      "   cccccccc   ",
+      "  cccccccccc  ",
+      " ccc gggg ccc ",
+      " cccccccccccc ",
+      " ccc bbbb ccc ",
+      "  cccccccccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ddd    ddd  ",
+      "  ddd    ddd  ",
+    ],
+    H,
+  );
+  const humanIdleB = pixelMap(
+    [
+      "    hhhhhh    ",
+      "   hhhhhhhh   ",
+      "   hhsssshh   ",
+      "   hhsrrshh   ",
+      "    ssssss    ",
+      "   cccccccc   ",
+      "  cccccccccc  ",
+      " ccc gggg ccc ",
+      " cccccccccccc ",
+      " ccc bbbb ccc ",
+      "  cccccccccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      "  ccc    ccc  ",
+      " ddd      ddd ",
+      " ddd      ddd ",
+    ],
+    H,
+  );
+  const humanCast = pixelMap(
+    [
+      "    hhhhhh    ",
+      "   hhhhhhhh   ",
+      "   hhsssshh   ",
+      "   hhsrrshh   ",
+      "    ssssss    ",
+      "   cccccccc   ",
+      "  cccccccccc  ",
+      "ccc  gggg  ccc",
+      "cc cccccc cc  ",
+      "c  c bbbb c  b",
+      "   cccccccc  b",
+      "   ccc  ccc  b",
+      "   ccc  ccc   ",
+      "   ccc  ccc   ",
+      "   ccc  ccc   ",
+      "   ccc  ccc   ",
+      "   ddd  ddd   ",
+      "   ddd  ddd   ",
+    ],
+    H,
+  );
+  const humanLunge = pixelMap(
+    [
+      "   hhhhhh     ",
+      "  hhhhhhhh    ",
+      "  hhsssshh    ",
+      "  hhsrrshh    ",
+      "   ssssss     ",
+      "  cccccccc    ",
+      " cccccccccc   ",
+      "ccc gggg cccc ",
+      " cccccccccccc ",
+      " cccbbbb cccc ",
+      "  cccccccccc  ",
+      "   ccc  cccc  ",
+      "   ccc   cccc ",
+      "   ccc    ccc ",
+      "   ccc    ccc ",
+      "  ddd     ddd ",
+      " ddd      ddd ",
+      "              ",
+    ],
+    H,
+  );
+
+  const B = {
+    c: "#280818",
+    d: "#14040c",
+    s: "#c09070",
+    h: "#d0c8b0",
+    r: "#ff2020",
+    g: PAL.coatTrim,
+    f: "#401020",
+    w: "#f0e0d0",
+  };
+  const beastIdleA = pixelMap(
+    [
+      "   f  hhhh  f ",
+      "  ff hhhhhh ff",
+      "  f hsssssh f ",
+      "    hsrrssh   ",
+      "    ssssss    ",
+      "   cccccccc   ",
+      "  cccccccccc  ",
+      " cccccccccccc ",
+      " ccc gggg ccc ",
+      " cccccccccccc ",
+      "  cccccccccc  ",
+      "  cc ffff cc  ",
+      "  cc      cc  ",
+      "  cc      cc  ",
+      "  cc      cc  ",
+      "  dd      dd  ",
+      "  dd      dd  ",
+      "              ",
+    ],
+    B,
+  );
+  const beastIdleB = pixelMap(
+    [
+      "  f  hhhh  f  ",
+      " ff hhhhhh ff ",
+      " f hsssssh f  ",
+      "   hsrrssh    ",
+      "   ssssss     ",
+      "  cccccccc    ",
+      " cccccccccc   ",
+      "cccccccccccc  ",
+      "ccc gggg ccc  ",
+      "cccccccccccc  ",
+      " cccccccccc   ",
+      " cc ffff cc   ",
+      " cc      cc   ",
+      " cc      cc   ",
+      " cc      cc   ",
+      "dd        dd  ",
+      "dd        dd  ",
+      "              ",
+    ],
+    B,
+  );
+  const beastCast = pixelMap(
+    [
+      "   f hhhh f   ",
+      "  ffhhhhhhff  ",
+      "  f hssssh f  ",
+      "    hsrrsh    ",
+      "    ssssss    ",
+      "   cccccccc   ",
+      "  cccccccccc  ",
+      "ccc      ccc  ",
+      "cc  gggg  cc r",
+      "c  cccccc c  r",
+      "   cccccccc  r",
+      "   cc ff cc   ",
+      "   cc    cc   ",
+      "   cc    cc   ",
+      "   cc    cc   ",
+      "   dd    dd   ",
+      "   dd    dd   ",
+      "              ",
+    ],
+    B,
+  );
+  const beastLunge = pixelMap(
+    [
+      "  f hhhh f    ",
+      " ffhhhhhhff   ",
+      " f hssssh f   ",
+      "   hsrrsh     ",
+      "   ssssss     ",
+      "  cccccccc    ",
+      " cccccccccc   ",
+      "cccccccccccc  ",
+      "cccggggcccccc ",
+      " cccccccccccc ",
+      "  cccccccccc  ",
+      "  ccffffcccc  ",
+      "  cc    cccc  ",
+      "  cc     ccc  ",
+      "  cc     ccc  ",
+      " dd      ddd  ",
+      "dd       ddd  ",
+      "              ",
+    ],
+    B,
+  );
+
+  return {
+    human: makeSet([humanIdleA, humanIdleB, humanCast, humanLunge]),
+    beast: makeSet([beastIdleA, beastIdleB, beastCast, beastLunge]),
+  };
+}
+
 const BOSS = {
   b: PAL.bone,
   s: PAL.boneShade,

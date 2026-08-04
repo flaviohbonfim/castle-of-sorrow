@@ -6,7 +6,16 @@ import { buildSubweaponSprites, buildBoneSprites } from "../gfx/sprites";
 import { PAL } from "../gfx/palette";
 import { rectsOverlap } from "../engine/math";
 
-export type ProjectileKind = "dagger" | "axe" | "spell" | "fire" | "bone" | "spit" | "axeThrow";
+export type ProjectileKind =
+  | "dagger"
+  | "axe"
+  | "spell"
+  | "fire"
+  | "batFire"
+  | "bone"
+  | "spit"
+  | "axeThrow"
+  | "blood";
 
 let SPRITES: ReturnType<typeof buildSubweaponSprites> | null = null;
 let BONES: HTMLCanvasElement[] | null = null;
@@ -17,9 +26,11 @@ let BONES: HTMLCanvasElement[] | null = null;
  *  - axe: arcing spinner, pierces enemies, ignores walls (player)
  *  - spell "Soul Lance": piercing bolt, INT-scaled (player)
  *  - fire "Hellfire": arcing fireball, pierces, INT-scaled (player)
+ *  - batFire: flat bat-form fireball (player); dies on walls
  *  - bone: arcing bone toss that damages the player (hostile)
  *  - spit: flat, slow hostile blob (Fishman); dies on walls
  *  - axeThrow: arcing hostile axe (Axe Knight); pierces terrain
+ *  - blood: flat hostile blood bolt (Dracula)
  */
 export class Projectile extends Entity {
   private swing = new Swing();
@@ -35,11 +46,14 @@ export class Projectile extends Entity {
     readonly hostile = false,
     vyBoost = 0,
   ) {
+    const isSpell = kind === "spell";
+    const isTiny = kind === "spit" || kind === "blood";
+    const isBat = kind === "batFire";
     super(
-      x - (kind === "spell" ? 8 : kind === "spit" ? 3 : 5),
-      y - (kind === "spell" ? 4 : kind === "spit" ? 2 : 3),
-      kind === "spell" ? 16 : kind === "spit" ? 6 : 10,
-      kind === "spell" ? 8 : kind === "spit" ? 4 : 6,
+      x - (isSpell ? 8 : isTiny ? 3 : isBat ? 4 : 5),
+      y - (isSpell ? 4 : isTiny ? 2 : isBat ? 4 : 3),
+      isSpell ? 16 : isTiny ? 6 : isBat ? 10 : 10,
+      isSpell ? 8 : isTiny ? 4 : isBat ? 8 : 6,
     );
     SPRITES ??= buildSubweaponSprites();
     BONES ??= buildBoneSprites();
@@ -56,6 +70,10 @@ export class Projectile extends Entity {
         this.body.vx = dir * 2.6;
         this.body.vy = -2.2 + vyBoost;
         break;
+      case "batFire":
+        this.body.vx = dir * 3.6;
+        this.body.vy = 0;
+        break;
       case "bone":
         this.body.vx = dir * 1.9;
         this.body.vy = -4.6 + vyBoost;
@@ -67,6 +85,10 @@ export class Projectile extends Entity {
       case "axeThrow":
         this.body.vx = dir * 2.0;
         this.body.vy = -4.4 + vyBoost;
+        break;
+      case "blood":
+        this.body.vx = dir * 2.4;
+        this.body.vy = vyBoost;
         break;
     }
   }
@@ -94,13 +116,21 @@ export class Projectile extends Entity {
       return;
     }
 
-    // Daggers and spit stop at walls; everything else pierces terrain.
-    if (this.kind === "dagger" || this.kind === "spit") {
+    // Flat projectiles stop at walls; arcing/piercing kinds ignore terrain.
+    if (this.kind === "dagger" || this.kind === "spit" || this.kind === "batFire" || this.kind === "blood") {
       const col = Math.floor((this.body.x + (this.facing > 0 ? this.body.w : 0)) / TILE);
       const row = Math.floor(this.centerY / TILE);
       if (map.isSolid(col, row)) {
         this.dead = true;
-        this.impactSparks(game, this.kind === "spit" ? PAL.waterHi : PAL.bladeHi);
+        const spark =
+          this.kind === "spit"
+            ? PAL.waterHi
+            : this.kind === "batFire"
+              ? PAL.flameMid
+              : this.kind === "blood"
+                ? PAL.hpRed
+                : PAL.bladeHi;
+        this.impactSparks(game, spark);
         return;
       }
     }
@@ -114,9 +144,9 @@ export class Projectile extends Entity {
     } else {
       // Damage pass — the Game routes this swing to enemies and candles.
       game.applySwing(this.swing, this.body, this.power, this.centerX, () => {
-        if (this.kind === "dagger") {
+        if (this.kind === "dagger" || this.kind === "batFire") {
           this.dead = true;
-          this.impactSparks(game, PAL.bladeHi);
+          this.impactSparks(game, this.kind === "batFire" ? PAL.flameMid : PAL.bladeHi);
         }
       });
     }
@@ -131,12 +161,21 @@ export class Projectile extends Entity {
         size: 1,
       });
     }
-    if (this.kind === "fire" && this.age % 2 === 0) {
+    if ((this.kind === "fire" || this.kind === "batFire") && this.age % 2 === 0) {
       game.spawnParticle(this.centerX, this.centerY, {
         vx: (Math.random() - 0.5) * 0.5,
         vy: -0.4 - Math.random() * 0.4,
         life: 12,
         color: Math.random() < 0.5 ? PAL.flameMid : PAL.flameCore,
+        size: 1,
+      });
+    }
+    if (this.kind === "blood" && this.age % 2 === 0) {
+      game.spawnParticle(this.centerX, this.centerY, {
+        vx: -this.facing * 0.4,
+        vy: (Math.random() - 0.5) * 0.5,
+        life: 10,
+        color: Math.random() < 0.5 ? PAL.hpRed : PAL.hpRedHi,
         size: 1,
       });
     }
@@ -174,14 +213,21 @@ export class Projectile extends Entity {
       ctx.fillRect(Math.round(cx - 2), Math.round(cy - 2), 4, 4);
       ctx.fillStyle = PAL.spellCyan;
       ctx.fillRect(Math.round(cx - 1), Math.round(cy - 1), 2, 2);
+    } else if (this.kind === "blood") {
+      const cx = x + this.body.w / 2 - camX;
+      const cy = y + this.body.h / 2 - camY;
+      ctx.fillStyle = PAL.hpRed;
+      ctx.fillRect(Math.round(cx - 3), Math.round(cy - 2), 6, 4);
+      ctx.fillStyle = PAL.hpRedHi;
+      ctx.fillRect(Math.round(cx - 1), Math.round(cy - 1), 3, 2);
     } else {
-      // Glowing bolt (Soul Lance cyan / Hellfire orange).
-      const fire = this.kind === "fire";
+      // Glowing bolt (Soul Lance cyan / Hellfire + bat fire orange).
+      const fire = this.kind === "fire" || this.kind === "batFire";
       const cx = x + this.body.w / 2 - camX;
       const cy = y + this.body.h / 2 - camY;
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, 10);
+      const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, this.kind === "batFire" ? 12 : 10);
       if (fire) {
         grad.addColorStop(0, "rgba(255, 240, 160, 0.95)");
         grad.addColorStop(0.4, "rgba(255, 160, 48, 0.55)");

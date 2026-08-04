@@ -8,6 +8,9 @@ export interface Spawn {
     | "bat"
     | "fishman"
     | "axeKnight"
+    | "zombie"
+    | "spearGuard"
+    | "fleaMan"
     | "medusaSpawner"
     | "candle"
     | "relic"
@@ -168,11 +171,12 @@ function buildEntrance(): BuiltRoom {
   b.frame();
   b.windows(3, 7, 55, 8);
 
-  // Main floor + right step.
+  // Main floor + solid underlay.
   b.hline(20, 1, 62, TileId.FloorTop);
   b.fill(1, 21, 62, 22, TileId.Brick);
+  // Right raised step — solid brick column under it (no floating FloorTop strip).
   b.hline(18, 55, 62, TileId.FloorTop);
-  b.hline(19, 55, 62, TileId.Brick);
+  b.fill(55, 19, 62, 22, TileId.Brick);
 
   // One-way platform climb.
   b.hline(17, 18, 24, TileId.Platform);
@@ -189,20 +193,31 @@ function buildEntrance(): BuiltRoom {
 
   // Doorway to the Marble Gallery (above the right step).
   b.door(63, 15, 17);
+  // West door → Forsaken Chapel
+  b.door(0, 17, 19);
 
-  // Pit to Underground Cavern (RIGHT side). Ledges on both sides so you can
-  // climb back up when returning through the same shaft.
+  // Pit to Underground Cavern (RIGHT side). Walls lined with BgWall so the
+  // shaft doesn't read as broken floor / outdoor sky under the right step.
   for (let c = 52; c <= 54; c++) {
     b.set(c, 20, TileId.Empty);
     for (let r = 21; r <= 23; r++) b.set(c, r, TileId.Empty);
   }
+  // Pit side walls (inner faces of the lips)
+  for (let r = 20; r <= 22; r++) {
+    b.set(51, r, TileId.Brick);
+    b.set(55, r, TileId.Brick);
+  }
   // Keep a solid lip left of the pit to stand on after a return jump.
   b.set(51, 20, TileId.FloorTop);
+  b.set(55, 20, TileId.FloorTop);
 
   b.at("player", 3, 19);
+  b.at("zombie", 22, 19);
   b.at("skeleton", 28, 19);
+  b.at("zombie", 38, 19);
   b.at("skeleton", 43, 19);
   b.at("skeleton", 60, 17);
+  b.at("fleaMan", 30, 13);
   b.spawns.push({ kind: "bat", x: 16 * TILE, y: 8 * TILE });
   b.spawns.push({ kind: "bat", x: 34 * TILE, y: 7 * TILE });
   b.at("candle", 7, 19);
@@ -245,8 +260,101 @@ function buildCorridor(): BuiltRoom {
   b.at("candle", 18, 10);
   b.at("candle", 26, 10);
   b.at("candle", 34, 10);
-  b.at("skeleton", 20, 10);
+  b.at("spearGuard", 20, 10);
   b.at("skeleton", 32, 10);
+  b.at("fleaMan", 25, 6);
+  return b.build();
+}
+
+function buildChapel(): BuiltRoom {
+  const b = new RoomBuilder(28, 16);
+  b.frame();
+  b.windows(4, 5, 22, 6);
+  b.hline(13, 1, 26, TileId.FloorTop);
+  b.fill(1, 14, 26, 14, TileId.Brick);
+  b.pillar(6, 10);
+  b.pillar(21, 10);
+  // Raised altar ledge
+  b.hline(11, 10, 17, TileId.Platform);
+  b.door(27, 10, 12); // back to entrance
+  b.at("spearGuard", 14, 12);
+  b.at("zombie", 8, 12);
+  b.at("zombie", 20, 12);
+  b.at("candle", 5, 12);
+  b.at("candle", 22, 12);
+  b.at("candle", 12, 10);
+  b.at("candle", 15, 10);
+  return b.build();
+}
+
+function buildLibrary(): BuiltRoom {
+  const b = new RoomBuilder(32, 14);
+  b.frame();
+  b.windows(4, 5, 26, 6);
+  b.hline(11, 1, 30, TileId.FloorTop);
+  b.fill(1, 12, 30, 12, TileId.Brick);
+  b.hline(8, 8, 14, TileId.Platform);
+  b.hline(8, 18, 24, TileId.Platform);
+  b.pillar(10, 8);
+  b.pillar(22, 8);
+  b.door(0, 8, 10); // from corridor
+  b.door(31, 8, 10); // to sanctuary
+  b.at("axeKnight", 16, 10);
+  b.at("skeleton", 8, 10);
+  b.at("fleaMan", 20, 7);
+  b.at("candle", 6, 10);
+  b.at("candle", 12, 10);
+  b.at("candle", 20, 10);
+  b.at("candle", 26, 10);
+  return b.build();
+}
+
+function buildApproach(): BuiltRoom {
+  const b = new RoomBuilder(36, 14, "tower");
+  b.frame();
+  b.hline(11, 1, 34, TileId.FloorTop);
+  b.fill(1, 12, 34, 12, TileId.Brick);
+  b.hline(8, 10, 16, TileId.Platform);
+  b.hline(8, 20, 26, TileId.Platform);
+  b.pillar(8, 8);
+  b.pillar(27, 8);
+  b.door(0, 8, 10); // from towerTop
+  b.door(35, 8, 10); // to sovereign hall
+  b.at("spearGuard", 14, 10);
+  b.at("spearGuard", 24, 10);
+  b.at("axeKnight", 18, 10);
+  // Form skill relics (separate from the transformation unlocks)
+  b.at("relic", 12, 7, "batFire");
+  b.at("relic", 22, 7, "wolfDash");
+  b.at("candle", 6, 10);
+  b.at("candle", 12, 10);
+  b.at("candle", 22, 10);
+  b.at("candle", 30, 10);
+  return b.build();
+}
+
+function buildCatacombs(): BuiltRoom {
+  const b = new RoomBuilder(40, 16);
+  b.frame();
+  b.hline(13, 1, 38, TileId.FloorTop);
+  b.fill(1, 14, 38, 14, TileId.Brick);
+  b.hline(10, 6, 12, TileId.Platform);
+  b.hline(10, 18, 24, TileId.Platform);
+  b.hline(7, 28, 34, TileId.Platform);
+  b.pillar(10, 10);
+  b.pillar(22, 10);
+  b.pillar(32, 10);
+  b.door(0, 10, 12); // from lakeDepths
+  b.at("zombie", 8, 12);
+  b.at("zombie", 14, 12);
+  b.at("zombie", 20, 12);
+  b.at("skeleton", 28, 12);
+  b.at("fleaMan", 20, 9);
+  b.at("fleaMan", 30, 6);
+  b.at("candle", 5, 12);
+  b.at("candle", 16, 12);
+  b.at("candle", 26, 12);
+  b.at("candle", 34, 12);
   return b.build();
 }
 
@@ -357,17 +465,61 @@ function buildTowerTop(): BuiltRoom {
 }
 
 /** Final arena — opens only with all form relics + both wing bosses slain. */
+/**
+ * Throne of Night — SotN-inspired red hall: wide carpet, stepped dais,
+ * pillars sitting on each landing, candelabras. Dracula on the top dais.
+ */
 function buildThrone(): BuiltRoom {
-  const b = new RoomBuilder(36, 14, "tower");
+  const b = new RoomBuilder(48, 16, "tower");
   b.frame();
-  b.hline(11, 1, 34, TileId.FloorTop);
-  b.fill(1, 12, 34, 12, TileId.Brick);
-  b.pillar(6, 8);
-  b.pillar(29, 8);
-  b.door(0, 8, 10); // from towerTop
+  // Main hall floor
+  b.hline(13, 1, 46, TileId.FloorTop);
+  b.fill(1, 14, 46, 14, TileId.Brick);
+
+  // Stepped dais (each step: FloorTop + solid brick underlay — never inverted fill ranges)
+  // Step 1 (lowest)
+  b.hline(12, 16, 40, TileId.FloorTop);
+  b.fill(16, 13, 40, 13, TileId.Brick);
+  // Step 2
+  b.hline(11, 20, 38, TileId.FloorTop);
+  b.fill(20, 12, 38, 12, TileId.Brick);
+  // Step 3 (throne platform)
+  b.hline(10, 24, 36, TileId.FloorTop);
+  b.fill(24, 11, 36, 11, TileId.Brick);
+
+  // Pillars sit ON their landings (base = floor row)
+  b.pillar(6, 11); // main floor 13 → top at 11
+  b.pillar(12, 11);
+  b.pillar(30, 8); // top dais floor 10 → top at 8
+  b.pillar(42, 11);
+
+  b.door(0, 10, 12); // from sovereign hall / approach
+  b.at("boss", 30, 9, "dracula");
+  b.at("candle", 4, 12);
+  b.at("candle", 9, 12);
+  b.at("candle", 15, 12);
+  b.at("candle", 18, 11);
+  b.at("candle", 22, 10);
+  b.at("candle", 34, 9);
+  b.at("candle", 44, 12);
+  return b.build();
+}
+
+/** Sovereign rematch arena — between Approach and Throne (boss kept, not removed). */
+function buildSovereignHall(): BuiltRoom {
+  const b = new RoomBuilder(40, 14, "tower");
+  b.frame();
+  b.hline(11, 1, 38, TileId.FloorTop);
+  b.fill(1, 12, 38, 12, TileId.Brick);
+  b.pillar(8, 8);
+  b.pillar(31, 8);
+  b.door(0, 8, 10); // from approach
+  b.door(39, 8, 10); // to throne (sealed as Gate while boss lives)
   b.at("boss", 22, 10, "sovereign");
-  b.at("candle", 10, 10);
+  b.at("candle", 6, 10);
+  b.at("candle", 14, 10);
   b.at("candle", 26, 10);
+  b.at("candle", 34, 10);
   return b.build();
 }
 
@@ -509,6 +661,11 @@ function buildLakeDepths(): BuiltRoom {
   b.hline(11, 30, 34, TileId.FloorTop);
   b.fill(30, 12, 34, 13, TileId.Brick);
 
+  // Dry east ledge + door → catacombs
+  b.fill(36, 10, 38, 12, TileId.Empty);
+  b.hline(13, 36, 38, TileId.FloorTop);
+  b.door(39, 10, 12);
+
   // Ceiling shaft back up to the Sunken Gallery. Rows 1–2 are already open
   // air above the surface; only the stone ceiling needs punching through.
   b.hpunch(0, 18, 21);
@@ -587,9 +744,8 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildEntrance,
     mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 }, // 64x24
     exits: [
+      { side: "left", min: 260, max: 320, target: "chapel", tx: 400, ty: 208 },
       { side: "right", min: 230, max: 300, target: "corridor", tx: 40, ty: 176 },
-      // Only vertical link to cavern (right pit → cavern ceiling shaft).
-      // Lands on the first shaft ledge so the drop reads as continuous.
       {
         side: "bottom",
         min: 52 * TILE,
@@ -600,6 +756,13 @@ export const ROOMS: Record<string, RoomDef> = {
       },
     ],
   },
+  chapel: {
+    id: "chapel",
+    name: "Forsaken Chapel",
+    build: buildChapel,
+    mapRect: { gx: -2, gy: 0, gw: 2, gh: 1 }, // 28x16
+    exits: [{ side: "right", min: 152, max: 208, target: "entrance", tx: 48, ty: 304 }],
+  },
   corridor: {
     id: "corridor",
     name: "Marble Gallery",
@@ -607,7 +770,7 @@ export const ROOMS: Record<string, RoomDef> = {
     mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 }, // 48x14
     exits: [
       { side: "left", min: 120, max: 180, target: "entrance", tx: 960, ty: 288 },
-      { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
+      { side: "right", min: 120, max: 180, target: "library", tx: 40, ty: 176 },
       {
         side: "top",
         min: 24 * TILE,
@@ -616,6 +779,16 @@ export const ROOMS: Record<string, RoomDef> = {
         tx: 40,
         ty: 592,
       },
+    ],
+  },
+  library: {
+    id: "library",
+    name: "Forbidden Library",
+    build: buildLibrary,
+    mapRect: { gx: 7, gy: 0, gw: 2, gh: 1 }, // 32x14
+    exits: [
+      { side: "left", min: 120, max: 180, target: "corridor", tx: 728, ty: 176 },
+      { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
     ],
   },
   towerShaft: {
@@ -686,7 +859,38 @@ export const ROOMS: Record<string, RoomDef> = {
     },
     exits: [
       { side: "left", min: 120, max: 180, target: "towerHall", tx: 600, ty: 208 },
-      { side: "right", min: 120, max: 180, target: "throne", tx: 40, ty: 176 },
+      { side: "right", min: 120, max: 180, target: "approach", tx: 40, ty: 176 },
+    ],
+  },
+  approach: {
+    id: "approach",
+    name: "Royal Approach",
+    zone: "tower",
+    build: buildApproach,
+    mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 }, // 36x14
+    exits: [
+      { side: "left", min: 120, max: 180, target: "towerTop", tx: 472, ty: 176 },
+      { side: "right", min: 120, max: 180, target: "sovereignHall", tx: 40, ty: 176 },
+    ],
+  },
+  sovereignHall: {
+    id: "sovereignHall",
+    name: "Hall of the Eternal",
+    zone: "tower",
+    build: buildSovereignHall,
+    mapRect: { gx: 11, gy: -4, gw: 2, gh: 1 }, // 40x14
+    boss: {
+      id: "sovereign",
+      gateCells: [
+        [39, 8],
+        [39, 9],
+        [39, 10],
+      ],
+      rewards: [],
+    },
+    exits: [
+      { side: "left", min: 120, max: 180, target: "approach", tx: 536, ty: 176 },
+      { side: "right", min: 120, max: 180, target: "throne", tx: 48, ty: 208 },
     ],
   },
   throne: {
@@ -694,26 +898,26 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Throne of Night",
     zone: "tower",
     build: buildThrone,
-    mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 }, // 36x14
+    mapRect: { gx: 13, gy: -4, gw: 3, gh: 1 }, // 48x16
     boss: {
-      id: "sovereign",
+      id: "dracula",
       gateCells: [
-        [0, 8],
-        [0, 9],
         [0, 10],
+        [0, 11],
+        [0, 12],
       ],
       rewards: [],
     },
     exits: [
-      { side: "left", min: 120, max: 180, target: "towerTop", tx: 472, ty: 176 },
+      { side: "left", min: 152, max: 208, target: "sovereignHall", tx: 600, ty: 176 },
     ],
   },
   saveRoom: {
     id: "saveRoom",
     name: "Sanctuary",
     build: buildSaveRoom,
-    mapRect: { gx: 7, gy: 0, gw: 1, gh: 1 }, // 20x12
-    exits: [{ side: "left", min: 88, max: 148, target: "corridor", tx: 728, ty: 176 }],
+    mapRect: { gx: 9, gy: 0, gw: 1, gh: 1 }, // 20x12
+    exits: [{ side: "left", min: 88, max: 148, target: "library", tx: 472, ty: 176 }],
   },
   cavern: {
     id: "cavern",
@@ -763,7 +967,6 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildLakeDepths,
     mapRect: { gx: -2, gy: 4, gw: 3, gh: 1 }, // 40x16
     exits: [
-      // Swim up the ceiling shaft (cols 18–21) → lake floor, beside its pit.
       {
         side: "top",
         min: 18 * TILE,
@@ -772,6 +975,16 @@ export const ROOMS: Record<string, RoomDef> = {
         tx: 376,
         ty: 256,
       },
+      { side: "right", min: 152, max: 208, target: "catacombs", tx: 40, ty: 208 },
+    ],
+  },
+  catacombs: {
+    id: "catacombs",
+    name: "Bone Catacombs",
+    build: buildCatacombs,
+    mapRect: { gx: 1, gy: 4, gw: 3, gh: 1 }, // 40x16
+    exits: [
+      { side: "left", min: 152, max: 208, target: "lakeDepths", tx: 600, ty: 208 },
     ],
   },
   shop: {

@@ -28,7 +28,7 @@ export const ENDINGS: Record<EndingId, EndingDef> = {
       {
         scene: "throneCollapse",
         lines: [
-          "The Sovereign's crown struck the floor,",
+          "Dracula's goblet struck the floor,",
           "and for the first time in six hundred years",
           "the throne room was silent.",
         ],
@@ -62,7 +62,7 @@ export const ENDINGS: Record<EndingId, EndingDef> = {
       {
         scene: "sealedGate",
         lines: [
-          "The Sovereign fell — but the castle did not.",
+          "Dracula fell — but the castle did not.",
           "It drew its halls inward, and sealed the ones",
           "you never opened.",
         ],

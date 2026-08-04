@@ -36,8 +36,8 @@ interface Built {
 
 /** Spawn kinds that must rest on a walkable surface. */
 const GROUNDED_SPAWNS = new Set<Spawn["kind"]>([
-  "player", "skeleton", "axeKnight", "candle", "relic", "item",
-  "warp", "save", "shopkeeper", "npc", "boss",
+  "player", "skeleton", "axeKnight", "zombie", "spearGuard", "fleaMan",
+  "candle", "relic", "item", "warp", "save", "shopkeeper", "npc", "boss",
 ]);
 
 function buildAll(): Map<string, Built> {

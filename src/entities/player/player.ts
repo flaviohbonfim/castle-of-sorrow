@@ -86,6 +86,13 @@ export class Player extends Entity {
   private wasInWater = false;
   /** Crack progress 0..1 while petrified (draw overlay). */
   petrifyCracks = 0;
+  /**
+   * Wolf sonic run — invulnerable body-ram. Cleared every tick by WolfFormState;
+   * Game applies contact damage while true.
+   */
+  sonicRun = false;
+  /** Bat fireball cooldown (ticks). */
+  batFireCd = 0;
   spawnX: number;
   spawnY: number;
 
@@ -116,6 +123,9 @@ export class Player extends Entity {
     this.animTick++;
     if (this.iframes > 0) this.iframes--;
     if (this.throwAnim > 0) this.throwAnim--;
+    if (this.batFireCd > 0) this.batFireCd--;
+    // Default off; WolfFormState re-enables each tick while dashing.
+    this.sonicRun = false;
     if (this.dropTimer > 0) {
       this.dropTimer--;
       this.body.dropThrough = true;
@@ -451,11 +461,18 @@ export class Player extends Entity {
 
     const frame = this.currentFrame();
     if (this.form === "bat" || this.form === "wolf") {
-      ctx.drawImage(
-        frame,
-        Math.round(cx - frame.width / 2 - camX),
-        Math.round(footY - frame.height - camY),
-      );
+      const dx = Math.round(cx - frame.width / 2 - camX);
+      const dy = Math.round(footY - frame.height - camY);
+      // Sonic run: cyan afterimage trail
+      if (this.sonicRun) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.drawImage(frame, dx - this.facing * 6, dy);
+        ctx.globalAlpha = 0.18;
+        ctx.drawImage(frame, dx - this.facing * 12, dy);
+        ctx.restore();
+      }
+      ctx.drawImage(frame, dx, dy);
       return;
     }
     const anchorX = this.facing > 0 ? 21 : 19;
