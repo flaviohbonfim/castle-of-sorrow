@@ -2,6 +2,7 @@ import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
 import { ROOMS, WARP_CYCLE, WARP_PADS } from "../world/rooms";
+import { t } from "../data/i18n";
 import type { Game } from "../game";
 
 interface WarpDest {
@@ -86,9 +87,9 @@ export class WarpUI {
 
     ctx.font = "8px 'Courier New', monospace";
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— WARP —", x + 12, y + 16);
+    ctx.fillText(t("warp.title"), x + 12, y + 16);
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText("↑↓ select   X/Z confirm   Esc cancel", x + 12, y + boxH - 10);
+    ctx.fillText(t("warp.hint"), x + 12, y + boxH - 10);
 
     this.dests.forEach((d, i) => {
       const sel = i === this.cursor;

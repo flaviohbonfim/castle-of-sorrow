@@ -434,6 +434,105 @@ export class HurtState extends PlayerState {
   }
 }
 
+/**
+ * SotN-style petrification (Medusa Head contact).
+ * Player freezes as grey stone; mashing ←→ (or jump) cracks the shell.
+ * After enough cracks — or a long timeout — the statue shatters.
+ */
+export class PetrifyState extends PlayerState {
+  readonly name = "petrify";
+  /** 0..1 crack progress exposed for draw. */
+  cracks = 0;
+  private readonly need = 7;
+  private presses = 0;
+  private tick = 0;
+  private cooldown = 0;
+  private readonly maxTicks = 210; // ~3.5s failsafe
+
+  enter(p: Player, g: Game): void {
+    p.body.vx = 0;
+    p.activeAttack = null;
+    p.form = "human";
+    p.iframes = 8; // brief grace so contact doesn't re-trigger every tick
+    p.petrifyCracks = 0;
+    audio.play("hurt");
+    g.camera.addShake(0.4);
+  }
+
+  exit(p: Player): void {
+    p.petrifyCracks = 0;
+    p.iframes = Math.max(p.iframes, 40);
+  }
+
+  update(p: Player, g: Game): PlayerState | null {
+    this.tick++;
+    p.petrifyCracks = this.cracks;
+    // Heavy stone: fall, but no walking.
+    p.body.vx = 0;
+    p.applyGravity(g);
+    // Slightly heavier fall while stone.
+    if (p.body.vy > 0) p.body.vy = Math.min(p.body.vy + 0.08, PHYS.terminalVel * 0.85);
+
+    if (this.cooldown > 0) this.cooldown--;
+
+    const input = g.input;
+    let cracked = false;
+    if (this.cooldown === 0) {
+      if (input.pressed("left") || input.pressed("right") || input.pressed("jump") || input.pressed("up") || input.pressed("down")) {
+        input.consume("left");
+        input.consume("right");
+        input.consume("jump");
+        input.consume("up");
+        input.consume("down");
+        cracked = true;
+      }
+    }
+    // Holding a direction also chips stone slowly (SotN-ish struggle).
+    if (!cracked && this.tick % 12 === 0 && (input.held("left") || input.held("right"))) {
+      cracked = true;
+    }
+
+    if (cracked) {
+      this.presses++;
+      this.cracks = Math.min(1, this.presses / this.need);
+      this.cooldown = 4;
+      p.petrifyCracks = this.cracks;
+      audio.play("hit");
+      // Chip particles
+      for (let i = 0; i < 3; i++) {
+        g.spawnParticle(p.centerX + (Math.random() * 10 - 5), p.centerY + (Math.random() * 12 - 6), {
+          vx: Math.random() * 1.4 - 0.7,
+          vy: -Math.random() * 1.2 - 0.2,
+          life: 12 + Math.floor(Math.random() * 8),
+          color: i % 2 === 0 ? "#908878" : "#606058",
+          size: 1,
+        });
+      }
+    }
+
+    if (this.presses >= this.need || this.tick >= this.maxTicks) {
+      this.shatter(p, g);
+      return p.body.onGround ? new IdleState() : new FallState();
+    }
+    return null;
+  }
+
+  private shatter(p: Player, g: Game): void {
+    audio.play("crit");
+    g.camera.addShake(0.35);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      g.spawnParticle(p.centerX, p.centerY, {
+        vx: Math.cos(a) * (1.2 + Math.random()),
+        vy: Math.sin(a) * (1.0 + Math.random() * 0.6) - 0.5,
+        life: 18 + Math.floor(Math.random() * 12),
+        color: i % 3 === 0 ? "#c0b8a0" : "#787060",
+        size: i % 2 === 0 ? 2 : 1,
+      });
+    }
+  }
+}
+
 export class DieState extends PlayerState {
   readonly name = "die";
   private tick = 0;

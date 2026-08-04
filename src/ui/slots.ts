@@ -3,14 +3,9 @@ import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
 import type { Input } from "../engine/input";
 import { SLOT_COUNT, deleteSlot, slotSummary, type SlotSummary } from "../rpg/saveSlots";
+import { t } from "../data/i18n";
 
 export type SlotMode = "load" | "save" | "new";
-
-const TITLES: Record<SlotMode, string> = {
-  load: "— LOAD GAME —",
-  save: "— SAVE GAME —",
-  new: "— NEW GAME —",
-};
 
 /**
  * Shared 3-slot picker. Hosted by both the App (load / new game) and the
@@ -127,7 +122,9 @@ export class SlotScreen {
     ctx.font = "10px 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText(TITLES[this.mode], VIEW_W / 2, 52);
+    const titleKey =
+      this.mode === "load" ? "slots.load" : this.mode === "save" ? "slots.save" : "title.new";
+    ctx.fillText(`— ${t(titleKey)} —`, VIEW_W / 2, 52);
 
     ctx.font = "8px 'Courier New', monospace";
     for (let i = 0; i < SLOT_COUNT; i++) {
@@ -142,17 +139,17 @@ export class SlotScreen {
       ctx.textAlign = "left";
       const dim = !this.selectable(i);
       ctx.fillStyle = sel ? PAL.textGold : dim ? PAL.uiFrameDark : PAL.textWhite;
-      ctx.fillText(`${sel ? ">" : " "} SLOT ${i + 1}`, 70, y);
+      ctx.fillText(`${sel ? ">" : " "} ${t("slots.slot", { n: i + 1 })}`, 70, y);
 
       if (!row) {
         ctx.fillStyle = PAL.uiFrameDark;
-        ctx.fillText("— empty —", 150, y);
+        ctx.fillText(t("slots.empty"), 150, y);
       } else {
         ctx.fillStyle = dim ? PAL.uiFrameDark : PAL.textWhite;
         ctx.fillText(row.roomName, 150, y);
         ctx.fillStyle = PAL.uiFrame;
         ctx.fillText(
-          `LV ${row.level}   ${row.percent}%   ${row.time}   deaths ${row.deaths}`,
+          `${t("slots.lv", { n: row.level })}   ${row.percent}%   ${row.time}   deaths ${row.deaths}`,
           70,
           y + 13,
         );
@@ -163,12 +160,12 @@ export class SlotScreen {
     ctx.fillStyle = PAL.uiFrame;
     if (this.confirm === "overwrite") {
       ctx.fillStyle = PAL.textGold;
-      ctx.fillText(`Overwrite slot ${this.cursor + 1}?  X yes   Z no`, VIEW_W / 2, VIEW_H - 40);
+      ctx.fillText(t("slots.overwrite", { n: this.cursor + 1 }), VIEW_W / 2, VIEW_H - 40);
     } else if (this.confirm === "delete") {
       ctx.fillStyle = PAL.dmgPlayer;
-      ctx.fillText(`Delete slot ${this.cursor + 1}?  X yes   Z no`, VIEW_W / 2, VIEW_H - 40);
+      ctx.fillText(t("slots.confirmDelete", { n: this.cursor + 1 }), VIEW_W / 2, VIEW_H - 40);
     } else {
-      ctx.fillText("↑↓ choose   X confirm   C delete   Z back", VIEW_W / 2, VIEW_H - 40);
+      ctx.fillText(t("slots.hint"), VIEW_W / 2, VIEW_H - 40);
     }
     ctx.textAlign = "left";
     ctx.restore();

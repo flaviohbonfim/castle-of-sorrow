@@ -1,6 +1,7 @@
 import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
+import { t } from "../data/i18n";
 import type { Game } from "../game";
 
 interface ShopEntry {
@@ -97,7 +98,7 @@ export class ShopUI {
     ctx.font = "8px 'Courier New', monospace";
 
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText(discount ? "— HERMIT'S WARES (friend) —" : "— HERMIT'S WARES —", 76, 46);
+    ctx.fillText(discount ? t("shop.titleFriend") : t("shop.title"), 76, 46);
     ctx.textAlign = "right";
     ctx.fillText(`$ ${p.inventory.gold}`, VIEW_W - 76, 46);
     ctx.textAlign = "left";
@@ -107,14 +108,18 @@ export class ShopUI {
       const price = this.priceOf(game, e.price);
       const afford = p.inventory.gold >= price;
       ctx.fillStyle = sel ? PAL.textGold : afford ? PAL.textWhite : PAL.uiFrameDark;
-      ctx.fillText(`${sel ? ">" : " "}${e.name}${e.relicId ? " (relic)" : ""}`, 76, 62 + i * 12);
+      ctx.fillText(
+        `${sel ? ">" : " "}${e.name}${e.relicId ? ` ${t("shop.relic")}` : ""}`,
+        76,
+        62 + i * 12,
+      );
       ctx.textAlign = "right";
       ctx.fillText(`$${price}`, VIEW_W - 76, 62 + i * 12);
       ctx.textAlign = "left";
     });
 
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText("X: buy   Tab: leave", 76, VIEW_H - 48);
+    ctx.fillText(t("shop.hint"), 76, VIEW_H - 48);
     ctx.restore();
   }
 }

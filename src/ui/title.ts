@@ -4,17 +4,19 @@ import { audio } from "../engine/audio";
 import type { Input } from "../engine/input";
 import { ParallaxBackground } from "../gfx/parallax";
 import { anySlotUsed } from "../rpg/saveSlots";
+import { localeLabel, t, toggleLocale } from "../data/i18n";
+import { saveSettings } from "../engine/settings";
 
 export type TitleChoice = "new" | "load";
 
 interface Item {
   choice: TitleChoice;
-  label: string;
+  labelKey: string;
 }
 
 const ITEMS: Item[] = [
-  { choice: "new", label: "NEW GAME" },
-  { choice: "load", label: "LOAD GAME" },
+  { choice: "new", labelKey: "title.new" },
+  { choice: "load", labelKey: "title.load" },
 ];
 
 /**
@@ -53,6 +55,13 @@ export class TitleScreen {
     if (input.pressed("up")) {
       input.consume("up");
       this.cursor = (this.cursor - 1 + ITEMS.length) % ITEMS.length;
+      audio.play("pickup");
+    }
+    if (input.pressed("left") || input.pressed("right")) {
+      input.consume("left");
+      input.consume("right");
+      const loc = toggleLocale();
+      saveSettings({ language: loc });
       audio.play("pickup");
     }
     if (input.pressed("attack") || input.pressed("jump")) {
@@ -105,7 +114,7 @@ export class TitleScreen {
 
     ctx.font = "8px 'Courier New', monospace";
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText("a nocturne in six hundred years", VIEW_W / 2, 124);
+    ctx.fillText(t("title.subtitle"), VIEW_W / 2, 124);
 
     // Menu.
     ITEMS.forEach((item, i) => {
@@ -114,11 +123,14 @@ export class TitleScreen {
       const y = 168 + i * 22;
       ctx.fillStyle = !on ? PAL.uiFrameDark : sel ? PAL.textGold : PAL.textWhite;
       const blink = sel && Math.floor(this.age / 20) % 2 === 0;
-      ctx.fillText(`${blink ? "» " : "  "}${item.label}${blink ? " «" : "  "}`, VIEW_W / 2, y);
+      const label = t(item.labelKey);
+      ctx.fillText(`${blink ? "» " : "  "}${label}${blink ? " «" : "  "}`, VIEW_W / 2, y);
     });
 
+    ctx.fillStyle = PAL.textGold;
+    ctx.fillText(`${t("title.lang")}: ${localeLabel()}`, VIEW_W / 2, VIEW_H - 40);
     ctx.fillStyle = PAL.uiFrameDark;
-    ctx.fillText("↑↓ choose    X confirm", VIEW_W / 2, VIEW_H - 24);
+    ctx.fillText(t("title.hint"), VIEW_W / 2, VIEW_H - 24);
     ctx.textAlign = "left";
     ctx.restore();
   }

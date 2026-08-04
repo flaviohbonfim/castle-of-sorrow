@@ -1,9 +1,10 @@
 import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
-import { DIALOGUES, NPC_DEFS, type DialoguePages } from "../data/dialogues";
+import { dialoguePages, NPC_DEFS, npcName, type DialoguePages } from "../data/dialogues";
 import { buildPortraitSprites } from "../gfx/sprites";
 import { noticeText } from "../combat/damage";
+import { t } from "../data/i18n";
 import type { Game } from "../game";
 
 let PORTRAITS: ReturnType<typeof buildPortraitSprites> | null = null;
@@ -33,9 +34,9 @@ export class DialogueUI {
     const p = game.player;
     const hasItem = (id: string) => p.inventory.count(id) > 0;
     const dialogueId = def.pickDialogue(game.flags, hasItem);
-    const pages = DIALOGUES[dialogueId];
+    const pages = dialoguePages(dialogueId);
     if (!pages) return;
-    this.name = def.name;
+    this.name = npcName(def);
     this.portrait = def.portrait;
     this.pages = pages;
     this.page = 0;
@@ -48,7 +49,7 @@ export class DialogueUI {
   }
 
   startRaw(name: string, portrait: "hermit" | "ghost" | "demon", dialogueId: string): void {
-    const pages = DIALOGUES[dialogueId];
+    const pages = dialoguePages(dialogueId);
     if (!pages) return;
     this.name = name;
     this.portrait = portrait;
@@ -97,7 +98,7 @@ export class DialogueUI {
           p.res.maxHp += n;
           p.res.hp = Math.min(p.res.maxHp, p.res.hp + n);
           game.texts.push(
-            noticeText(p.centerX, p.body.y - 12, `+${n} Max HP`, PAL.textGold),
+            noticeText(p.centerX, p.body.y - 12, t("notice.maxHp", { n }), PAL.textGold),
           );
           audio.play("levelup");
           game.camera.addShake(0.25);

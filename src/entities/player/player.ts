@@ -20,7 +20,8 @@ import { defaultPlayerSave } from "../../rpg/defaultSave";
 import { computeDamage } from "../../combat/damage";
 import { noticeText } from "../../combat/damage";
 import type { AttackInstance } from "./attacks";
-import { DieState, HurtState, IdleState, type PlayerState } from "./states";
+import { DieState, HurtState, IdleState, PetrifyState, type PlayerState } from "./states";
+import { t } from "../../data/i18n";
 
 /** All movement tuning in one table — feel adjustments happen here. */
 export const PHYS = {
@@ -83,6 +84,8 @@ export class Player extends Entity {
   private throwAnim = 0;
   private animTick = 0;
   private wasInWater = false;
+  /** Crack progress 0..1 while petrified (draw overlay). */
+  petrifyCracks = 0;
   spawnX: number;
   spawnY: number;
 
@@ -265,7 +268,14 @@ export class Player extends Entity {
   /** Incoming hit. `power` is the attacker's raw attack value. */
   takeDamage(game: Game, power: number, fromX: number): void {
     if (this.form === "mist") return; // intangible
-    if (this.iframes > 0 || this.state.name === "die" || this.state.name === "hurt") return;
+    if (
+      this.iframes > 0 ||
+      this.state.name === "die" ||
+      this.state.name === "hurt" ||
+      this.state.name === "petrify"
+    ) {
+      return;
+    }
     if (this.form !== "human") this.becomeHuman(); // hits knock you out of form
     const stats = this.combatStats();
     const { amount } = computeDamage(power, stats.defense, 0);
@@ -282,11 +292,42 @@ export class Player extends Entity {
     }
   }
 
+  /**
+   * Medusa Head contact — SotN petrify: take damage and freeze as stone
+   * until the player mashes directions to crack free.
+   */
+  petrify(game: Game, power: number, fromX: number): void {
+    if (this.form === "mist") return;
+    if (
+      this.iframes > 0 ||
+      this.state.name === "die" ||
+      this.state.name === "petrify" ||
+      this.state.name === "hurt"
+    ) {
+      return;
+    }
+    if (this.form !== "human") this.becomeHuman();
+    const stats = this.combatStats();
+    const { amount } = computeDamage(power, stats.defense, 0);
+    this.res.hp -= amount;
+    game.texts.push(noticeText(this.centerX, this.body.y - 8, String(amount), PAL.dmgPlayer));
+    game.texts.push(
+      noticeText(this.centerX, this.body.y - 18, t("notice.petrify"), "#c0b8a0"),
+    );
+    if (this.res.hp <= 0) {
+      this.res.hp = 0;
+      this.setState(new DieState(), game);
+      return;
+    }
+    this.setState(new PetrifyState(), game);
+    void fromX; // direction unused — stone freezes in place
+  }
+
   gainExp(game: Game, amount: number): void {
     const ups = grantExp(this.levelState, this.attrs, this.res, amount);
     for (const up of ups) {
       game.texts.push(
-        noticeText(this.centerX, this.body.y - 16, `LEVEL ${up.newLevel}!`, PAL.textGold),
+        noticeText(this.centerX, this.body.y - 16, t("notice.levelUp", { n: up.newLevel }), PAL.textGold),
       );
       audio.play("levelup");
       game.camera.addShake(0.3);
@@ -373,6 +414,7 @@ export class Player extends Entity {
       case "crouch": return set(s.crouch)[0];
       case "backdash": return set(s.backdash)[0];
       case "hurt": return set(s.hurt)[0];
+      case "petrify": return set(s.hurt)[0]; // frozen mid-recoil pose reads as stiff
       case "die": return this.body.onGround ? set(s.die)[0] : set(s.hurt)[0];
       case "spell": return set(s.attackUp)[1];
       default:
@@ -415,6 +457,46 @@ export class Player extends Entity {
       return;
     }
     const anchorX = this.facing > 0 ? 21 : 19;
-    ctx.drawImage(frame, Math.round(cx - anchorX - camX), Math.round(footY - 36 - camY));
+    const dx = Math.round(cx - anchorX - camX);
+    const dy = Math.round(footY - 36 - camY);
+
+    if (this.state.name === "petrify") {
+      // Stone statue: grey body + crack lines growing with mash progress.
+      ctx.save();
+      ctx.filter = "grayscale(1) brightness(0.78) contrast(1.15)";
+      ctx.drawImage(frame, dx, dy);
+      ctx.restore();
+      const cracks = this.petrifyCracks;
+      if (cracks > 0.05) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(40, 36, 30, ${0.35 + cracks * 0.55})`;
+        ctx.lineWidth = 1;
+        const midX = dx + frame.width / 2;
+        const top = dy + 6;
+        const bot = dy + frame.height - 4;
+        // Diagonal fracture that spreads with progress
+        ctx.beginPath();
+        ctx.moveTo(midX - 2, top);
+        ctx.lineTo(midX + cracks * 4, top + (bot - top) * 0.45);
+        ctx.lineTo(midX - cracks * 5, bot);
+        ctx.stroke();
+        if (cracks > 0.4) {
+          ctx.beginPath();
+          ctx.moveTo(midX + 4, top + 4);
+          ctx.lineTo(midX - cracks * 6, top + (bot - top) * 0.55);
+          ctx.stroke();
+        }
+        if (cracks > 0.7) {
+          ctx.beginPath();
+          ctx.moveTo(midX - 6, top + 10);
+          ctx.lineTo(midX + cracks * 3, bot - 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      return;
+    }
+
+    ctx.drawImage(frame, dx, dy);
   }
 }

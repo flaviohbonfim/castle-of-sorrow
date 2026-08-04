@@ -627,11 +627,16 @@ export class Game {
     this.tickMedusaSpawners();
 
     // Enemy contact damage (mist form is intangible).
+    // Medusa Heads petrify (SotN) instead of a normal knockback hurt.
     const body = this.player.body;
     if (this.player.form !== "mist") {
       for (const e of this.enemies) {
         if (!e.dead && rectsOverlap(e.body, body)) {
-          this.player.takeDamage(this, e.stats.touchPower, e.centerX);
+          if (e instanceof MedusaHead) {
+            this.player.petrify(this, e.stats.touchPower, e.centerX);
+          } else {
+            this.player.takeDamage(this, e.stats.touchPower, e.centerX);
+          }
         }
       }
     }

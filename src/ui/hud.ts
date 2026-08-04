@@ -2,6 +2,7 @@ import { VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import type { Player } from "../entities/player/player";
 import { buildPickupSprites } from "../gfx/sprites";
+import { t } from "../data/i18n";
 
 /**
  * Compact combat HUD (Phase 8.6 option B).
@@ -85,7 +86,7 @@ export class Hud {
     // --- key hints ---
     ctx.textAlign = "left";
     ctx.fillStyle = PAL.uiFrameDark;
-    ctx.fillText("[Tab] Menu  [V] Sub", L.hints.x, L.hints.y);
+    ctx.fillText(t("hud.hints"), L.hints.x, L.hints.y);
 
     ctx.textAlign = "left";
     ctx.restore();

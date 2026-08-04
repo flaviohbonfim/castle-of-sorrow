@@ -12,9 +12,11 @@ import {
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
 import { ITEMS } from "../rpg/items";
+import { relicDesc, relicName, t } from "../data/i18n";
 
 let SPRITES: ReturnType<typeof buildInteractableSprites> | null = null;
 
+/** English fallbacks for code that still indexes by id (menu lists use relicName). */
 export const RELIC_NAMES: Record<string, string> = {
   doubleJump: "Soul of the Gale",
   batForm: "Soul of the Bat",
@@ -22,15 +24,6 @@ export const RELIC_NAMES: Record<string, string> = {
   mistForm: "Power of the Mist",
   waterWalk: "Mermaid Statue",
   highJump: "Gravity Boots",
-};
-
-const RELIC_DESCS: Record<string, string> = {
-  doubleJump: "Double Jump!",
-  batForm: "Bat Form [1]!",
-  wolfForm: "Wolf Form [2]!",
-  mistForm: "Mist Form [3]!",
-  waterWalk: "Water Walking!",
-  highJump: "High Jump!",
 };
 
 /** Floating relic pickup — grants a permanent ability on touch. */
@@ -52,10 +45,10 @@ export class RelicPickup extends Entity {
       this.dead = true;
       game.player.relics.add(this.relicId);
       game.flags.add(`relic:${this.relicId}`);
-      const name = RELIC_NAMES[this.relicId] ?? this.relicId;
+      const name = relicName(this.relicId);
       game.texts.push(noticeText(this.centerX, this.body.y - 14, name, PAL.spellCyan));
       game.texts.push(
-        noticeText(this.centerX, this.body.y - 4, RELIC_DESCS[this.relicId] ?? "", PAL.textGold),
+        noticeText(this.centerX, this.body.y - 4, relicDesc(this.relicId), PAL.textGold),
       );
       audio.play("levelup");
       game.camera.addShake(0.3);
@@ -170,7 +163,7 @@ export class WarpPad extends Entity {
     ctx.font = "8px 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.fillStyle = PAL.textWhite;
-    ctx.fillText("[^] Warp", Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
+    ctx.fillText(t("prompt.warp"), Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
     ctx.textAlign = "left";
   }
 }
@@ -206,7 +199,7 @@ export class Shopkeeper extends Entity {
       ctx.textAlign = "center";
       ctx.fillStyle = PAL.textWhite;
       ctx.fillText(
-        _showQuestBang ? "[^] Talk !" : "[^] Talk",
+        _showQuestBang ? t("prompt.talkQuest") : t("prompt.talk"),
         Math.round(this.centerX - camX),
         Math.round(this.body.y - 6 - camY),
       );
@@ -260,22 +253,32 @@ export class Npc extends Entity {
       ctx.restore();
     } else {
       ctx.drawImage(frame, x, y);
-      // Cage bars for the imp
+      // Cage bars for the imp — frame the body, not a tall empty cell
+      const cageH = Math.min(frame.height, 26);
+      const cageTop = y + Math.max(0, frame.height - cageH - 2);
       ctx.strokeStyle = PAL.stoneHi;
       ctx.lineWidth = 1;
+      const barStep = Math.max(4, Math.floor((frame.width + 4) / 4));
       for (let i = 0; i < 4; i++) {
-        const bx = x - 2 + i * 6;
+        const bx = x - 2 + i * barStep;
         ctx.beginPath();
-        ctx.moveTo(bx, y - 2);
-        ctx.lineTo(bx, y + frame.height + 2);
+        ctx.moveTo(bx, cageTop);
+        ctx.lineTo(bx, cageTop + cageH);
         ctx.stroke();
       }
+      // top + bottom rails
+      ctx.beginPath();
+      ctx.moveTo(x - 2, cageTop);
+      ctx.lineTo(x + frame.width + 2, cageTop);
+      ctx.moveTo(x - 2, cageTop + cageH);
+      ctx.lineTo(x + frame.width + 2, cageTop + cageH);
+      ctx.stroke();
     }
     if (this.playerNear) {
       ctx.font = "8px 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.fillStyle = PAL.textWhite;
-      ctx.fillText("[^] Talk", Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
+      ctx.fillText(t("prompt.talk"), Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
       ctx.textAlign = "left";
     }
   }
@@ -324,7 +327,7 @@ export class SavePoint extends Entity {
       ctx.font = "8px 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.fillStyle = PAL.textWhite;
-      ctx.fillText("[^] Save", Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
+      ctx.fillText(t("prompt.save"), Math.round(this.centerX - camX), Math.round(this.body.y - 6 - camY));
       ctx.textAlign = "left";
     }
   }

@@ -2,29 +2,37 @@ import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { ITEMS, type EquipSlot, type ItemDef } from "../rpg/items";
 import { expToNext } from "../rpg/leveling";
-import { RELIC_NAMES } from "../entities/interactables";
 import { audio } from "../engine/audio";
 import { music } from "../engine/music";
 import { ROOMS, WARP_PADS } from "../world/rooms";
 import { computeCompletion, formatPlayTime } from "../rpg/completion";
 import { buildPickupSprites } from "../gfx/sprites";
+import { localeLabel, relicName, t, toggleLocale } from "../data/i18n";
+import { saveSettings } from "../engine/settings";
 import type { Game } from "../game";
 import type { Player } from "../entities/player/player";
 
-const SLOTS: { slot: EquipSlot; label: string }[] = [
-  { slot: "rightHand", label: "Right Hand" },
-  { slot: "leftHand", label: "Left Hand" },
-  { slot: "head", label: "Head" },
-  { slot: "body", label: "Body" },
-  { slot: "cloak", label: "Cloak" },
-  { slot: "accessory1", label: "Acc. 1" },
-  { slot: "accessory2", label: "Acc. 2" },
+const SLOT_KEYS: { slot: EquipSlot; key: string }[] = [
+  { slot: "rightHand", key: "menu.slot.rightHand" },
+  { slot: "leftHand", key: "menu.slot.leftHand" },
+  { slot: "head", key: "menu.slot.head" },
+  { slot: "body", key: "menu.slot.body" },
+  { slot: "cloak", key: "menu.slot.cloak" },
+  { slot: "accessory1", key: "menu.slot.accessory1" },
+  { slot: "accessory2", key: "menu.slot.accessory2" },
 ];
 
-const TABS = ["STATUS", "EQUIP", "ITEMS", "MAP", "SYS"] as const;
+const TAB_KEYS = [
+  "menu.tab.status",
+  "menu.tab.equip",
+  "menu.tab.items",
+  "menu.tab.map",
+  "menu.tab.sys",
+] as const;
 type Panel = 0 | 1 | 2 | 3 | 4;
 
-const SYS_ROWS = ["Music", "Save game", "Return to title"] as const;
+/** SYS rows: music, language, save, title */
+const SYS_COUNT = 4;
 
 let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
 
@@ -75,13 +83,13 @@ export class Menu {
 
     if (input.pressed("left")) {
       input.consume("left");
-      this.panel = ((this.panel + TABS.length - 1) % TABS.length) as Panel;
+      this.panel = ((this.panel + TAB_KEYS.length - 1) % TAB_KEYS.length) as Panel;
       this.cursor = 0;
       audio.play("pickup");
     }
     if (input.pressed("right")) {
       input.consume("right");
-      this.panel = ((this.panel + 1) % TABS.length) as Panel;
+      this.panel = ((this.panel + 1) % TAB_KEYS.length) as Panel;
       this.cursor = 0;
       audio.play("pickup");
     }
@@ -112,13 +120,13 @@ export class Menu {
       case 0:
         return 0; // status is read-only
       case 1:
-        return SLOTS.length;
+        return SLOT_KEYS.length;
       case 2:
         return Math.max(1, p.inventory.items.length);
       case 3:
-        return 0; // map read-only (music moved to SYS)
+        return 0; // map read-only
       case 4:
-        return SYS_ROWS.length;
+        return SYS_COUNT;
       default:
         return 0;
     }
@@ -127,11 +135,11 @@ export class Menu {
   private confirm(game: Game): void {
     const p = game.player;
     if (this.panel === 1) {
-      const slot = SLOTS[this.cursor].slot;
+      const slot = SLOT_KEYS[this.cursor].slot;
       if (p.inventory.equipment[slot]) {
         p.inventory.unequip(slot);
         audio.play("pickup");
-        this.flash("Unequipped");
+        this.flash(t("menu.flash.unequip"));
       } else {
         audio.play("hurt");
       }
@@ -162,15 +170,15 @@ export class Menu {
         if (used) {
           p.inventory.remove(entry.itemId);
           audio.play("heart");
-          this.flash(msg || "Used");
+          this.flash(msg || t("menu.flash.used"));
         } else {
           audio.play("hurt");
-          this.flash("No effect");
+          this.flash(t("menu.flash.noEffect"));
         }
       } else {
         if (p.inventory.equip(entry.itemId)) {
           audio.play("pickup");
-          this.flash(`Equipped ${def.name}`);
+          this.flash(t("menu.flash.equipped", { name: def.name }));
         } else {
           audio.play("hurt");
         }
@@ -188,13 +196,20 @@ export class Menu {
       case 0:
         music.toggleMuted();
         audio.play("pickup");
-        this.flash(music.isMuted() ? "Music OFF" : "Music ON");
+        this.flash(music.isMuted() ? t("menu.flash.musicOff") : t("menu.flash.musicOn"));
         break;
-      case 1:
+      case 1: {
+        const loc = toggleLocale();
+        saveSettings({ language: loc });
+        audio.play("pickup");
+        this.flash(t("menu.flash.lang", { lang: localeLabel(loc) }));
+        break;
+      }
+      case 2:
         this.open = false;
         game.openSaveSlots();
         break;
-      case 2:
+      case 3:
         this.open = false;
         game.requestExitToTitle();
         break;
@@ -278,24 +293,24 @@ export class Menu {
   private hintForPanel(): string {
     switch (this.panel) {
       case 0:
-        return "←→ tabs   Tab close";
+        return t("menu.hint.status");
       case 1:
-        return "←→ tabs   ↑↓ select   X unequip   Tab close";
+        return t("menu.hint.equip");
       case 2:
-        return "←→ tabs   ↑↓ select   X use/equip   Tab close";
+        return t("menu.hint.items");
       case 3:
-        return "←→ tabs   Tab close";
+        return t("menu.hint.map");
       case 4:
-        return "←→ tabs   ↑↓ select   X confirm   Tab close";
+        return t("menu.hint.sys");
       default:
-        return "Tab close";
+        return "Tab";
     }
   }
 
   private drawTabs(ctx: CanvasRenderingContext2D): void {
     const tabW = 68;
     const startX = CHROME.pad + 2;
-    TABS.forEach((t, i) => {
+    TAB_KEYS.forEach((key, i) => {
       const x = startX + i * (tabW + 3);
       const active = this.panel === i;
       ctx.fillStyle = active ? "rgba(40, 28, 64, 0.95)" : "rgba(16, 10, 28, 0.9)";
@@ -310,7 +325,7 @@ export class Menu {
         ctx.stroke();
       }
       ctx.fillStyle = active ? PAL.textGold : PAL.uiFrame;
-      ctx.fillText(t, x + 6, CHROME.tabY + 9);
+      ctx.fillText(t(key), x + 6, CHROME.tabY + 9);
     });
   }
 
@@ -352,7 +367,7 @@ export class Menu {
     const barW = w - 48;
 
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("STATUS", left, row);
+    ctx.fillText(t("menu.status"), left, row);
     row += 12;
 
     const stats = p.combatStats();
@@ -389,7 +404,7 @@ export class Menu {
 
     // Combat block (compact 2-col)
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("COMBAT", left, row);
+    ctx.fillText(t("menu.combat"), left, row);
     row += 11;
     ctx.fillStyle = PAL.textWhite;
     ctx.fillText(`ATK ${stats.attack}`, left, row);
@@ -415,24 +430,24 @@ export class Menu {
 
     // Relics — fill remaining plate height (all 6 fit with 9px lines)
     ctx.fillStyle = PAL.spellCyan;
-    ctx.fillText("RELICS", left, row);
+    ctx.fillText(t("menu.relics"), left, row);
     row += 10;
     const relics = [...p.relics];
     if (relics.length === 0) {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("(none)", left, row);
+      ctx.fillText(t("menu.none"), left, row);
     } else {
       const lineH = 9;
       const maxLines = Math.max(1, Math.floor((y + h - 4 - row) / lineH));
       relics.slice(0, maxLines).forEach((r, i) => {
-        const name = RELIC_NAMES[r] ?? r;
+        const name = relicName(r);
         const short = name.length > 18 ? name.slice(0, 17) + "…" : name;
         ctx.fillStyle = PAL.textWhite;
         ctx.fillText(`·${short}`, left, row + i * lineH);
       });
       if (relics.length > maxLines) {
         ctx.fillStyle = PAL.uiFrame;
-        ctx.fillText(`+${relics.length - maxLines} more`, left, row + maxLines * lineH);
+        ctx.fillText(t("menu.more", { n: relics.length - maxLines }), left, row + maxLines * lineH);
       }
     }
 
@@ -449,24 +464,21 @@ export class Menu {
     _h: number,
   ): void {
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— CHARACTER —", x + 10, y + 16);
+    ctx.fillText(t("menu.character"), x + 10, y + 16);
     ctx.fillStyle = PAL.textWhite;
     const weapon = p.inventory.weapon();
     const lines = [
-      `Weapon   ${weapon?.name ?? "—"}`,
-      `Sub-arm  ${p.subweapon}`,
+      `${t("menu.weapon")}   ${weapon?.name ?? "—"}`,
+      `Sub  ${p.subweapon}`,
       "",
-      "Combat HUD shows bars & resources.",
-      "Open EQUIP to change gear.",
-      "Open ITEMS to use potions.",
-      "MAP shows the castle layout.",
-      "SYS: music, save, title.",
+      t("tip.1"),
+      t("tip.2"),
+      t("tip.3"),
+      t("tip.4"),
+      t("tip.5"),
     ];
     lines.forEach((l, i) => {
-      ctx.fillStyle = l.startsWith(" ") || l.includes("HUD") || l.startsWith("Open") || l.startsWith("MAP") || l.startsWith("SYS")
-        ? PAL.uiFrame
-        : PAL.textWhite;
-      if (l.startsWith("Weapon") || l.startsWith("Sub")) ctx.fillStyle = PAL.textWhite;
+      ctx.fillStyle = i >= 3 ? PAL.uiFrame : PAL.textWhite;
       ctx.fillText(l, x + 10, y + 36 + i * 12);
     });
   }
@@ -485,12 +497,12 @@ export class Menu {
     ctx.clip();
 
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— EQUIPMENT —", x + 10, y + 14);
+    ctx.fillText(t("menu.equipment"), x + 10, y + 14);
 
     const base = p.combatStats();
     const listTop = y + 28;
     const rowH = 13;
-    SLOTS.forEach(({ slot, label }, i) => {
+    SLOT_KEYS.forEach(({ slot, key }, i) => {
       const sel = this.cursor === i;
       const rowY = listTop + i * rowH;
       if (sel) {
@@ -499,14 +511,14 @@ export class Menu {
       }
       ctx.fillStyle = sel ? PAL.textGold : PAL.textWhite;
       const id = p.inventory.equipment[slot];
-      const name = id ? ITEMS[id].name : "— empty —";
-      ctx.fillText(label, x + 10, rowY);
+      const name = id ? ITEMS[id].name : t("menu.empty");
+      ctx.fillText(t(key), x + 10, rowY);
       ctx.fillStyle = id ? (sel ? PAL.textWhite : PAL.uiFrame) : PAL.uiFrameDark;
       ctx.fillText(name, x + 86, rowY);
     });
 
-    const previewY = listTop + SLOTS.length * rowH + 10;
-    const sel = SLOTS[this.cursor];
+    const previewY = listTop + SLOT_KEYS.length * rowH + 10;
+    const sel = SLOT_KEYS[this.cursor];
     const id = p.inventory.equipment[sel.slot];
     ctx.fillStyle = PAL.textGold;
     ctx.fillText("— PREVIEW —", x + 10, previewY);
@@ -515,7 +527,7 @@ export class Menu {
     if (id) {
       const def = ITEMS[id];
       const bits: string[] = [];
-      if (def.kind === "weapon") bits.push(`Weapon ATK ${def.atk}`);
+      if (def.kind === "weapon") bits.push(`ATK ${def.atk}`);
       if (def.kind === "armor" || def.kind === "shield") bits.push(`DEF ${def.def}`);
       if (def.kind !== "consumable" && def.bonus) {
         for (const [k, v] of Object.entries(def.bonus)) {
@@ -526,10 +538,10 @@ export class Menu {
       const label = bits.length > 0 ? bits.join("  ") : ITEMS[id].name;
       ctx.fillText(label, x + 10, previewY + 26);
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("X: unequip to bag", x + 10, previewY + 40);
+      ctx.fillText(t("menu.hint.equip"), x + 10, previewY + 40);
     } else {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("Equip from ITEMS tab", x + 10, previewY + 26);
+      ctx.fillText(t("menu.tab.items"), x + 10, previewY + 26);
     }
     ctx.restore();
   }
@@ -548,11 +560,11 @@ export class Menu {
     ctx.clip();
 
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— ITEMS —", x + 10, y + 14);
+    ctx.fillText(t("menu.items"), x + 10, y + 14);
 
     if (p.inventory.items.length === 0) {
       ctx.fillStyle = PAL.uiFrame;
-      ctx.fillText("(bag empty)", x + 10, y + 36);
+      ctx.fillText(t("menu.emptyItems"), x + 10, y + 36);
       ctx.restore();
       return;
     }
@@ -632,7 +644,7 @@ export class Menu {
     h: number,
   ): void {
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— CASTLE MAP —", x + 10, y + 16);
+    ctx.fillText(t("menu.map"), x + 10, y + 16);
     const room = ROOMS[game.currentRoomId];
     ctx.fillStyle = PAL.textWhite;
     ctx.fillText(room?.name ?? game.currentRoomId, x + 120, y + 16);
@@ -730,9 +742,15 @@ export class Menu {
     _h: number,
   ): void {
     ctx.fillStyle = PAL.textGold;
-    ctx.fillText("— SYSTEM —", x + 10, y + 16);
+    ctx.fillText(t("menu.sys"), x + 10, y + 16);
 
-    SYS_ROWS.forEach((label, i) => {
+    const rows = [
+      music.isMuted() ? t("menu.sys.musicOff") : t("menu.sys.musicOn"),
+      `${t("menu.sys.lang")}: ${localeLabel()}`,
+      t("menu.sys.save"),
+      t("menu.sys.title"),
+    ];
+    rows.forEach((line, i) => {
       const sel = this.cursor === i;
       const rowY = y + 40 + i * 20;
       if (sel) {
@@ -740,13 +758,12 @@ export class Menu {
         ctx.fillRect(x + 6, rowY - 12, w - 12, 18);
       }
       ctx.fillStyle = sel ? PAL.textGold : PAL.textWhite;
-      const line = i === 0 ? `Music: ${music.isMuted() ? "OFF" : "ON"}` : label;
       ctx.fillText(`${sel ? "» " : "  "}${line}`, x + 14, rowY);
     });
 
     ctx.fillStyle = PAL.uiFrame;
-    ctx.fillText("Save opens the slot picker and fully heals.", x + 14, y + 120);
-    ctx.fillText("Return to title leaves this run (save first!).", x + 14, y + 134);
+    ctx.fillText(t("tip.3"), x + 14, y + 140);
+    ctx.fillText(t("tip.4"), x + 14, y + 154);
   }
 
   private bar(

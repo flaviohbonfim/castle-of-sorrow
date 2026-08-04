@@ -1,7 +1,11 @@
 import { Renderer } from "./engine/renderer";
 import { startLoop } from "./engine/loop";
 import { music } from "./engine/music";
+import { loadSettings } from "./engine/settings";
 import { App } from "./app";
+
+// Apply persisted language (and other prefs) before any UI draws.
+loadSettings();
 
 const root = document.getElementById("game-root");
 if (!root) throw new Error("Missing #game-root");
