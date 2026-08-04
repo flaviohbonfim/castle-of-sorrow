@@ -270,6 +270,72 @@
         "fishScale", "fishScaleMid", "fishScaleDark", "fishScaleHi", "fishBelly", "fishFin",
         "eyeRed", "batEye", "skin", "bladeHi", "waterHi"
       ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Bat fly 8 frames. Hitbox 14x8; draw centra o frame. align center.",
+      "key": "bat.fly",
+      "out": "bat.png",
+      "frameW": 22,
+      "frameH": 14,
+      "align": "center",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": { "height": 12, "mode": "majority" },
+      "source": { "file": "raw/bat-fly-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "batFur", "batWing", "batEye", "eyeRed",
+        "coat", "coatShade", "pants", "boneShade", "bladeHi"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Medusa Head fly 8 frames. Hitbox 12x12; draw centra. align center.",
+      "key": "medusaHead.fly",
+      "out": "medusa.png",
+      "frameW": 16,
+      "frameH": 16,
+      "align": "center",
+      "registration": "shared",
+      "maxFeetDrift": 4,
+      "resize": { "height": 14, "mode": "majority" },
+      "source": { "file": "raw/medusa-fly-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "medusaSkin", "medusaSkinDark", "medusaSkinHi", "medusaHair",
+        "skin", "eyeRed", "batEye", "gold", "goldShade", "bladeHi"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Spear Guard walk 8 frames + lunge usa frame estendido. Hitbox 16x32; frame largo p/ lanca.",
+      "key": "spearGuard.walk",
+      "out": "spearguard.png",
+      "frameW": 34,
+      "frameH": 32,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 4,
+      "resize": { "height": 30, "mode": "majority" },
+      "source": { "file": "raw/spearguard-walk-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "armor", "armorMid", "armorDark", "armorHi", "armorShade",
+        "coatTrim", "gold", "blade", "bladeHi", "bladeEdge",
+        "eyeRed", "batEye", "skin", "skinShade"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Axe Knight walk 8 frames. Hitbox 16x32; frame largo p/ machado.",
+      "key": "axeKnight.walk",
+      "out": "axeknight.png",
+      "frameW": 28,
+      "frameH": 32,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 4,
+      "resize": { "height": 30, "mode": "majority" },
+      "source": { "file": "raw/axeknight-walk-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "armor", "armorMid", "armorDark", "armorHi", "armorShade",
+        "coatTrim", "gold", "goldHi", "blade", "bladeHi", "bladeEdge",
+        "eyeRed", "batEye", "skin"
+      ]
     }
   ]
 }

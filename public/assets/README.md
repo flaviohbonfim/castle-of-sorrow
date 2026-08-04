@@ -96,15 +96,15 @@ back to procedural art automatically.
 
 | Key | Frames | Hitbox |
 | --- | --- | --- |
-| `skeleton.walk` | 2 | 14×32 |
-| `zombie.walk` | 2 | 14×32 |
+| `skeleton.walk` | 8 | 14×32 |
+| `zombie.walk` | 8 | 14×32 |
 | `fishman.walk` | 8 | 14×32 |
-| `axeKnight.walk` | 2 | 16×32 |
-| `spearGuard.walk` | 2 | 16×32 |
+| `axeKnight.walk` | 8 | 16×32 |
+| `spearGuard.walk` | 8 | 16×32 |
 | `wraith.float` | 2 | 20×34 |
-| `bat.fly` | 2 | 14×8 |
-| `medusaHead.fly` | 2 | 12×12 |
-| `fleaMan.hop` | 2 | 12×16 |
+| `bat.fly` | 8 | 14×8 |
+| `medusaHead.fly` | 8 | 12×12 |
+| `fleaMan.hop` | 8 | 12×16 |
 | `boss.walk`, `boss.windup` | 2, 1 | 26×40 |
 | `dracula.human`, `dracula.beast` | — | 24×36 |
 

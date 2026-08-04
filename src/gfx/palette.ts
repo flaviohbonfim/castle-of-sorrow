@@ -80,6 +80,17 @@ export const PAL = {
   fishScaleHi: "#5aad88",
   fishBelly: "#a8d8c0",
   fishFin: "#c8a060",
+  // Medusa Head (floating green head + gold snakes)
+  medusaSkin: "#6a8a58",
+  medusaSkinDark: "#3a5030",
+  medusaSkinHi: "#a8c080",
+  medusaHair: "#c8b070",
+  // Armored minions (spear guard / axe knight) — steel ramp with midtones
+  armor: "#686878",
+  armorMid: "#505060",
+  armorDark: "#383848",
+  armorHi: "#a0a8b8",
+  armorShade: "#282030",
 
   // Candles & pickups
   candleBrass: "#a08030",

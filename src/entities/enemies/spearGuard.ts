@@ -74,7 +74,18 @@ export class SpearGuard extends Enemy {
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, alpha: number): void {
     const sprites = SpearGuard.sprites!;
     const set = this.facing > 0 ? sprites.right : sprites.left;
-    const frame = set[this.lunging > 0 ? 1 : Math.floor(this.animTick / 12) % 2];
+    const frames = set.length;
+    // Procedural sheet is [walk, lunge]. AI walk strips are 8 frames —
+    // cycle the full walk, and hold a mid/late "thrust" pose while lunging.
+    let idx: number;
+    if (frames <= 2) {
+      idx = this.lunging > 0 ? Math.min(1, frames - 1) : 0;
+    } else if (this.lunging > 0) {
+      idx = Math.min(frames - 1, Math.floor(frames * 0.7));
+    } else {
+      idx = Math.floor(this.animTick / 12) % frames;
+    }
+    const frame = set[idx];
     const x = this.renderX(alpha) + this.body.w / 2 - frame.width / 2 - camX;
     const y = this.renderY(alpha) + this.body.h - frame.height - camY;
     this.drawFrame(ctx, frame, x, y);

@@ -96,6 +96,30 @@
       "frameW": 20,
       "frameH": 32,
       "frames": 8
+    },
+    "bat.fly": {
+      "file": "bat.png",
+      "frameW": 22,
+      "frameH": 14,
+      "frames": 8
+    },
+    "medusaHead.fly": {
+      "file": "medusa.png",
+      "frameW": 16,
+      "frameH": 16,
+      "frames": 8
+    },
+    "spearGuard.walk": {
+      "file": "spearguard.png",
+      "frameW": 34,
+      "frameH": 32,
+      "frames": 8
+    },
+    "axeKnight.walk": {
+      "file": "axeknight.png",
+      "frameW": 28,
+      "frameH": 32,
+      "frames": 8
     }
   }
 }
