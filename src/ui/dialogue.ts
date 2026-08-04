@@ -2,12 +2,12 @@ import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
 import { dialoguePages, NPC_DEFS, npcName, type DialoguePages } from "../data/dialogues";
-import { buildPortraitSprites } from "../gfx/sprites";
+import { resolvePortraitSprites } from "../gfx/resolveSprites";
 import { noticeText } from "../combat/damage";
 import { t } from "../data/i18n";
 import type { Game } from "../game";
 
-let PORTRAITS: ReturnType<typeof buildPortraitSprites> | null = null;
+let PORTRAITS: ReturnType<typeof resolvePortraitSprites> | null = null;
 
 /**
  * Modal dialogue textbox — freezes the world while open.
@@ -112,7 +112,7 @@ export class DialogueUI {
 
   draw(ctx: CanvasRenderingContext2D): void {
     if (!this.open) return;
-    PORTRAITS ??= buildPortraitSprites();
+    PORTRAITS ??= resolvePortraitSprites();
     const boxH = 72;
     const boxY = VIEW_H - boxH - 12;
     const boxX = 16;

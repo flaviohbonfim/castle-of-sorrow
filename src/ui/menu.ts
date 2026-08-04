@@ -6,7 +6,7 @@ import { audio } from "../engine/audio";
 import { music } from "../engine/music";
 import { ROOMS, WARP_PADS } from "../world/rooms";
 import { computeCompletion, formatPlayTime } from "../rpg/completion";
-import { buildPickupSprites } from "../gfx/sprites";
+import { resolvePickupSprites } from "../gfx/resolveSprites";
 import { localeLabel, relicName, t, toggleLocale } from "../data/i18n";
 import { getSettings, saveSettings } from "../engine/settings";
 import {
@@ -43,7 +43,7 @@ type Panel = 0 | 1 | 2 | 3 | 4 | 5;
 /** SYS rows: music, language, scanlines, save, title */
 const SYS_COUNT = 5;
 
-let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
+let PICKUPS: ReturnType<typeof resolvePickupSprites> | null = null;
 
 /** Shared chrome metrics for the pause menu. */
 const CHROME = {
@@ -239,7 +239,7 @@ export class Menu {
   }
 
   draw(ctx: CanvasRenderingContext2D, game: Game): void {
-    PICKUPS ??= buildPickupSprites();
+    PICKUPS ??= resolvePickupSprites();
     const p = game.player;
     ctx.save();
     ctx.font = "8px 'Courier New', monospace";

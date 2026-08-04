@@ -2,6 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildZombieSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { statsFor } from "../../rpg/bestiary";
 
 const GRAVITY = 0.26;
@@ -15,7 +16,7 @@ export class Zombie extends Enemy {
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 7, y - 32, 14, 32, statsFor("zombie", flags), "zombie");
-    Zombie.sprites ??= buildZombieSprites();
+    Zombie.sprites ??= resolveSpriteSet("zombie.walk", buildZombieSprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
 

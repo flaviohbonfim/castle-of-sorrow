@@ -2,7 +2,7 @@ import { Entity } from "./entity";
 import type { Game } from "../game";
 import { TILE } from "../gfx/tiles";
 import { Swing } from "../combat/hitbox";
-import { buildSubweaponSprites, buildBoneSprites } from "../gfx/sprites";
+import { resolveSubweaponSprites, resolveBoneSprites } from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 import { rectsOverlap } from "../engine/math";
 
@@ -17,7 +17,7 @@ export type ProjectileKind =
   | "axeThrow"
   | "blood";
 
-let SPRITES: ReturnType<typeof buildSubweaponSprites> | null = null;
+let SPRITES: ReturnType<typeof resolveSubweaponSprites> | null = null;
 let BONES: HTMLCanvasElement[] | null = null;
 
 /**
@@ -55,8 +55,8 @@ export class Projectile extends Entity {
       isSpell ? 16 : isTiny ? 6 : isBat ? 10 : 10,
       isSpell ? 8 : isTiny ? 4 : isBat ? 8 : 6,
     );
-    SPRITES ??= buildSubweaponSprites();
-    BONES ??= buildBoneSprites();
+    SPRITES ??= resolveSubweaponSprites();
+    BONES ??= resolveBoneSprites();
     this.facing = dir;
     this.power = power;
     switch (kind) {

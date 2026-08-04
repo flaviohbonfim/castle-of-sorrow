@@ -2,6 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody, groundAhead } from "../../world/collision";
 import { buildSpearGuardSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { statsFor } from "../../rpg/bestiary";
 
 const GRAVITY = 0.26;
@@ -20,7 +21,7 @@ export class SpearGuard extends Enemy {
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 8, y - 32, 16, 32, statsFor("spearGuard", flags), "spearGuard");
-    SpearGuard.sprites ??= buildSpearGuardSprites();
+    SpearGuard.sprites ??= resolveSpriteSet("spearGuard.walk", buildSpearGuardSprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
 

@@ -1,4 +1,4 @@
-import { TILE, TileId, buildTileset, type ZoneId } from "../gfx/tiles";
+import { TILE, TileId, resolveTileset, type ZoneId } from "../gfx/tiles";
 
 export class Tilemap {
   readonly widthPx: number;
@@ -13,7 +13,7 @@ export class Tilemap {
   ) {
     this.widthPx = cols * TILE;
     this.heightPx = rows * TILE;
-    this.tileset = buildTileset(zone);
+    this.tileset = resolveTileset(zone);
   }
 
   at(col: number, row: number): TileId {

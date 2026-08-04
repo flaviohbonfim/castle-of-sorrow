@@ -5,17 +5,16 @@ import { rectsOverlap } from "../engine/math";
 import {
   buildDemonSprites,
   buildGhostSprites,
-  buildInteractableSprites,
   buildShopkeeperSprites,
   type SpriteSet,
 } from "../gfx/sprites";
-import { resolveSpriteSet } from "../gfx/resolveSprites";
+import { resolveInteractableSprites, resolveSpriteSet } from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
 import { ITEMS } from "../rpg/items";
 import { relicDesc, relicName, t } from "../data/i18n";
 
-let SPRITES: ReturnType<typeof buildInteractableSprites> | null = null;
+let SPRITES: ReturnType<typeof resolveInteractableSprites> | null = null;
 
 /** English fallbacks for code that still indexes by id (menu lists use relicName). */
 export const RELIC_NAMES: Record<string, string> = {
@@ -39,7 +38,7 @@ export class RelicPickup extends Entity {
     y: number,
   ) {
     super(x - 5, y - 16, 10, 10);
-    SPRITES ??= buildInteractableSprites();
+    SPRITES ??= resolveInteractableSprites();
   }
 
   update(game: Game): void {
@@ -89,7 +88,7 @@ export class ItemPickup extends Entity {
     y: number,
   ) {
     super(x - 5, y - 12, 10, 12);
-    SPRITES ??= buildInteractableSprites();
+    SPRITES ??= resolveInteractableSprites();
   }
 
   update(game: Game): void {
@@ -146,7 +145,7 @@ export class WarpPad extends Entity {
   }
 
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, _alpha: number): void {
-    const s = SPRITES ?? (SPRITES = buildInteractableSprites());
+    const s = SPRITES ?? (SPRITES = resolveInteractableSprites());
     const frame = s.warp[Math.floor(this.age / 20) % 2];
     const x = Math.round(this.centerX - frame.width / 2 - camX);
     const y = Math.round(this.body.y + this.body.h - frame.height - camY);
@@ -313,7 +312,7 @@ export class SavePoint extends Entity {
   }
 
   draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, _alpha: number): void {
-    const s = SPRITES ?? (SPRITES = buildInteractableSprites());
+    const s = SPRITES ?? (SPRITES = resolveInteractableSprites());
     const frame = s.save[Math.floor(this.age / 16) % 2];
     const x = Math.round(this.centerX - frame.width / 2 - camX);
     const y = Math.round(this.body.y + this.body.h - frame.height - camY);

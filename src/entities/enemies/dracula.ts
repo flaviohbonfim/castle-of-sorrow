@@ -1,7 +1,7 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody } from "../../world/collision";
-import { buildDraculaSprites } from "../../gfx/sprites";
+import { resolveDraculaSprites } from "../../gfx/resolveSprites";
 import { PAL } from "../../gfx/palette";
 import { statsFor } from "../../rpg/bestiary";
 import { audio } from "../../engine/audio";
@@ -18,7 +18,7 @@ type Mode = "idle" | "cast" | "teleport" | "lunge" | "recover";
  * Phase 2 (beast, ≤50% HP): faster, triple volleys, aggressive lunges.
  */
 export class Dracula extends Enemy {
-  private static sprites: ReturnType<typeof buildDraculaSprites> | null = null;
+  private static sprites: ReturnType<typeof resolveDraculaSprites> | null = null;
   private animTick = 0;
   private mode: Mode = "idle";
   private modeTicks = 0;
@@ -31,7 +31,7 @@ export class Dracula extends Enemy {
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 12, y - 36, 24, 36, statsFor("dracula", flags), "dracula");
     this.maxHp = this.stats.hp;
-    Dracula.sprites ??= buildDraculaSprites();
+    Dracula.sprites ??= resolveDraculaSprites();
     this.facing = -1;
   }
 

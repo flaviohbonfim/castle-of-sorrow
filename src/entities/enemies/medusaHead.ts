@@ -1,6 +1,7 @@
 import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { buildMedusaHeadSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { statsFor } from "../../rpg/bestiary";
 
 /**
@@ -18,7 +19,7 @@ export class MedusaHead extends Enemy {
     this.facing = dir;
     this.baseY = y;
     this.body.vx = dir * 1.35;
-    MedusaHead.sprites ??= buildMedusaHeadSprites();
+    MedusaHead.sprites ??= resolveSpriteSet("medusaHead.fly", buildMedusaHeadSprites);
   }
 
   protected override onHit(fromX: number): void {

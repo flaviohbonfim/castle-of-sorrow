@@ -1,7 +1,7 @@
 import { VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import type { Player } from "../entities/player/player";
-import { buildPickupSprites } from "../gfx/sprites";
+import { resolvePickupSprites } from "../gfx/resolveSprites";
 import { t } from "../data/i18n";
 
 /**
@@ -26,14 +26,14 @@ export const LAYOUT = {
   hints: { x: 6, y: VIEW_H - 10 },
 } as const;
 
-let PICKUPS: ReturnType<typeof buildPickupSprites> | null = null;
+let PICKUPS: ReturnType<typeof resolvePickupSprites> | null = null;
 
 /**
  * Minimal left vitals + resource strip. Minimap owns the top-right alone.
  */
 export class Hud {
   draw(ctx: CanvasRenderingContext2D, p: Player): void {
-    PICKUPS ??= buildPickupSprites();
+    PICKUPS ??= resolvePickupSprites();
     const L = LAYOUT;
     ctx.save();
     ctx.font = "8px 'Courier New', monospace";

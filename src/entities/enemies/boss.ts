@@ -2,7 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { audio } from "../../engine/audio";
 import { moveBody } from "../../world/collision";
-import { buildBossSprites } from "../../gfx/sprites";
+import { resolveBossSprites } from "../../gfx/resolveSprites";
 import { PAL } from "../../gfx/palette";
 import { statsFor, type BestiaryId } from "../../rpg/bestiary";
 
@@ -13,7 +13,7 @@ const GRAVITY = 0.26;
  * player, tosses bone volleys and telegraphs a charge. Enrages below half HP.
  */
 export class BoneColossus extends Enemy {
-  private static sprites: ReturnType<typeof buildBossSprites> | null = null;
+  private static sprites: ReturnType<typeof resolveBossSprites> | null = null;
   private animTick = 0;
   private cooldown = 90;
   private mode: "walk" | "windup" | "charge" = "walk";
@@ -33,7 +33,7 @@ export class BoneColossus extends Enemy {
     this.maxHp = this.stats.hp;
     this.bossId = kind;
     this.displayName = kind === "sovereign" ? "ETERNAL SOVEREIGN" : "BONE COLOSSUS";
-    BoneColossus.sprites ??= buildBossSprites();
+    BoneColossus.sprites ??= resolveBossSprites();
     this.facing = -1;
     if (kind === "sovereign") this.cooldown = 70;
   }

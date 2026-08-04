@@ -1,4 +1,5 @@
 import { makeSurface } from "../engine/renderer";
+import { getSheet } from "./assets";
 import { PAL } from "./palette";
 
 export const TILE = 16;
@@ -356,5 +357,40 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
     }),
   );
 
+  return tiles;
+}
+
+/**
+ * Override key slug per tile role. The tileset is semantic, not autotile —
+ * a sheet named `tile.castle.floorTop` is a horizontal strip of TILE×TILE
+ * variants, one frame per variant.
+ */
+const TILE_SLUG: Record<TileId, string> = {
+  [TileId.Empty]: "empty",
+  [TileId.Brick]: "brick",
+  [TileId.FloorTop]: "floorTop",
+  [TileId.Platform]: "platform",
+  [TileId.PillarTop]: "pillarTop",
+  [TileId.Pillar]: "pillar",
+  [TileId.PillarBase]: "pillarBase",
+  [TileId.BgWall]: "bgWall",
+  [TileId.BgWindow]: "bgWindow",
+  [TileId.Cracked]: "cracked",
+  [TileId.Gate]: "gate",
+  [TileId.Water]: "water",
+  [TileId.WaterTop]: "waterTop",
+  [TileId.Door]: "door",
+};
+
+/**
+ * Procedural tileset with per-tile overrides from the asset manifest.
+ * A missing or empty sheet keeps the generated tile.
+ */
+export function resolveTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasElement[]> {
+  const tiles = buildTileset(zone);
+  for (const id of tiles.keys()) {
+    const sheet = getSheet(`tile.${zone}.${TILE_SLUG[id]}`);
+    if (sheet && sheet.length > 0) tiles.set(id, sheet);
+  }
   return tiles;
 }

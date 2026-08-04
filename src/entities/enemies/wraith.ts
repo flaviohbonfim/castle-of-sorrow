@@ -3,6 +3,7 @@ import type { Game } from "../../game";
 import { audio } from "../../engine/audio";
 import { PAL } from "../../gfx/palette";
 import { buildWraithSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { MedusaHead } from "./medusaHead";
 import { statsFor } from "../../rpg/bestiary";
 
@@ -27,7 +28,7 @@ export class ClockworkWraith extends Enemy {
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 10, y - 34, 20, 34, statsFor("wraith", flags), "wraith");
     this.maxHp = this.stats.hp;
-    ClockworkWraith.sprites ??= buildWraithSprites();
+    ClockworkWraith.sprites ??= resolveSpriteSet("wraith.float", buildWraithSprites);
     this.facing = -1;
   }
 

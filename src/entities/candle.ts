@@ -2,10 +2,10 @@ import { Entity } from "./entity";
 import type { Game } from "../game";
 import { audio } from "../engine/audio";
 import { chance } from "../engine/math";
-import { buildCandleSprites } from "../gfx/sprites";
+import { resolveCandleSprites } from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 
-let SPRITES: ReturnType<typeof buildCandleSprites> | null = null;
+let SPRITES: ReturnType<typeof resolveCandleSprites> | null = null;
 
 /**
  * Breakable candelabra. One hit from anything shatters it and drops a heart
@@ -16,7 +16,7 @@ export class Candle extends Entity {
 
   constructor(x: number, y: number) {
     super(x - 3, y - 12, 6, 12); // bottom-center anchor
-    SPRITES ??= buildCandleSprites();
+    SPRITES ??= resolveCandleSprites();
   }
 
   smash(game: Game): void {

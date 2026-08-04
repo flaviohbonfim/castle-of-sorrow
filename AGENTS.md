@@ -15,8 +15,10 @@ agents; the real documentation lives in `docs/`.
 ## Commands
 
 ```bash
-npm run dev        # Vite dev server, http://localhost:5173
-npm run typecheck  # tsc --noEmit — MUST be clean before you finish
+npm run dev              # Vite dev server, http://localhost:5173
+npm run typecheck        # tsc --noEmit — MUST be clean before you finish
+npm run assets:build     # assets-src/ -> public/assets/ (art pipeline)
+npm run assets:validate   # QA gate for overrides — must pass before shipping art
 ```
 
 ## Hard rules
@@ -24,7 +26,9 @@ npm run typecheck  # tsc --noEmit — MUST be clean before you finish
 - Fixed 60Hz tick simulation; all gameplay values are per-tick. Never use
   wall-clock time in gameplay logic.
 - All colors from `src/gfx/palette.ts` (PAL); all sprites generated in
-  `src/gfx/sprites.ts`. No image/audio files (until Roadmap Phase 9).
+  `src/gfx/sprites.ts`. Image files are override-only: they go through
+  `src/gfx/resolveSprites.ts`, and removing a manifest key must always fall
+  back to the procedural builder. See [docs/ART_PIPELINE.md](docs/ART_PIPELINE.md).
 - Save key `castle-of-sorrow-save` and the flag namespaces
   (`wall:` `relic:` `visited:` `boss:`) are append-only.
 - After acting on `input.pressed(x)`, call `input.consume(x)`.

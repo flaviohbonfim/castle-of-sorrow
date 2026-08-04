@@ -25,12 +25,25 @@ export const PAL = {
   cloudDark: "#2c2248",
 
   // Player (Alucard-ish: pale, black-and-gold coat)
+  //
+  // The ramp deliberately has no gap wider than ~0.10 in OKLab lightness:
+  // coatShade .19 / boots .20 / coat .26 / pants .36 / coatMid .43 /
+  // coatLight .53 / skinShade .62 / bladeEdge .66 / coatTrim .72 /
+  // hairShade .73 / linen .78 / skin .81 / blade .91 / hair .91 / bladeHi 1.0.
+  // A hole between .36 and .66 used to collapse every mid-tone onto `pants`,
+  // which flattened the figure at sprite size (docs/ART_PIPELINE.md §5.1).
+  // The mid-tones also carry chroma the stone ramp does not, so the hero
+  // separates from a wall by hue and not only by brightness.
   hair: "#e8e0c8",
   hairShade: "#b0a888",
   skin: "#e0b898",
+  skinShade: "#a87860",
+  linen: "#c0b8a8",
   coat: "#26202f",
   coatTrim: "#c8a038",
   coatShade: "#161020",
+  coatMid: "#4e4482",
+  coatLight: "#6d5fa8",
   pants: "#403850",
   boots: "#181420",
 

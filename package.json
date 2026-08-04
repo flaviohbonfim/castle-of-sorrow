@@ -8,6 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "assets:build": "node tools/process-sprites.mjs",
+    "assets:remove-bg": "node tools/remove-background.mjs",
+    "assets:validate": "node tools/validate-assets.mjs",
+    "assets:selftest": "node tools/make-test-asset.mjs && node tools/process-sprites.mjs --preview --out .assets-selftest && node tools/validate-assets.mjs --out .assets-selftest",
     "package": "npm run build && cd dist && zip -r ../castle-of-sorrow.zip . && cd .. && echo \"Wrote castle-of-sorrow.zip\""
   },
   "devDependencies": {

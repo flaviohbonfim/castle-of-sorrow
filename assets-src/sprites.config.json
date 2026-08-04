@@ -1,0 +1,225 @@
+{
+  "_doc": "Sheet recipes for tools/process-sprites.mjs. See docs/ART_PIPELINE.md §4. Keys must exist in src/gfx/resolveSprites.ts. Set \"enabled\": false to keep a recipe without shipping it.",
+  "_heroPalette": [
+    "hair", "hairShade", "skin", "skinShade", "linen",
+    "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+    "pants", "boots", "blade", "bladeHi", "bladeEdge"
+  ],
+  "sheets": [
+    {
+      "_note": "Fase 2 — ATIVO. Idle multi-frame (8) via generate_character_animations. Substitui a pose unica da Fase 1.",
+      "key": "player.idle",
+      "out": "player-idle.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-idle-v2-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Walk 8 frames, mesmo character_id.",
+      "key": "player.walk",
+      "out": "player-walk.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-walk-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Jump 8 frames. maxFeetDrift 6 para tuck mid-air. Fall reusa frame mid-air do jump.",
+      "key": "player.jump",
+      "out": "player-jump.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 6,
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-jump-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Attack 2a geracao (espada sem clip).",
+      "key": "player.attack",
+      "out": "player-attack.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-attack-regen2.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Attack up custom (prompt anti-crop).",
+      "key": "player.attackUp",
+      "out": "player-attack-up.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 6,
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-attack-up-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Crouch ESTATICO (1 frame). NAO usar height:34 — isso reescala o crouch ate a mesma altura do idle. scale 0.2297 = 34/148 (altura do idle em pe), assim o crouch (~101px bruto) sai ~23px e fica visivelmente mais baixo na caixa 40x36.",
+      "key": "player.crouch",
+      "out": "player-crouch.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "per-frame",
+      "resize": { "scale": 0.2297, "mode": "majority" },
+      "frames": ["raw/hero-crouch-static.png"],
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Crouch attack custom (prompt anti-crop).",
+      "key": "player.crouchAttack",
+      "out": "player-crouch-attack.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-crouch-attack-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Backdash v2 (prompt forcou deslize em pe pra tras; v1 parecia morte). 8 frames, shared reg.",
+      "key": "player.backdash",
+      "out": "player-backdash.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 6,
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-backdash-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Hurt preset 8 frames.",
+      "key": "player.hurt",
+      "out": "player-hurt.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 6,
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-hurt-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Death preset 12 frames. player.ts avanca e segura o ultimo frame.",
+      "key": "player.die",
+      "out": "player-die.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 10,
+      "resize": { "height": 34, "mode": "majority" },
+      "source": { "file": "raw/hero-death-base.png", "cols": 12, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade", "linen",
+        "coat", "coatTrim", "coatShade", "coatMid", "coatLight",
+        "pants", "boots", "blade", "bladeHi", "bladeEdge"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Forma lobo: run 8 frames. Source lifted (hero-wolf-run-lifted) + palette SEM pretos (coat/coatShade/boots) para o pelo cair em cinzas medios legiveis no cenario escuro. Juba/colar/olho preservados no lift.",
+      "key": "player.wolf",
+      "out": "player-wolf.png",
+      "frameW": 40,
+      "frameH": 22,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 6,
+      "resize": { "height": 18, "mode": "majority" },
+      "source": { "file": "raw/hero-wolf-run-lifted.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "pants", "stoneMid", "stoneLight", "stoneHi",
+        "coatMid", "coatLight", "batFur",
+        "hair", "hairShade", "bone", "boneShade",
+        "coatTrim", "gold", "goldHi", "goldShade",
+        "eyeRed", "batEye", "bladeHi"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Forma morcego do heroi: generate + animate wing flap (8 frames). height 32 (24px ficou ilegivel no downscale 6.7x; 32 preserva asas/cabelo/colar dourado). Hitbox continua 18x14.",
+      "key": "player.bat",
+      "out": "player-bat.png",
+      "frameW": 40,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 12,
+      "resize": { "height": 32, "mode": "majority" },
+      "source": { "file": "raw/hero-bat-fly-base.png", "cols": 8, "rows": 1 },
+      "palette": [
+        "hair", "hairShade", "skin", "skinShade",
+        "coat", "coatShade", "coatMid", "coatLight", "coatTrim",
+        "pants", "boots", "batFur", "batWing", "batEye", "eyeRed",
+        "gold", "goldHi", "goldShade", "bladeHi"
+      ]
+    },
+    {
+      "_note": "Fase 2 — ATIVO. Skeleton walk 8 frames: import bible aprovada + animate. Hitbox 14x32; altura 30. Codigo ja cicla set.length (animTick/14).",
+      "key": "skeleton.walk",
+      "out": "skeleton.png",
+      "frameW": 20,
+      "frameH": 32,
+      "align": "feet",
+      "registration": "shared",
+      "maxFeetDrift": 4,
+      "resize": { "height": 30, "mode": "majority" },
+      "source": { "file": "raw/skeleton-walk-lifted.png", "cols": 8, "rows": 1 },
+      "palette": ["bone", "boneShade", "boneDark", "eyeRed", "bladeHi"]
+    }
+  ]
+}

@@ -23,6 +23,16 @@ npm-debug.log*
 # TypeScript / Vite
 *.tsbuildinfo
 
+# Asset pipeline self-test output (throwaway; run `npm run assets:selftest`)
+.assets-selftest/
+
 # Local agent / tool caches
 .claude/
 graphify-out/
+
+# Asset pipeline scratch (previews, failed gens, download leftovers)
+assets-src/raw/_preview*
+assets-src/raw/*.bin
+assets-src/raw/*-v1-bad*
+assets-src/raw/*-preview.png
+assets-src/raw/grok-skeleton-source.*

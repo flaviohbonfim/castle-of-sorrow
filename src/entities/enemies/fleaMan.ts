@@ -2,6 +2,7 @@ import { Enemy } from "./enemy";
 import type { Game } from "../../game";
 import { moveBody } from "../../world/collision";
 import { buildFleaManSprites, type SpriteSet } from "../../gfx/sprites";
+import { resolveSpriteSet } from "../../gfx/resolveSprites";
 import { statsFor } from "../../rpg/bestiary";
 
 const GRAVITY = 0.28;
@@ -14,7 +15,7 @@ export class FleaMan extends Enemy {
 
   constructor(x: number, y: number, flags?: Set<string>) {
     super(x - 6, y - 16, 12, 16, statsFor("fleaMan", flags), "fleaMan");
-    FleaMan.sprites ??= buildFleaManSprites();
+    FleaMan.sprites ??= resolveSpriteSet("fleaMan.hop", buildFleaManSprites);
     this.facing = Math.random() < 0.5 ? 1 : -1;
   }
 

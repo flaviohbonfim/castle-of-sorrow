@@ -3,13 +3,13 @@ import type { Game } from "../game";
 import { audio } from "../engine/audio";
 import { moveBody } from "../world/collision";
 import { rectsOverlap } from "../engine/math";
-import { buildPickupSprites } from "../gfx/sprites";
+import { resolvePickupSprites } from "../gfx/resolveSprites";
 import { PAL } from "../gfx/palette";
 import { noticeText } from "../combat/damage";
 
 export type PickupKind = "heart" | "bigHeart" | "gold" | "potion";
 
-let SPRITES: ReturnType<typeof buildPickupSprites> | null = null;
+let SPRITES: ReturnType<typeof resolvePickupSprites> | null = null;
 
 /** Dropped loot: falls, settles, then magnetizes to the player when close. */
 export class Pickup extends Entity {
@@ -21,7 +21,7 @@ export class Pickup extends Entity {
     y: number,
   ) {
     super(x - 4, y - 8, 8, 8);
-    SPRITES ??= buildPickupSprites();
+    SPRITES ??= resolvePickupSprites();
     this.body.vx = Math.random() * 1.2 - 0.6;
     this.body.vy = -1.8;
   }

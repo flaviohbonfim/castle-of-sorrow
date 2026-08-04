@@ -3,12 +3,12 @@ import type { Game } from "../../game";
 import { audio } from "../../engine/audio";
 import { moveBody } from "../../world/collision";
 import {
-  buildPlayerSprites,
   buildPlayerBatSprites,
   buildPlayerWolfSprites,
   type PlayerSprites,
   type SpriteSet,
 } from "../../gfx/sprites";
+import { resolvePlayerSprites, resolveSpriteSet } from "../../gfx/resolveSprites";
 import { TILE } from "../../gfx/tiles";
 import { PAL } from "../../gfx/palette";
 import { Inventory } from "../../rpg/inventory";
@@ -58,7 +58,7 @@ export interface PlayerSave {
 }
 
 export class Player extends Entity {
-  private sprites: PlayerSprites = buildPlayerSprites();
+  private sprites: PlayerSprites = resolvePlayerSprites();
   state: PlayerState = new IdleState();
 
   // RPG state
@@ -402,36 +402,114 @@ export class Player extends Entity {
   private currentFrame(): HTMLCanvasElement {
     const set = (s: SpriteSet) => (this.facing > 0 ? s.right : s.left);
     if (this.form === "bat") {
-      this.batSprites ??= buildPlayerBatSprites();
-      // 3-frame wing cycle (up / open / down)
-      return set(this.batSprites)[Math.floor(this.animTick / 4) % 3];
+      this.batSprites ??= resolveSpriteSet("player.bat", buildPlayerBatSprites);
+      // Procedural bat is 3 frames @ 4 ticks (~12-tick cycle). Scale so AI
+      // strips with more frames keep similar wing-beat tempo.
+      const frames = this.batSprites.right.length;
+      const ticksPerFrame = Math.max(1, Math.round(12 / frames));
+      return set(this.batSprites)[Math.floor(this.animTick / ticksPerFrame) % frames];
     }
     if (this.form === "wolf") {
-      this.wolfSprites ??= buildPlayerWolfSprites();
+      this.wolfSprites ??= resolveSpriteSet("player.wolf", buildPlayerWolfSprites);
       const moving = Math.abs(this.body.vx) > 0.25;
-      // [0]=idle, [1..3]=run cycle
-      return set(this.wolfSprites)[moving ? 1 + (Math.floor(this.animTick / 5) % 3) : 0];
+      const frames = this.wolfSprites.right.length;
+      // Procedural: idle=[0], run=[1..3] @ 5 ticks (~15-tick cycle). AI strips
+      // are a full run loop — hold frame 0 when still, cycle all when moving.
+      if (!moving) return set(this.wolfSprites)[0];
+      const ticksPerFrame = Math.max(1, Math.round(15 / frames));
+      return set(this.wolfSprites)[Math.floor(this.animTick / ticksPerFrame) % frames];
     }
     const s = this.sprites;
     const atk = this.activeAttack;
     if (atk) {
-      const idx = atk.phase === "startup" ? 0 : atk.phase === "active" ? 1 : 2;
+      // Procedural attack sheets have 3 frames (startup/active/recovery). AI
+      // overrides may have more — map attack progress across the full strip so
+      // no frames are dead weight. Up/crouch still use their own sheets.
       const sheet = atk.dir === "up" ? s.attackUp : atk.crouched ? s.crouchAttack : s.attack;
+      const frames = sheet.right.length;
+      let idx: number;
+      if (frames <= 3) {
+        idx = atk.phase === "startup" ? 0 : atk.phase === "active" ? 1 : 2;
+      } else {
+        const progress = Math.min(0.999, atk.tick / Math.max(1, atk.total));
+        idx = Math.min(frames - 1, Math.floor(progress * frames));
+      }
       return set(sheet)[idx];
     }
     switch (this.state.name) {
-      case "walk": return set(s.walk)[Math.floor(this.animTick / 7) % 4];
-      case "jump": return set(s.jump)[0];
-      case "fall": return set(s.fall)[0];
-      case "crouch": return set(s.crouch)[0];
-      case "backdash": return set(s.backdash)[0];
-      case "hurt": return set(s.hurt)[0];
-      case "petrify": return set(s.hurt)[0]; // frozen mid-recoil pose reads as stiff
-      case "die": return this.body.onGround ? set(s.die)[0] : set(s.hurt)[0];
-      case "spell": return set(s.attackUp)[1];
+      case "walk": {
+        // Keep the full step-cycle duration ~constant (28 ticks) regardless of
+        // frame count, so an override with more frames plays smoother instead
+        // of just slower. 4 frames -> 7 ticks/frame, matching the original.
+        const frames = s.walk.right.length;
+        const ticksPerFrame = Math.max(1, Math.round(28 / frames));
+        return set(s.walk)[Math.floor(this.animTick / ticksPerFrame) % frames];
+      }
+      case "jump": {
+        // Procedural jump is a single pose; multi-frame overrides play through
+        // the strip (held mid-air still advances so the coat/legs read as live).
+        const frames = s.jump.right.length;
+        if (frames <= 1) return set(s.jump)[0];
+        const ticksPerFrame = Math.max(1, Math.round(24 / frames));
+        return set(s.jump)[Math.floor(this.animTick / ticksPerFrame) % frames];
+      }
+      case "fall": {
+        // When jump is an AI multi-frame strip, reuse a mid-air tuck pose so
+        // fall doesn't flash back to the procedural style. Procedural jump is
+        // 1 frame and has a dedicated fall sheet — keep that path.
+        const jumpFrames = s.jump.right.length;
+        if (jumpFrames > 1) {
+          // Second half of the jump strip is the airborne/tuck region.
+          const idx = Math.min(jumpFrames - 1, Math.floor(jumpFrames * 0.6));
+          return set(s.jump)[idx];
+        }
+        return set(s.fall)[0];
+      }
+      case "crouch":
+        // Held crouch is a static pose. Multi-frame crouch strips were a
+        // stand→duck transition that looked like endless bobbing when looped.
+        return set(s.crouch)[0];
+      case "backdash": {
+        // Play through the strip once as the dash progresses; hold last frame.
+        const frames = s.backdash.right.length;
+        if (frames <= 1) return set(s.backdash)[0];
+        const idx = Math.min(frames - 1, Math.floor(this.animTick / 3));
+        return set(s.backdash)[idx];
+      }
+      case "hurt": {
+        const frames = s.hurt.right.length;
+        if (frames <= 1) return set(s.hurt)[0];
+        const idx = Math.min(frames - 1, Math.floor(this.animTick / 4));
+        return set(s.hurt)[idx];
+      }
+      case "petrify": {
+        // Frozen mid-recoil pose reads as stiff.
+        return set(s.hurt)[0];
+      }
+      case "die": {
+        if (!this.body.onGround) {
+          const hurtFrames = s.hurt.right.length;
+          return set(s.hurt)[Math.min(hurtFrames - 1, Math.floor(this.animTick / 4))];
+        }
+        const frames = s.die.right.length;
+        if (frames <= 1) return set(s.die)[0];
+        // Advance once through the death strip, then hold the final pose.
+        const idx = Math.min(frames - 1, Math.floor(this.animTick / 5));
+        return set(s.die)[idx];
+      }
+      case "spell": return set(s.attackUp)[Math.min(1, s.attackUp.right.length - 1)];
       default:
-        if (this.throwAnim > 0) return set(s.attack)[2];
-        return set(s.idle)[Math.floor(this.animTick / 32) % 2];
+        if (this.throwAnim > 0) {
+          const frames = s.attack.right.length;
+          return set(s.attack)[Math.min(frames - 1, frames <= 3 ? 2 : frames - 1)];
+        }
+        {
+          // Idle: keep a ~64-tick full cycle regardless of frame count
+          // (procedural was 2 frames × 32 ticks).
+          const frames = s.idle.right.length;
+          const ticksPerFrame = Math.max(1, Math.round(64 / frames));
+          return set(s.idle)[Math.floor(this.animTick / ticksPerFrame) % frames];
+        }
     }
   }
 
@@ -475,9 +553,13 @@ export class Player extends Entity {
       ctx.drawImage(frame, dx, dy);
       return;
     }
-    const anchorX = this.facing > 0 ? 21 : 19;
+    // Anchor on frame centre with the same ±1 facing bias the procedural
+    // 40×36 sheet used (21 / 19). Works for wider attack frames (48) without
+    // hardcoding a single box size.
+    const half = frame.width / 2;
+    const anchorX = Math.round(half + (this.facing > 0 ? 1 : -1));
     const dx = Math.round(cx - anchorX - camX);
-    const dy = Math.round(footY - 36 - camY);
+    const dy = Math.round(footY - frame.height - camY);
 
     if (this.state.name === "petrify") {
       // Stone statue: grey body + crack lines growing with mash progress.

@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "sheets": {
+    "player.idle": {
+      "file": "player-idle.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "skeleton.walk": {
+      "file": "skeleton.png",
+      "frameW": 20,
+      "frameH": 32,
+      "frames": 8
+    },
+    "player.walk": {
+      "file": "player-walk.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.jump": {
+      "file": "player-jump.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.attack": {
+      "file": "player-attack.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.attackUp": {
+      "file": "player-attack-up.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.crouch": {
+      "file": "player-crouch.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 1
+    },
+    "player.crouchAttack": {
+      "file": "player-crouch-attack.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.backdash": {
+      "file": "player-backdash.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.hurt": {
+      "file": "player-hurt.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.die": {
+      "file": "player-die.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 12
+    },
+    "player.bat": {
+      "file": "player-bat.png",
+      "frameW": 40,
+      "frameH": 36,
+      "frames": 8
+    },
+    "player.wolf": {
+      "file": "player-wolf.png",
+      "frameW": 40,
+      "frameH": 22,
+      "frames": 8
+    }
+  }
+}
