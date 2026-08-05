@@ -229,40 +229,10 @@
       "frameH": 48,
       "frames": 1
     },
-    "backdrop.throne": {
-      "file": "backdrop-throne.png",
-      "frameW": 768,
-      "frameH": 256,
-      "frames": 1
-    },
     "prop.column": {
       "file": "prop-column.png",
       "frameW": 28,
       "frameH": 100,
-      "frames": 1
-    },
-    "backdrop.chapel": {
-      "file": "backdrop-chapel.png",
-      "frameW": 448,
-      "frameH": 256,
-      "frames": 1
-    },
-    "backdrop.bossRoom": {
-      "file": "backdrop-bossroom.png",
-      "frameW": 640,
-      "frameH": 224,
-      "frames": 1
-    },
-    "backdrop.towerTop": {
-      "file": "backdrop-towertop.png",
-      "frameW": 512,
-      "frameH": 224,
-      "frames": 1
-    },
-    "backdrop.lake": {
-      "file": "backdrop-lake.png",
-      "frameW": 768,
-      "frameH": 288,
       "frames": 1
     }
   }

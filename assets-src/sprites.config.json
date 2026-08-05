@@ -1334,7 +1334,8 @@
       ]
     },
     {
-      "_note": "Strategy C v2 \u2014 native 768x256, no runtime stretch. Composited by tools/compose-throne-backdrop.mjs from two SpriteCook wall modules (throne-window-module, throne-curtain-module) placed at the authored bay/pier positions in src/gfx/throneLayout.ts \u2014 design-first, not measured after the fact (see docs/ART_PIPELINE.md \u00a79).",
+      "_note": "Reverted to procedural \u2014 modular composition (window/curtain modules generated separately, stitched together) never fully read as one coherent hand-painted wall, even after fixing crop and color-continuity bugs. See docs/ART_PIPELINE.md \u00a79.11. Re-enable only after a from-scratch, whole-room-in-one-generation approach is validated.",
+      "enabled": false,
       "key": "backdrop.throne",
       "out": "backdrop-throne.png",
       "frameW": 768,
@@ -1382,7 +1383,8 @@
       ]
     },
     {
-      "_note": "Nave backdrop, native 448x256, no runtime stretch. Reuses the throne's stained-glass module (tools/compose-chapel-backdrop.mjs) — no new generation. See docs/ART_PIPELINE.md §9.5.",
+      "_note": "Reverted to procedural along with backdrop.throne — see docs/ART_PIPELINE.md §9.11.",
+      "enabled": false,
       "key": "backdrop.chapel",
       "out": "backdrop-chapel.png",
       "frameW": 448,
@@ -1414,7 +1416,8 @@
       ]
     },
     {
-      "_note": "Windowless arena backdrop, native 640x224, no runtime stretch. Masonry + weathering cracks only, no new generation (tools/compose-bossroom-backdrop.mjs). See docs/ART_PIPELINE.md §9.5.",
+      "_note": "Reverted to procedural along with backdrop.throne — see docs/ART_PIPELINE.md §9.11.",
+      "enabled": false,
       "key": "backdrop.bossRoom",
       "out": "backdrop-bossroom.png",
       "frameW": 640,
@@ -1433,7 +1436,8 @@
       "palette": ["stoneDark", "stoneMid", "stoneLight", "stoneHi"]
     },
     {
-      "_note": "Two open (glassless) archways cut through tower masonry so the sky parallax shows behind the Wraith fight, native 512x224, no runtime stretch. tools/compose-towertop-backdrop.mjs. See docs/ART_PIPELINE.md §9.5.",
+      "_note": "Reverted to procedural along with backdrop.throne — see docs/ART_PIPELINE.md §9.11. (This one had no reported visual issue on its own — the open-archway/parallax effect looked good — but reverted for a consistent baseline while replanning; safe to re-enable independently later.)",
+      "enabled": false,
       "key": "backdrop.towerTop",
       "out": "backdrop-towertop.png",
       "frameW": 512,
@@ -1452,7 +1456,8 @@
       "palette": ["towerStoneDark", "towerStoneMid", "towerStoneLight", "towerStoneHi"]
     },
     {
-      "_note": "Sunken Gallery backdrop, native 768x288, no runtime stretch. Only the band above the waterline (row 9) is ever visible in the flooded span — opaque Water/WaterTop tiles cover the rest; the full-height wall stays visible in the two dry pedestal alcoves. tools/compose-lake-backdrop.mjs. See docs/ART_PIPELINE.md §9.5.",
+      "_note": "Reverted to procedural along with backdrop.throne — see docs/ART_PIPELINE.md §9.11.",
+      "enabled": false,
       "key": "backdrop.lake",
       "out": "backdrop-lake.png",
       "frameW": 768,

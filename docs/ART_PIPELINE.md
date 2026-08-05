@@ -793,3 +793,44 @@ anteriores (§9.8). Revertido antes de ir para o manifest; os tiles de
 parede normais continuam procedurais. Se algum dia quiser esse upgrade nas
 salas normais, a rota provável é gerar UM tile 16×16 isolado por vez (como
 fiz na segunda tentativa do §9.8), não recortar de uma textura grande.
+
+### 9.11 Recuo estratégico: as 5 salas voltaram pro procedural
+
+Mesmo depois do fix de recorte (§9.9) e do fix de continuidade da parede
+(§9.10), o usuário avaliou o resultado ao vivo e concluiu que ainda não
+estava à altura da qualidade dos sprites de personagem — e que o problema
+não era mais um bug pontual caçável, e sim estrutural do método: gerar
+janela, cortina e parede **separadamente** (cada uma com sua própria
+interpretação da IA para "parede gótica") nunca produz o mesmo "traço" que
+uma única geração coerente produziria, não importa quanto se ajuste cor e
+recorte depois.
+
+**Ação:** `backdrop.throne`, `backdrop.chapel`, `backdrop.bossRoom`,
+`backdrop.towerTop` e `backdrop.lake` marcados `"enabled": false` em
+`sprites.config.json` — mecanismo padrão do pipeline (§8.4 do header do
+config, regra dura em `AGENTS.md`: remover a chave sempre volta pro
+construtor procedural). `assets:build` removeu as 5 entradas do manifest;
+as 5 salas voltaram a renderizar 100% procedural (tiles, sem backdrop
+pintado), confirmado no browser sala por sala. Nenhum código de gameplay
+foi alterado — `rooms.ts` (posições de props do trono),
+`gfx/backdrop.ts` (fallback procedural), `gfx/throneLayout.ts` (constantes)
+continuam no repo, prontos para retomar quando/se uma nova abordagem for
+validada.
+
+**Direção proposta pelo usuário para a próxima tentativa:** gerar cada sala
+como **uma única ilustração completa** (janela + cortina + parede + colunas
+todas na mesma geração, coerentes entre si por construção), em vez de
+montar por módulos separados. Isso é essencialmente a primeira tentativa do
+trono (§9.5, o "full hall reference" de 4K) — abandonada na hora porque a
+proporção não bateu exatamente 3:1 (a API só aceita 1:1/16:9/9:16). O ajuste
+proposto: aceitar uma tolerância de enquadramento (esticar levemente ou
+recortar as bordas) em vez de insistir em pixel-perfect, já que fidelidade
+de proporção acabou custando mais em coerência visual do que valia. Nada
+disso foi executado ainda — fica registrado aqui para quando o usuário
+decidir retomar.
+
+**O que ficou (sem problema reportado, não revertido):** limpeza de código
+da Fase 0 (dead code, binários órfãos, cache do backdrop, extensões do
+pipeline), e o parallax por zona da Fase 4 (`towerFar`/`towerMid`,
+`buildFarSpires`/`buildGears`) — nenhum dos dois depende de composição
+modular de arte gerada, e nenhum teve queixa.
