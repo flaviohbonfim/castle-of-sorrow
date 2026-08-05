@@ -665,3 +665,33 @@ regeneração completa do backdrop, nativa, sem stretch. Decisões chave:
   paleta, mesmo peso de linha, sem textura ruidosa.
 - Itens 9.3 (velas de chão) segue **sem decisão** — não mexido, por pedido
   explícito do usuário registrado em `rooms.ts`.
+
+### 9.6 Salas-marco adicionais (executado, 0 créditos novos)
+
+Quatro salas ganharam backdrop nativo pelo mesmo método de composição,
+reaproveitando os módulos já gerados para o trono (`tools/lib/
+backdrop-compose.mjs` extrai a lógica comum de `compose-throne-backdrop.mjs`):
+
+- **`chapel`** (448×256) — `tools/compose-chapel-backdrop.mjs`: reusa o
+  módulo de vitral do trono, 3 janelas na parede da nave, sem geração nova.
+- **`bossRoom`** (640×224) — `tools/compose-bossroom-backdrop.mjs`: sala sem
+  janelas no design original (arena do Colossus); só alvenaria + rachaduras
+  de intemperismo, sem geração nova.
+- **`towerTop`** (512×224) — `tools/compose-towertop-backdrop.mjs`: dois
+  vãos em arco **recortados como transparência real** (`cutoutArch` em
+  `backdrop-compose.mjs`) na parede — o parallax do céu (lua, estrelas)
+  aparece atrás, já que o backdrop desenha depois do parallax na ordem de
+  `Game.draw`. Confirmado visualmente no browser.
+- **`lake`** (768×288) — `tools/compose-lake-backdrop.mjs`: como
+  `Water`/`WaterTop` são tiles **opacos** (`src/gfx/tiles.ts`), qualquer
+  arte abaixo da linha d'água (row 9) no trecho alagado nunca aparece — só
+  as duas alcovas secas (pedestal da sereia, desembarque da caverna) veem a
+  parede em altura total. O backdrop pinta a sala inteira como uma parede
+  normal (visível nas alcovas, inofensivo/oculto no trecho alagado) mais uma
+  mancha mineral na linha d'água.
+
+Nenhuma das quatro precisou de nova chamada ao SpriteCook — todas reusam os
+dois módulos do trono (`throne-window-module.png`, `throne-curtain-module.png`)
+ou são só preenchimento procedural. Todas passaram em `assets:validate` e no
+gate de coerência visual (screenshot no browser, comparado com as salas já
+aprovadas).
