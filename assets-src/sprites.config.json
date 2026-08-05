@@ -1334,16 +1334,21 @@
       ]
     },
     {
-      "_note": "Strategy C \u2014 Throne backdrop flat side-view (PixelLab). Mid bricks, arches+curtains. Stretched to map at runtime.",
+      "_note": "Strategy C v2 \u2014 native 768x256, no runtime stretch. Composited by tools/compose-throne-backdrop.mjs from two SpriteCook wall modules (throne-window-module, throne-curtain-module) placed at the authored bay/pier positions in src/gfx/throneLayout.ts \u2014 design-first, not measured after the fact (see docs/ART_PIPELINE.md \u00a79).",
       "key": "backdrop.throne",
       "out": "backdrop-throne.png",
-      "frameW": 400,
-      "frameH": 180,
+      "frameW": 768,
+      "frameH": 256,
       "align": "none",
       "source": {
-        "file": "raw/backdrop-throne-sheet.png",
+        "file": "raw/backdrop-throne-composed.png",
         "cols": 1,
         "rows": 1
+      },
+      "resize": {
+        "width": 768,
+        "height": 256,
+        "mode": "majority"
       },
       "palette": [
         "towerStoneDark",

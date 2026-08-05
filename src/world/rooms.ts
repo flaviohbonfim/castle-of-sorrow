@@ -1,4 +1,9 @@
 import { TILE, TileId, type ZoneId } from "../gfx/tiles";
+import {
+  THRONE_FLOOR_Y,
+  THRONE_GLASS_CENTERS,
+  THRONE_PIER_XS,
+} from "../gfx/throneLayout";
 import { Tilemap } from "./tilemap";
 
 export interface Spawn {
@@ -495,13 +500,12 @@ function buildThrone(): BuiltRoom {
   b.at("boss", 34, 12, "dracula");
 
   // --- Scenery props (draw-only) ---
-  // Pier centers were measured from the current 400×180 backdrop scaled
-  // ×1.92 to world space. The next backdrop is generated design-first at
-  // native room size, with piers authored to fixed positions — when that
-  // lands, these values become the authored constants, not measurements.
+  // All positions come from the authored layout in gfx/throneLayout.ts —
+  // the backdrop art is generated to match those constants (design-first),
+  // so props and painted architecture agree by construction.
   //
-  // Pier 4 stands on the main floor before the dais step (col 38 =
-  // world 608), not on the raised surface.
+  // Pier 4 (x 592) stands on the main floor before the dais step (x 608),
+  // not on the raised surface.
   //
   // Throne on the dais, facing the entrance.
   b.spawns.push({
@@ -514,29 +518,28 @@ function buildThrone(): BuiltRoom {
 
   // Full-height column props on the stone piers (not tile stubs). All four
   // stand on the main floor — see pier 4 note above.
-  const floorY = 13 * TILE; // feet on FloorTop row 13
-  const pierXs = [179, 304, 463, 588];
+  const floorY = THRONE_FLOOR_Y; // feet on FloorTop row 13
+  const pierXs = THRONE_PIER_XS;
   for (const x of pierXs) {
     b.spawns.push({ kind: "prop", x, y: floorY, id: "column" });
   }
 
-  // Banners: hang on the pier face, HIGHER so cloth sits on stone under the
-  // arch spring — not mid-glass / mid-curtain (video 13.20.55).
+  // Banners: hang on the pier face, HIGH so cloth sits on stone under the
+  // arch spring — not mid-glass / mid-curtain.
   // Banner sprite ~48px tall; feet y ≈ 7.5*TILE puts top near arch line.
   const bannerY = 7 * TILE + 8;
-  // Small inset from the (now accurate) pier center so cloth reads as
-  // draped in front of the shaft rather than pasted dead-center on it.
+  // Small inset from the pier center so cloth reads as draped in front of
+  // the shaft rather than pasted dead-center on it.
   b.spawns.push({ kind: "prop", x: pierXs[0] + 4, y: bannerY, id: "banner" });
   b.spawns.push({ kind: "prop", x: pierXs[1] - 4, y: bannerY, id: "banner" });
   b.spawns.push({ kind: "prop", x: pierXs[2] + 4, y: bannerY, id: "banner", dir: -1 });
   // No banner on the dais pier — throne + curtain bay already fill that side.
 
-  // Chandeliers: high, centered in glass bays (not curtain bays).
+  // Chandeliers: high, centered in the stained-glass bays (not curtain bays).
   const chY = 3 * TILE + 4;
-  b.spawns.push({ kind: "prop", x: 6 * TILE + 8, y: chY, id: "chandelier" });
-  b.spawns.push({ kind: "prop", x: 15 * TILE, y: chY, id: "chandelier" });
-  b.spawns.push({ kind: "prop", x: 24 * TILE + 8, y: chY, id: "chandelier" });
-  b.spawns.push({ kind: "prop", x: 34 * TILE, y: chY, id: "chandelier" });
+  for (const x of THRONE_GLASS_CENTERS) {
+    b.spawns.push({ kind: "prop", x, y: chY, id: "chandelier" });
+  }
 
   // Candles mounted mid-shaft on each column, not on the floor — floor-level
   // candles read as generic corridor clutter next to hand-drawn scenery.

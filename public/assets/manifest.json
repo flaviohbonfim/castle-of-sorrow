@@ -231,8 +231,8 @@
     },
     "backdrop.throne": {
       "file": "backdrop-throne.png",
-      "frameW": 400,
-      "frameH": 180,
+      "frameW": 768,
+      "frameH": 256,
       "frames": 1
     },
     "prop.column": {

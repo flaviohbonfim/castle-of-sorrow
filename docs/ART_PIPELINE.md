@@ -625,3 +625,43 @@ pequeno ao lado de cenário grande e desenhado à mão) quanto estruturalmente
    compartilhado, não sprite isolado), renderizar lado a lado com os
    vizinhos da mesma sala antes de aprovar** — é o único jeito de pegar
    "tecnicamente válido mas não combina", que é subjetivo por natureza.
+
+### 9.5 Trono regenerado nativo (768×256, executado)
+
+Item 1 (pilar procedural) e a decisão de layout foram substituídos por uma
+regeneração completa do backdrop, nativa, sem stretch. Decisões chave:
+
+- **Upload de arquivo local está quebrado neste ambiente MCP.** Tanto o
+  fluxo `create_asset_upload` → PUT (a URL pré-assinada devolve 404 mesmo
+  imediatamente após criada, com headers corretos) quanto `import_asset`
+  com base64 inline (o servidor decodifica um PNG com alguns bytes a mais
+  do que o enviado — 1483 → 1485 → 1488 em tentativas sucessivas do mesmo
+  arquivo, corrupção crescente com o tamanho) falharam de forma
+  consistente. **Não depender de `reference_asset_id` vindo de upload
+  local** enquanto isso não for corrigido — nem para blockouts de layout
+  nem para nada mais. `style_asset_ids` com asset IDs que já existem no
+  servidor (gerados por `generate_game_art` anteriormente) funciona
+  normalmente, porque não envolve upload.
+- **Layout por composição determinística, não por geração única.** Em vez
+  de pedir para o gerador acertar a posição de 4 pilares + 5 vãos numa
+  imagem só (o que já falhou duas vezes — PixelLab e a versão 400×180), a
+  sala foi montada a partir de **dois módulos gerados isolados** — um vão
+  de vitral (`throne-window-module.png`) e um vão de cortina
+  (`throne-curtain-module.png`), cada um com boa resolução nativa — mais
+  **preenchimentos procedurais** (alvenaria da parede, pilares lisos, chão,
+  sombra de teto, dossel/degrau do dais). Um script novo,
+  `tools/compose-throne-backdrop.mjs`, cola os módulos exatamente nas
+  posições autoradas de `src/gfx/throneLayout.ts` (mesmas constantes usadas
+  pelos props), a 4× a resolução final, e grava
+  `assets-src/raw/backdrop-throne-composed.png` (3072×256 → o recipe
+  reduz para 768×256 nativo via `resize.mode: "majority"`). Alinhamento
+  fica exato por construção — sem medir nada depois.
+- Isso torna o item 1 do plano acima (reverter pilar pintado) irrelevante:
+  não há mais pilar "gerado" para reverter, os pilares do backdrop são
+  preenchimento chapado da própria paleta, e a coluna 3D real (`prop.column`)
+  continua sendo o `Prop` que efetivamente aparece na posição.
+- Gate de coerência (item 3) passou: verificado lado a lado com trono,
+  lustres, banners e velas já aprovados via screenshot no browser — mesma
+  paleta, mesmo peso de linha, sem textura ruidosa.
+- Itens 9.3 (velas de chão) segue **sem decisão** — não mexido, por pedido
+  explícito do usuário registrado em `rooms.ts`.

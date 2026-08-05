@@ -12,7 +12,12 @@
 import { makeSurface } from "../engine/renderer";
 import { getSheet } from "./assets";
 import { PAL } from "./palette";
-import { TILE } from "./tiles";
+import {
+  THRONE_BAY_EDGES,
+  THRONE_FLOOR_Y,
+  THRONE_PIER_W,
+  THRONE_PIER_XS,
+} from "./throneLayout";
 
 export type Frame = HTMLCanvasElement;
 
@@ -97,58 +102,60 @@ export function buildThroneBackdrop(w: number, h: number): Frame {
     }
   }
 
-  // Far crimson curtain panels (depth plane)
-  for (let i = 0; i < 10; i++) {
-    const x = 40 + i * Math.floor(w / 10);
-    const panelW = 28 + (i % 3) * 4;
-    const open = i >= 3 && i <= 6;
-    if (open) continue; // open center for fight readability
-    ctx.fillStyle = i % 2 === 0 ? "#4a1018" : "#381018";
-    ctx.fillRect(x, 12, panelW, h - 56);
-    ctx.fillStyle = "#6a1828";
-    ctx.fillRect(x + 3, 12, 3, h - 56);
-    ctx.fillStyle = "#1a080c";
-    ctx.fillRect(x + panelW - 4, 12, 2, h - 56);
+  // Five bays between the authored piers: glass / curtain / glass / curtain /
+  // dais+canopy. Same constants the props and the generated art use.
+  const floorY = Math.min(THRONE_FLOOR_Y, h - 2 * 16);
+  for (let bay = 0; bay < THRONE_BAY_EDGES.length - 1; bay++) {
+    const x0 = THRONE_BAY_EDGES[bay];
+    const x1 = Math.min(THRONE_BAY_EDGES[bay + 1], w - 16);
+    if (x1 - x0 < 40) continue;
+    const cx = Math.floor((x0 + x1) / 2);
+    if (bay === 1 || bay === 3 || bay === 4) {
+      // Floor-length crimson curtain panel filling the bay center.
+      const cw = Math.min(72, x1 - x0 - 48);
+      ctx.fillStyle = bay === 4 ? "#4a1018" : "#381018";
+      ctx.fillRect(cx - cw / 2, 16, cw, floorY - 16);
+      ctx.fillStyle = "#6a1828";
+      ctx.fillRect(cx - cw / 2 + 4, 16, 4, floorY - 16);
+      ctx.fillRect(cx + cw / 2 - 12, 16, 3, floorY - 16);
+      ctx.fillStyle = "#1a080c";
+      ctx.fillRect(cx + cw / 2 - 4, 16, 4, floorY - 16);
+    } else {
+      // Twin-lancet stained-glass window centered in the bay.
+      const winY = 28;
+      const winH = 96;
+      const winW = 56;
+      const wx = cx - winW / 2;
+      ctx.fillStyle = "#0a0c14";
+      ctx.fillRect(wx, winY + 8, winW, winH - 8);
+      ctx.beginPath();
+      ctx.ellipse(cx, winY + 14, winW / 2, 12, 0, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = "#1a1850";
+      ctx.fillRect(wx + 4, winY + 14, winW - 8, winH - 24);
+      ctx.fillStyle = "#2a2880";
+      ctx.fillRect(wx + 7, winY + 20, winW - 14, 14);
+      // central mullion makes it read as a twin lancet
+      ctx.fillStyle = stoneL;
+      ctx.fillRect(cx - 2, winY + 12, 4, winH - 20);
+      ctx.fillStyle = "rgba(220, 220, 255, 0.35)";
+      ctx.fillRect(wx + 9, winY + 26, 7, 7);
+      ctx.strokeStyle = stoneM;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(wx + 1, winY + 10, winW - 2, winH - 14);
+    }
   }
 
-  // Tall arched window recesses (mid plane)
-  const winY = 28;
-  const winH = 56;
-  const winW = 22;
-  for (const wx of [72, 200, 340, 480, 620]) {
-    if (wx > w - 40) continue;
-    // recess
-    ctx.fillStyle = "#0a0c14";
-    ctx.fillRect(wx, winY + 8, winW, winH - 8);
-    // arch top
-    ctx.beginPath();
-    ctx.ellipse(wx + winW / 2, winY + 14, winW / 2, 12, 0, Math.PI, 0);
-    ctx.fill();
-    // glass
-    ctx.fillStyle = "#1a1850";
-    ctx.fillRect(wx + 3, winY + 14, winW - 6, winH - 22);
-    ctx.fillStyle = "#2a2880";
-    ctx.fillRect(wx + 5, winY + 18, winW - 10, 10);
-    // mullion
-    ctx.fillStyle = stoneL;
-    ctx.fillRect(wx + winW / 2 - 1, winY + 12, 2, winH - 18);
-    // moon glow
-    ctx.fillStyle = "rgba(220, 220, 255, 0.35)";
-    ctx.fillRect(wx + 6, winY + 20, 5, 5);
-    // stone frame
-    ctx.strokeStyle = stoneM;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(wx + 1, winY + 10, winW - 2, winH - 14);
-  }
-
-  // Painted pillar silhouettes (far, low contrast) — real solid pillars are tiles
+  // Painted pier silhouettes on the authored centers (columns cover them,
+  // but the fallback must still read right without prop overrides).
   ctx.globalAlpha = 0.35;
-  for (const px of [110, 280, 450, 610]) {
+  for (const px of THRONE_PIER_XS) {
     if (px > w - 20) continue;
+    const pw = THRONE_PIER_W - 8;
     ctx.fillStyle = stoneL;
-    ctx.fillRect(px, 48, 10, h - 100);
-    ctx.fillRect(px - 2, 48, 14, 6);
-    ctx.fillRect(px - 3, h - 56, 16, 8);
+    ctx.fillRect(px - pw / 2, 40, pw, floorY - 40);
+    ctx.fillRect(px - pw / 2 - 3, 40, pw + 6, 6);
+    ctx.fillRect(px - pw / 2 - 4, floorY - 8, pw + 8, 8);
   }
   ctx.globalAlpha = 1;
 
@@ -160,7 +167,6 @@ export function buildThroneBackdrop(w: number, h: number): Frame {
   ctx.fillRect(0, 0, w, 40);
 
   // Floor shadow band (depth at feet — actual FloorTop tiles draw on top)
-  const floorY = h - 3 * TILE;
   const floorG = ctx.createLinearGradient(0, floorY - 24, 0, h);
   floorG.addColorStop(0, "rgba(0,0,0,0)");
   floorG.addColorStop(0.4, "rgba(0,0,0,0.35)");

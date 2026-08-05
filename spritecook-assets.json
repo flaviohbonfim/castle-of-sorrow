@@ -22,6 +22,29 @@
       "credits": 2
     }
   },
+  "backdrop_throne_v2": {
+    "_note": "Native 768x256 backdrop composited from two wall modules by tools/compose-throne-backdrop.mjs — see docs/ART_PIPELINE.md §9.5. full_hall_reference was a whole-room attempt kept only as a style_asset_id for the two modules (aspect ratio couldn't match the 3:1 room, see §9.5 upload note).",
+    "window_module": {
+      "asset_id": "cdf9694a-b81f-47d8-9be3-353c4f45e12c",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2
+    },
+    "curtain_module": {
+      "asset_id": "960ddd5d-c015-4c49-a0f8-803f88adae38",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2
+    },
+    "full_hall_reference": {
+      "asset_id": "dd74d0a9-f6fe-41a9-91f7-06f89139c111",
+      "model": "gpt-image-2",
+      "quality": "high",
+      "resolution": "4K",
+      "credits": 68,
+      "note": "not used directly — wrong aspect ratio for a 3:1 room; kept only as style reference"
+    }
+  },
   "tiles_tower_status": "reverted_procedural_better_contrast",
   "history": {
     "_note": "Dead experiments kept for provenance only; nothing here is live.",
