@@ -503,8 +503,14 @@ function buildThrone(): BuiltRoom {
   b.at("boss", 34, 12, "dracula");
 
   // --- Scenery props (draw-only) ---
-  // Throne centered on the dais, feet on the raised floor.
-  b.at("prop", 43, 11, "throne");
+  // Throne on the dais, facing the hall (left / toward the entrance).
+  b.spawns.push({
+    kind: "prop",
+    x: 43 * TILE + TILE / 2,
+    y: 12 * TILE,
+    id: "throne",
+    dir: -1,
+  });
   // Wall banners between pillars (hang from upper wall).
   b.spawns.push({ kind: "prop", x: 12 * TILE + 8, y: 8 * TILE, id: "banner" });
   b.spawns.push({ kind: "prop", x: 24 * TILE + 8, y: 8 * TILE, id: "banner" });

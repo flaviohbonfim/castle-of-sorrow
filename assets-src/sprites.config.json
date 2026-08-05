@@ -1228,6 +1228,110 @@
         "eyeRed",
         "bladeHi"
       ]
+    },
+    {
+      "_note": "Throne of Night prop \u2014 gothic vampire chair. AI gpt-image-2 low. Override of procedural prop.throne.",
+      "key": "prop.throne",
+      "out": "prop-throne.png",
+      "frameW": 40,
+      "frameH": 56,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 52,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/prop-throne-sheet.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "dracCape",
+        "dracCapeMid",
+        "dracCapeDark",
+        "dracCapeHi",
+        "dracSash",
+        "dracSashHi",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "coatTrim",
+        "towerStoneDark",
+        "towerStoneMid",
+        "towerStoneLight",
+        "towerStoneHi",
+        "bladeHi",
+        "hpRed"
+      ]
+    },
+    {
+      "_note": "Wall banner prop \u2014 crimson + gold bat crest.",
+      "key": "prop.banner",
+      "out": "prop-banner.png",
+      "frameW": 32,
+      "frameH": 48,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 44,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/prop-banner-sheet.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "dracSash",
+        "dracSashHi",
+        "dracCape",
+        "dracCapeDark",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "coatTrim",
+        "hpRed",
+        "hpRedHi",
+        "eyeRed",
+        "batEye",
+        "bladeHi"
+      ]
+    },
+    {
+      "_note": "Hanging chandelier prop \u2014 brass + candle flames (static; code glow does flicker).",
+      "key": "prop.chandelier",
+      "out": "prop-chandelier.png",
+      "frameW": 32,
+      "frameH": 36,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 32,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/prop-chandelier-sheet.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "candleBrass",
+        "candleBrassHi",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "flameCore",
+        "flameMid",
+        "flameOut",
+        "dracCape",
+        "dracCapeDark",
+        "coatTrim",
+        "bladeHi"
+      ]
     }
   ]
 }

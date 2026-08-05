@@ -1,0 +1,33 @@
+{
+  "props": {
+    "prop.throne": {
+      "asset_id": "c1b7603f-43b9-4112-8c8e-8f7b77accd58",
+      "label": "castle-of-sorrow-prop-throne",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2
+    },
+    "prop.banner": {
+      "asset_id": "eacfc50c-cc71-4d00-9fd1-d87ae89d33ca",
+      "label": "castle-of-sorrow-prop-banner",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2
+    },
+    "prop.chandelier": {
+      "asset_id": "cde268f8-86b6-403c-a4f3-8bb82e3b5f5a",
+      "label": "castle-of-sorrow-prop-chandelier",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2
+    }
+  },
+  "tiles_tower": {
+    "wall": "75607a87-6572-4a53-8273-0e7f8280e86b",
+    "floor": "7ead2014-1ef4-4cbd-8319-9d95bc23ed4b",
+    "window": "7a7f688e-6123-4a8a-a01b-6c86d9a524b8",
+    "pillar": "758cb163-7827-4064-bf9f-8b6d2ce9b7bc",
+    "credits": 8
+  },
+  "tiles_tower_status": "reverted_procedural_better_contrast"
+}

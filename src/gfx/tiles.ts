@@ -122,31 +122,37 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
     }),
   );
 
+  // Pillars use the lighter end of the ramp so they separate from bgWall
+  // (especially in tower, where AI mid-tone shafts vanished into the wall).
   tiles.set(
     TileId.PillarTop,
     variants(1, (ctx) => {
-      ctx.fillStyle = ramp.light;
-      ctx.fillRect(0, 4, TILE, 4);
       ctx.fillStyle = ramp.hi;
+      ctx.fillRect(0, 4, TILE, 4);
+      ctx.fillStyle = ramp.light;
       ctx.fillRect(0, 4, TILE, 1);
-      ctx.fillStyle = ramp.mid;
+      ctx.fillStyle = ramp.light;
       ctx.fillRect(2, 8, 12, 8);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(2, 8, 1, 8);
       ctx.fillRect(13, 8, 1, 8);
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(3, 8, 1, 8);
     }),
   );
 
   tiles.set(
     TileId.Pillar,
     variants(2, (ctx, s) => {
-      ctx.fillStyle = ramp.mid;
+      ctx.fillStyle = ramp.light;
       ctx.fillRect(2, 0, 12, TILE);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(2, 0, 1, TILE);
       ctx.fillRect(13, 0, 1, TILE);
-      ctx.fillStyle = ramp.light;
+      ctx.fillStyle = ramp.hi;
       ctx.fillRect(4, 0, 1, TILE);
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(3, 0, 1, TILE);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(3, s === 0 ? 5 : 11, 10, 1);
     }),
@@ -155,15 +161,17 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
   tiles.set(
     TileId.PillarBase,
     variants(1, (ctx) => {
-      ctx.fillStyle = ramp.mid;
-      ctx.fillRect(2, 0, 12, 8);
       ctx.fillStyle = ramp.light;
-      ctx.fillRect(0, 8, TILE, 8);
+      ctx.fillRect(2, 0, 12, 8);
       ctx.fillStyle = ramp.hi;
+      ctx.fillRect(0, 8, TILE, 8);
+      ctx.fillStyle = ramp.light;
       ctx.fillRect(0, 8, TILE, 1);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(2, 0, 1, 8);
       ctx.fillRect(13, 0, 1, 8);
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(3, 0, 1, 8);
     }),
   );
 

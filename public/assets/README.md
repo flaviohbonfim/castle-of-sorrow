@@ -122,7 +122,7 @@ back to procedural art automatically.
 | `projectile.bone` | spin cycle |
 | `portrait.hermit`, `portrait.ghost`, `portrait.demon` | 1 each (32×32) |
 | `portrait.dracula`, `portrait.hero` | 1 each (32×32) |
-| `prop.throne`, `prop.banner`, `prop.chandelier` | 1 / 1 / 2 (sway) — scenery |
+| `prop.throne`, `prop.banner`, `prop.chandelier` | 1 each (AI) — scenery; procedural fallback if removed |
 
 ### Tiles
 
@@ -132,3 +132,6 @@ back to procedural art automatically.
 
 Each sheet is a horizontal strip of 16×16 **variants** — the engine picks one
 per cell to break up repetition. This is not an autotile bitmask.
+
+Tower tiles currently use the **procedural** builders (AI pass blended into
+the walls — pillars/floor lost contrast). Props on the throne stay AI.

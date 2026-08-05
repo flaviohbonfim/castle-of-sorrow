@@ -210,6 +210,24 @@
       "frameW": 32,
       "frameH": 32,
       "frames": 1
+    },
+    "prop.throne": {
+      "file": "prop-throne.png",
+      "frameW": 40,
+      "frameH": 56,
+      "frames": 1
+    },
+    "prop.chandelier": {
+      "file": "prop-chandelier.png",
+      "frameW": 32,
+      "frameH": 36,
+      "frames": 1
+    },
+    "prop.banner": {
+      "file": "prop-banner.png",
+      "frameW": 32,
+      "frameH": 48,
+      "frames": 1
     }
   }
 }
