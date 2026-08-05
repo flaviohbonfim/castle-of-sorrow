@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import {
   CASTLE_RAMP,
-  MODULE_CONTENT_CROP,
+  WINDOW_CONTENT_CROP,
   ceilingShadow,
   fill,
   fillMasonry,
@@ -39,11 +39,11 @@ for (const cx0 of winCenters) {
   const top = 24 * SCALE;
   const contentH = FLOOR_Y * SCALE - top;
   const scale = contentH / windowImg.height;
-  const contentW = MODULE_CONTENT_CROP.w * scale;
+  const contentW = WINDOW_CONTENT_CROP.w * scale;
   stampScaled(
     canvas,
     windowImg,
-    { x: MODULE_CONTENT_CROP.x, y: 0, w: MODULE_CONTENT_CROP.w, h: windowImg.height },
+    { x: WINDOW_CONTENT_CROP.x, y: 0, w: WINDOW_CONTENT_CROP.w, h: windowImg.height },
     { x: cx - contentW / 2, y: top, w: contentW, h: contentH },
   );
 }

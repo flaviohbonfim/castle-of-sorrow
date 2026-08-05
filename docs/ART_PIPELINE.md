@@ -718,3 +718,31 @@ mudanças depois de navegar com um query-string novo
 (`?cachebust=<n>`), que força o browser a tratar como URL diferente e
 buscar tudo de novo. Se um teste no browser parecer "não pegar" uma mudança
 recente de código (mas os assets sim), suspeitar disso primeiro.
+
+### 9.9 Bug real: recorte dos módulos de vitral/cortina cortava o vão (corrigido)
+
+O usuário notou, jogando ao vivo, que as janelas do trono e da capela
+apareciam cortadas do lado direito. Causa raiz: `MODULE_CONTENT_CROP` em
+`tools/lib/backdrop-compose.mjs` usava `{x:210, w:522}` para os DOIS módulos
+(vitral e cortina) — valor obtido de olho para a cortina e simplesmente
+reaproveitado para o vitral, sem medir. Medindo de verdade (perfil de
+saturação numa faixa horizontal, mesmo método do §9.2):
+
+- vitral: conteúdo real vai de x=252 a x=900 (de 1152) — o crop antigo
+  parava em 732, faltando ~26% do arco.
+- cortina: conteúdo real vai de x=212 a x=940 — o crop antigo TAMBÉM
+  cortava, quase na mesma proporção; a "medição" original (§9.5) usou um
+  limiar de saturação frouxo demais e uma amostragem grossa (step 8),
+  passando no próprio teste que deveria ter pego o erro.
+
+Corrigido: `WINDOW_CONTENT_CROP {x:252,w:648}` e
+`CURTAIN_CONTENT_CROP {x:212,w:728}`, uma constante por módulo em vez de uma
+compartilhada. `compose-throne-backdrop.mjs` e `compose-chapel-backdrop.mjs`
+recompostos e revalidados (screenshot no browser, arco simétrico dos dois
+lados).
+
+**Lição:** "medi com um script" não é garantia de precisão — o limiar e o
+passo de amostragem importam tanto quanto o método. Qualquer crop de
+conteúdo gerado por IA precisa ser conferido visualmente após a medição
+(sobrepor o crop na imagem original, não confiar só no número), não só
+depois de composto na versão final.

@@ -95,8 +95,16 @@ export const TOWER_RAMP = {
   hi: PAL.towerStoneHi,
 };
 
-/** The window/curtain modules share this framing — crop off their flanking piers. */
-export const MODULE_CONTENT_CROP = { x: 210, w: 522 };
+/**
+ * The window/curtain modules share the same portrait framing (content
+ * centered, flanking pier reliefs on both sides) but NOT the same content
+ * width, so each needs its own measured crop — measured by sampling a
+ * horizontal band and finding where saturation (blue glass / red cloth)
+ * exceeds a threshold, not eyeballed. Re-measure with the same method if
+ * either module is regenerated.
+ */
+export const WINDOW_CONTENT_CROP = { x: 252, w: 648 }; // measured: glass spans 252-900 of 1152
+export const CURTAIN_CONTENT_CROP = { x: 212, w: 728 }; // measured: cloth spans 212-940 of 1152
 
 /** Cut a rectangular hole (alpha=0) — for openings where parallax/sky should show through. */
 export function cutoutRect(canvas, x, y, w, h) {

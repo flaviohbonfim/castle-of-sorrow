@@ -18,8 +18,9 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import {
-  MODULE_CONTENT_CROP,
+  CURTAIN_CONTENT_CROP,
   TOWER_RAMP,
+  WINDOW_CONTENT_CROP,
   ceilingShadow,
   fill,
   fillMasonry,
@@ -57,22 +58,22 @@ for (let bay = 0; bay < BAY_EDGES.length - 1; bay++) {
     const top = 24 * SCALE;
     const contentH = floorY - top;
     const scale = contentH / windowImg.height;
-    const contentW = MODULE_CONTENT_CROP.w * scale;
+    const contentW = WINDOW_CONTENT_CROP.w * scale;
     stampScaled(
       canvas,
       windowImg,
-      { x: MODULE_CONTENT_CROP.x, y: 0, w: MODULE_CONTENT_CROP.w, h: windowImg.height },
+      { x: WINDOW_CONTENT_CROP.x, y: 0, w: WINDOW_CONTENT_CROP.w, h: windowImg.height },
       { x: cx - contentW / 2, y: top, w: contentW, h: contentH },
     );
   } else if (bay === 1 || bay === 3) {
     const top = 16 * SCALE;
     const contentH = floorY - top;
     const scale = contentH / curtainImg.height;
-    const contentW = MODULE_CONTENT_CROP.w * scale;
+    const contentW = CURTAIN_CONTENT_CROP.w * scale;
     stampScaled(
       canvas,
       curtainImg,
-      { x: MODULE_CONTENT_CROP.x, y: 0, w: MODULE_CONTENT_CROP.w, h: curtainImg.height },
+      { x: CURTAIN_CONTENT_CROP.x, y: 0, w: CURTAIN_CONTENT_CROP.w, h: curtainImg.height },
       { x: cx - contentW / 2, y: top, w: contentW, h: contentH },
     );
   } else {
@@ -84,11 +85,11 @@ for (let bay = 0; bay < BAY_EDGES.length - 1; bay++) {
     const canopyH = daisY - canopyTop;
     const sliceH = curtainImg.height * 0.4;
     const scale = canopyH / sliceH;
-    const contentW = MODULE_CONTENT_CROP.w * scale;
+    const contentW = CURTAIN_CONTENT_CROP.w * scale;
     stampScaled(
       canvas,
       curtainImg,
-      { x: MODULE_CONTENT_CROP.x, y: 0, w: MODULE_CONTENT_CROP.w, h: sliceH },
+      { x: CURTAIN_CONTENT_CROP.x, y: 0, w: CURTAIN_CONTENT_CROP.w, h: sliceH },
       { x: cx - contentW / 2, y: canopyTop, w: contentW, h: canopyH },
     );
     fill(canvas, daisX, daisY, ROOM_W * SCALE - daisX, floorY - daisY, hex(TOWER_RAMP.light));
