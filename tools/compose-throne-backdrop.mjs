@@ -23,7 +23,7 @@ import {
   WINDOW_CONTENT_CROP,
   ceilingShadow,
   fill,
-  fillMasonry,
+  fillWallTexture,
   hex,
   makeCanvas,
   stampScaled,
@@ -45,8 +45,13 @@ const canvas = makeCanvas(ROOM_W, ROOM_H, SCALE);
 
 const windowImg = decodePng(readFileSync("assets-src/raw/throne-window-module.png"));
 const curtainImg = decodePng(readFileSync("assets-src/raw/throne-curtain-module.png"));
+// Anchored to the window/curtain modules via style_asset_ids at generation
+// time, so the wall shares their actual material — no color seam where a
+// hand-painted procedural wash met the modules' own baked-in stone frame
+// (see docs/ART_PIPELINE.md §9.10).
+const wallImg = decodePng(readFileSync("assets-src/raw/tile-tower-wall-anchored.png"));
 
-fillMasonry(canvas, FLOOR_Y * SCALE, TOWER_RAMP);
+fillWallTexture(canvas, wallImg, FLOOR_Y * SCALE);
 
 for (let bay = 0; bay < BAY_EDGES.length - 1; bay++) {
   const x0 = BAY_EDGES[bay] * SCALE;

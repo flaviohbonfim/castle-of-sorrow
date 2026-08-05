@@ -69,6 +69,28 @@ export function stampScaled(canvas, src, crop, dst) {
   }
 }
 
+/**
+ * Tile a raw generated wall texture across the canvas up to `bottomY`,
+ * repeating both axes. Use this instead of fillMasonry() when a texture was
+ * generated anchored (style_asset_ids) to the same window/curtain modules
+ * the bays are built from — same source material, no seam between the two
+ * (see docs/ART_PIPELINE.md §9.10).
+ */
+export function fillWallTexture(canvas, img, bottomY) {
+  const { img: dst, W } = canvas;
+  for (let y = 0; y < bottomY; y += img.height) {
+    for (let x = 0; x < W; x += img.width) {
+      const w = Math.min(img.width, W - x);
+      const h = Math.min(img.height, bottomY - y);
+      for (let sy = 0; sy < h; sy++) {
+        const si0 = sy * img.width * 4;
+        const di0 = ((y + sy) * W + x) * 4;
+        dst.data.set(img.data.subarray(si0, si0 + w * 4), di0);
+      }
+    }
+  }
+}
+
 /** Coursed masonry wall wash, in a given stone ramp, from y=0 to `bottomY`. */
 export function fillMasonry(canvas, bottomY, ramp) {
   const { W, scale } = canvas;

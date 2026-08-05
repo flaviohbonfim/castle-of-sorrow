@@ -13,7 +13,7 @@ import {
   WINDOW_CONTENT_CROP,
   ceilingShadow,
   fill,
-  fillMasonry,
+  fillWallTexture,
   makeCanvas,
   stampScaled,
 } from "./lib/backdrop-compose.mjs";
@@ -27,8 +27,11 @@ const FLOOR_Y = 208; // top of FloorTop row 13
 const SCALE = 4;
 const canvas = makeCanvas(ROOM_W, ROOM_H, SCALE);
 const windowImg = decodePng(readFileSync("assets-src/raw/throne-window-module.png"));
+// Anchored to the same window module via style_asset_ids — see
+// docs/ART_PIPELINE.md §9.10 (same fix as the throne room).
+const wallImg = decodePng(readFileSync("assets-src/raw/tile-wall-anchored.png"));
 
-fillMasonry(canvas, FLOOR_Y * SCALE, CASTLE_RAMP);
+fillWallTexture(canvas, wallImg, FLOOR_Y * SCALE);
 
 // Three evenly-spaced tall windows across the nave. The altar's own warm
 // light comes from the room's real candles/lighting pass at runtime — no

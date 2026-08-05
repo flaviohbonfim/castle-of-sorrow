@@ -45,6 +45,23 @@
       "note": "not used directly — wrong aspect ratio for a 3:1 room; kept only as style reference"
     }
   },
+  "wall_anchored": {
+    "_note": "Wall textures anchored (style_asset_ids) to the window/curtain modules, so backdrop walls share their actual material — see docs/ART_PIPELINE.md §9.10. Used via fillWallTexture() in the throne/chapel compositors; NOT used as discrete 16x16 game tiles (that attempt was noisy, reverted).",
+    "castle_purple": {
+      "asset_id": "0c218652-2f9f-493c-a52b-4ca8901c33c0",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2,
+      "note": "no explicit color forced — native tone already matches the castle stone ramp; used in chapel"
+    },
+    "tower_green": {
+      "asset_id": "f2eb1027-192f-459a-a648-d2a77449e551",
+      "model": "gpt-image-2",
+      "quality": "low",
+      "credits": 2,
+      "note": "colors explicitly forced to TOWER_RAMP hex; used in throne"
+    }
+  },
   "tiles_tower_status": "reverted_procedural_better_contrast",
   "history": {
     "_note": "Dead experiments kept for provenance only; nothing here is live.",
@@ -62,6 +79,11 @@
       "floor_job": "4737a00f-1e68-4aac-98a7-900d6663569f",
       "sidescroller_pending": "712891a5-d930-4ffa-84f1-b881b39d32c0",
       "source_dir": "assets-src/raw/pixellab/ (removed from repo)"
+    },
+    "tile_bgWall_phase2_attempts": {
+      "_note": "Two cold-start generations (too bright, invented arches; then a plain-tile version that passed alone) plus a third anchored-but-noisy crop-into-16x16 attempt — all reverted. See docs/ART_PIPELINE.md §9.8 and §9.10.",
+      "castle_bright_4panel": "2ea91c1d-bd89-4b81-9e28-d0615f9b5afb",
+      "castle_plain_single": "ee022957-4cd5-4460-9ebc-aa9fbf04b516"
     }
   }
 }

@@ -746,3 +746,50 @@ passo de amostragem importam tanto quanto o método. Qualquer crop de
 conteúdo gerado por IA precisa ser conferido visualmente após a medição
 (sobrepor o crop na imagem original, não confiar só no número), não só
 depois de composto na versão final.
+
+### 9.10 Bug real #2: parede sem continuidade com a moldura da janela (corrigido)
+
+Depois do fix de recorte acima, o usuário notou (jogando ao vivo) que a
+janela ainda destoava — não por corte, mas porque a moldura de pedra escura
+que já vem embutida no módulo da janela (gerado com `bg_mode: "include"`,
+preenchendo o canvas inteiro) não tem nada a ver com a alvenaria PROCEDURAL
+que eu pintava por trás (`fillMasonry`, cores da ramp escolhidas à mão) — no
+trono isso ficava especialmente óbvio porque a parede é verde (`TOWER_RAMP`)
+e a pedra nativa do módulo é cinza-arroxeada neutra (nunca foi restringida a
+uma paleta na hora de gerar).
+
+**Diagnóstico do usuário, não meu:** "gerar tileset de muro baseado no fundo
+da janela, assim dá continuidade" — em vez de tentar fazer minha parede
+procedural combinar com a arte gerada, extrair/derivar a parede DA MESMA
+fonte visual da janela.
+
+**Fix aplicado:**
+1. Gerei uma textura de parede nova via `generate_game_art` com
+   `style_asset_ids` apontando para os módulos de janela/cortina já
+   aprovados — herda o mesmo estilo de bloco/argamassa.
+   - Primeira tentativa (só style_asset_ids, sem forçar cor): saiu no tom
+     roxo-neutro nativo do módulo — ótima para `chapel` (zona castle, ramp
+     já é roxa), mas errada para `throne` (zona tower, ramp verde).
+   - Segunda tentativa, só para a torre: mesmo prompt + `colors` explícito
+     com os hex do `TOWER_RAMP` — saiu verde-verdigris correto.
+2. `tools/lib/backdrop-compose.mjs` ganhou `fillWallTexture()` — ladrilha a
+   imagem bruta gerada (1024×1024) diretamente no canvas de trabalho, em vez
+   de `fillMasonry()` (retângulos procedurais). `compose-throne-backdrop.mjs`
+   e `compose-chapel-backdrop.mjs` trocaram para essa função.
+3. Recompostos, reprocessados pelo pipeline (quantização para a paleta real)
+   e confirmados no browser — parede visivelmente contínua atrás/ao redor
+   das janelas e cortinas nas duas salas, sem mais o retângulo escuro
+   destacado.
+
+**Tentativa que NÃO deu certo (revertida):** também tentei recortar essa
+mesma textura em 4 variantes de tile 16×16 para virar `tile.tower.bgWall` /
+`tile.castle.bgWall` (upgrade para as salas normais, não só trono/capela).
+A versão castle saiu aceitável, mas a versão tower saiu ruidosa/quebrada —
+recortar uma janela de 256×256 da textura maior e reduzir para 16×16 via
+majority-vote não preserva um bloco de tijolo coerente, é um problema
+diferente de "usar a mesma textura como fundo contínuo grande" (que
+funcionou bem) — mesma categoria de falha das duas tentativas de Phase 2
+anteriores (§9.8). Revertido antes de ir para o manifest; os tiles de
+parede normais continuam procedurais. Se algum dia quiser esse upgrade nas
+salas normais, a rota provável é gerar UM tile 16×16 isolado por vez (como
+fiz na segunda tentativa do §9.8), não recortar de uma textura grande.
