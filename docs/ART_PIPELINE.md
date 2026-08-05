@@ -514,3 +514,114 @@ remover a chave do manifest). Nunca degradar o jogo por causa de arte nova.
 | Regressão de gameplay por hitbox × sprite | Hitboxes não mudam. Sprite só muda a caixa de desenho; o gate de foot-slide cobre o resto. |
 | Créditos acabam no meio de uma fase | Fases são fechadas por tema — parar entre fases deixa o jogo coerente, não meio-a-meio. |
 | `assets-src/` inchar o repositório | Raw em 1K, ~10 MB no total; aceitável. Se passar disso, Git LFS. |
+
+---
+
+## 9. Cenários (backdrops + props de sala) — diagnóstico Sala do Trono
+
+Trabalho feito fora desta sessão (créditos + PixelLab) estendeu o pipeline
+para arte de cenário. Levantamento antes de qualquer ajuste.
+
+### 9.1 O que foi construído (extensão legítima do pipeline, não um desvio)
+
+- **`src/gfx/backdrop.ts`** ("Strategy C") — pano de fundo pintado por sala,
+  uma imagem contínua no lugar do preenchimento decorativo de `BgWall`/
+  `BgWindow`. `FloorTop`/`Brick`/pilares/portas continuam desenhando por
+  cima para colisão e piso andável. Override por `backdrop.<roomId>`,
+  fallback procedural (`buildThroneBackdrop`) se a chave faltar.
+- **`src/entities/prop.ts` + `PropId`** (`sprites.ts`) — cenário draw-only
+  (throne, banner, chandelier, column), sem colisão, alinhado centro-x/pés
+  como as outras entidades. Cada `PropId` tem fallback procedural próprio.
+- Os 5 assets da Sala do Trono (`backdrop.throne`, `prop.throne`,
+  `prop.banner`, `prop.chandelier`, `prop.column`) **estão todos no formato
+  de receita do `sprites.config.json`** — o pipeline (`assets:build`,
+  `assets:validate`, quantização OKLab, `registration`, `resize.mode`) foi
+  respeitado, não contornado. `spritecook-assets.json` é um livro-razão
+  paralelo e mais leve (asset_id/modelo/créditos por chave) — útil, mas
+  duplica parte do que `sprites.config.json` já registra; considerar migrar
+  seu conteúdo para `_note` nas receitas numa limpeza futura, não urgente.
+- **Precedente já documentado pelo próprio usuário**:
+  `spritecook-assets.json` → `"tiles_tower_status":
+  "reverted_procedural_better_contrast"` — o tileset da torre (parede,
+  piso, janela, **pilar**) foi gerado via SpriteCook e revertido para
+  procedural por falta de contraste. O diagnóstico abaixo chega
+  independentemente à mesma conclusão para outro asset correlato.
+
+### 9.2 Pilares (`prop.column`) — causa raiz encontrada
+
+Comparação lado a lado dos assets da sala (extraídos e ampliados dos PNGs
+reais, não do vídeo — vídeo comprime e borra bordas):
+
+| Asset | Rota | Resultado |
+| --- | --- | --- |
+| `backdrop.throne` | PixelLab | Excelente — formas limpas, arcos e cortinas legíveis, faixas de tijolo consistentes |
+| `prop.throne` | SpriteCook (gpt-image-2) | Excelente — silhueta sólida, alto contraste |
+| `prop.banner` | SpriteCook (gpt-image-2) | Excelente |
+| `prop.chandelier` | SpriteCook (gpt-image-2) | Excelente |
+| **`prop.column`** | **PixelLab** | **Destoa** — textura ruidosa/salpicada em vez de blocos de sombra chapados, silhueta orgânica/irregular em vez de fuste retangular, faixa tonal estreita e enlameada, quase sem banda de luz/sombra |
+
+Note que **não é "PixelLab = ruim"** — o próprio `backdrop.throne`, feito na
+mesma ferramenta, é o melhor asset da sala. O problema é específico da
+receita/geração de `prop.column`: passa no gate técnico (10 cores, todas em
+`PAL`; zero alpha parcial — `assets:validate` aprova), mas falha no critério
+que o gate não mede — coerência visual com os vizinhos. É exatamente a
+mesma categoria de defeito que já levou à reversão do pilar de tile.
+
+Já existe um fallback procedural pronto para `prop.column`
+(`sprites.ts` — fuste reto com bandas claro/escuro alternadas, capitel e
+base, mesma linguagem visual do tileset) que nunca chegou a ser comparado
+lado a lado com o resultado final porque a chave do manifest sempre esteve
+ativa.
+
+### 9.3 Velas de chão — causa raiz encontrada
+
+`candle.lit`/`candle.broken` **nunca foi tocado** — é a mesma vela
+procedural pequena da primeira sessão. O problema não é visual isolado, é
+estrutural: `Candle` (`src/entities/candle.ts`) é o pickup-quebrável padrão
+usado em **todo corredor comum** do jogo (quebra → ~72% chance de coração).
+A Sala do Trono agora tem `throne`/`banner`/`chandelier`/`column`, todos
+`kind: "prop"` — **decoração explicitamente não-interativa**. As 6 velas
+(`buildThrone()`, linhas ~539-544) são o único objeto interativo/lootável
+que sobrou no meio de uma sala que passou a ser tratada como peça de
+espetáculo, não como corredor de farm — tanto visualmente (sprite genérico
+pequeno ao lado de cenário grande e desenhado à mão) quanto estruturalmente
+(mecânica de corredor comum dentro da arena do chefe final).
+
+### 9.4 Plano proposto (nada executado ainda — aguardando decisão)
+
+1. **Pilar — reverter para procedural.** Mesmo padrão já usado e já
+   validado (era o que fizemos com `player.idle`/`skeleton.walk` quando
+   reprovados, e o que o usuário já fez com o tileset da torre): marcar
+   `prop.column` com `"enabled": false` em `sprites.config.json`, rodar
+   `assets:build`, `assets:validate`, conferir no jogo. **Custo: 0
+   créditos, risco zero, reversível em uma linha.** Se depois quiserem uma
+   coluna desenhada à mão em vez da procedural, regenerar via SpriteCook
+   (rota que funcionou para throne/banner/chandelier) com prompt pedindo
+   fuste reto, bandas de luz/sombra chapadas, sem textura salpicada — não
+   PixelLab.
+2. **Velas de chão — decisão de design, não só de arte.** Três opções,
+   em ordem de recomendação:
+   - **(A) Remover as 6 velas da Sala do Trono.** A sala já tem 4
+     lustres (`chandelier`) fazendo o trabalho de luz; os outros props já
+     são não-interativos. Deixa a sala consistente com sua nova identidade
+     de "espetáculo", não "corredor". Custo zero, mas **reduz a economia de
+     cura da luta** (menos corações disponíveis) — precisa confirmação do
+     usuário, não é só call de arte.
+   - **(B) Trocar por um prop decorativo não-interativo** (braseiro/lanterna
+     de chão, no mesmo sistema `PropId`, gerado no estilo já aprovado do
+     throne/banner/chandelier) — resolve o descasamento visual e a
+     inconsistência estrutural, mas também remove os corações. Mesmo
+     trade-off de (A), com custo extra de uma geração nova.
+   - **(C) Manter a mecânica, só trocar o visual.** Reskin de
+     `candle.lit`/`candle.broken` para algo mais ornamentado — mas a chave
+     é global (toda sala do jogo usa o mesmo `candle.*`), então isso mudaria
+     a vela em **todo o jogo**, não só no Trono; teria de virar uma variante
+     por sala (`candle.throne`?) para não afetar as outras — mais invasivo,
+     exige mexer em `candle.ts`.
+3. **Fechar o gate de QA que faltou.** `assets:validate` mede corretude
+   técnica (paleta, alpha, enquadramento), não coerência visual — é assim
+   que `prop.column` passou no gate e ainda destoou. Adicionar ao checklist
+   manual do §7: **para props/backdrops de sala (categoria nova, cenário
+   compartilhado, não sprite isolado), renderizar lado a lado com os
+   vizinhos da mesma sala antes de aprovar** — é o único jeito de pegar
+   "tecnicamente válido mas não combina", que é subjetivo por natureza.

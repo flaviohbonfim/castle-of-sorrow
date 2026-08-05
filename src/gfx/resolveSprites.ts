@@ -155,5 +155,6 @@ export function resolvePropSprites(): Record<PropId, Frame[]> {
     throne: resolveFrames("prop.throne", () => base.throne),
     banner: resolveFrames("prop.banner", () => base.banner),
     chandelier: resolveFrames("prop.chandelier", () => base.chandelier),
+    column: resolveFrames("prop.column", () => base.column),
   };
 }

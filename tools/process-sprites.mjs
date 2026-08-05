@@ -338,7 +338,10 @@ function processSheet(sheet) {
   if (sheet.frames) {
     sources = sheet.frames.map((file, i) => ({ label: `${key}[${i}] ${file}`, img: loadFrame(file) }));
   } else if (sheet.source) {
-    const grid = loadFrame(sheet.source.file);
+    let grid = loadFrame(sheet.source.file);
+    // Generators emit fixed canvas sizes; `crop` cuts the useful band out
+    // before the grid is sliced.
+    if (sheet.source.crop) grid = crop(grid, sheet.source.crop);
     const count = (sheet.source.cols ?? 1) * (sheet.source.rows ?? 1);
     const picks = sheet.source.keyframes ?? [...Array(count).keys()];
     sources = picks.map((index) => ({
@@ -357,7 +360,13 @@ function processSheet(sheet) {
 
   // Reduce to native pixel size before quantising, so the palette snap happens
   // on final pixels rather than on detail that is about to be thrown away.
-  if (sheet.resize) {
+  if (sheet.resize?.width && sheet.resize?.height) {
+    // Both dimensions given: exact output size, whole frame, no content crop.
+    // For full-bleed art (backdrops, parallax strips) where the canvas IS the
+    // subject and `align: "none"` needs the frame box hit exactly.
+    const reduce = majority ? resizeMajority : resizeImage;
+    frames = frames.map((img) => reduce(img, sheet.resize.width, sheet.resize.height));
+  } else if (sheet.resize) {
     const registration = sheet.registration ?? (sheet.source ? "shared" : "per-frame");
     const each = frames.map((img, i) => {
       const bounds = opaqueBounds(img);

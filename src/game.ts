@@ -6,6 +6,7 @@ import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
 import { TILE, TileId } from "./gfx/tiles";
 import { ParallaxBackground } from "./gfx/parallax";
+import { resolveRoomBackdrop } from "./gfx/backdrop";
 import {
   canEnterThrone,
   nextWarp,
@@ -105,6 +106,8 @@ export class Game {
   camera!: Camera;
   private room!: RoomDef;
   private roomId = START.room;
+  /** Painted hall art; when set, tilemap skips BgWall/BgWindow (strategy C). */
+  private roomBackdrop: HTMLCanvasElement | null = null;
   /** Public room id for map UI / debug. */
   get currentRoomId(): string {
     return this.roomId;
@@ -174,6 +177,7 @@ export class Game {
     const built = def.build();
     this.map = built.map;
     this.camera = new Camera(this.map.widthPx, this.map.heightPx);
+    this.roomBackdrop = resolveRoomBackdrop(id, this.map.widthPx, this.map.heightPx);
 
     this.enemies = [];
     this.candles = [];
@@ -787,70 +791,33 @@ export class Game {
 
   /* ------------------------------- draw ------------------------------- */
 
-  /** Red draped backdrop for the Throne of Night (SotN-inspired). */
-  private drawThroneCurtains(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
-    const mapH = this.map.heightPx;
-    const mapW = this.map.widthPx;
-    const ox = Math.round(-camX);
-    const oy = Math.round(-camY);
-
-    // Deep crimson wall wash (shows through BgWall via translucent tiles)
-    ctx.fillStyle = "#2a0810";
-    ctx.fillRect(ox, oy, mapW, mapH);
-
-    // Vertical curtain folds — denser near the sides, open center for the fight.
-    for (let i = 0; i < 16; i++) {
-      const x = 12 + i * 48;
-      const wave = Math.sin(i * 1.7) * 5;
-      const open = i >= 5 && i <= 10; // centre panels thinner so props read
-      const w = open ? 18 : 30;
-      ctx.fillStyle = i % 2 === 0 ? "#5a101c" : "#401018";
-      ctx.fillRect(Math.round(x - camX + wave), Math.round(6 - camY), w, mapH - 44);
-      ctx.fillStyle = "#7a1830";
-      ctx.fillRect(Math.round(x + 3 - camX + wave), Math.round(6 - camY), 3, mapH - 44);
-      ctx.fillStyle = "#1a060c";
-      ctx.fillRect(Math.round(x + w - 5 - camX + wave), Math.round(6 - camY), 3, mapH - 44);
-    }
-
-    // Gold-trimmed runner from the door to the dais (main floor strip).
-    const carpetY = mapH - 64;
-    const carpetX = 48;
-    const carpetW = mapW - 96;
-    ctx.fillStyle = "#4a0c18";
-    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY - camY), carpetW, 16);
-    ctx.fillStyle = "#6a1424";
-    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY + 2 - camY), carpetW, 3);
-    ctx.fillStyle = "#a87820";
-    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY - camY), carpetW, 1);
-    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY + 15 - camY), carpetW, 1);
-    // Diamond accents along the runner
-    ctx.fillStyle = "#c02838";
-    for (let dx = 24; dx < carpetW - 16; dx += 40) {
-      const cx = Math.round(carpetX + dx - camX);
-      const cy = Math.round(carpetY + 8 - camY);
-      ctx.fillRect(cx, cy - 2, 2, 5);
-      ctx.fillRect(cx - 2, cy, 6, 2);
-    }
-
-    // Dark upper valence with gold fringe hints
-    ctx.fillStyle = "#140408";
-    ctx.fillRect(ox, oy, mapW, 18);
-    ctx.fillStyle = "#a87820";
-    for (let x = 8; x < mapW; x += 16) {
-      ctx.fillRect(Math.round(x - camX), Math.round(16 - camY), 2, 3);
-    }
-  }
-
   draw(ctx: CanvasRenderingContext2D, alpha: number): void {
     const camX = this.camera.renderX(alpha);
     const camY = this.camera.renderY(alpha);
 
     this.parallax.draw(ctx, camX);
-    // SotN-style red curtains behind the throne hall.
-    if (this.roomId === "throne") {
-      this.drawThroneCurtains(ctx, camX, camY);
+    // Strategy C: continuous painted backdrop (override PNG or procedural).
+    if (this.roomBackdrop) {
+      // Blit only the camera window (maps can be far larger than the view).
+      const sx = Math.max(0, Math.round(camX));
+      const sy = Math.max(0, Math.round(camY));
+      const sw = Math.min(this.map.widthPx - sx, VIEW_W);
+      const sh = Math.min(this.map.heightPx - sy, VIEW_H);
+      if (sw > 0 && sh > 0) {
+        ctx.drawImage(
+          this.roomBackdrop,
+          sx,
+          sy,
+          sw,
+          sh,
+          Math.round(sx - camX),
+          Math.round(sy - camY),
+          sw,
+          sh,
+        );
+      }
     }
-    this.map.draw(ctx, camX, camY, VIEW_W, VIEW_H);
+    this.map.draw(ctx, camX, camY, VIEW_W, VIEW_H, !!this.roomBackdrop);
 
     // Scenery props sit behind actors (throne/banners read as furniture).
     for (const p of this.props) p.draw(ctx, camX, camY);

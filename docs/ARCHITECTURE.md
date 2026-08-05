@@ -102,16 +102,21 @@ src/
 ## 5. Rendering pipeline (`Game.draw` — ORDER MATTERS)
 
 1. Parallax background (`parallax.draw`, scrolls with camX only)
-2. Tilemap
-3. Interactables → candles → pickups → enemies → **player** → projectiles
-4. Melee slash arc FX (additive crescents — never draw plain rects for FX)
-5. Particles
-6. **Lighting pass:** ambient dark overlay `rgba(8,5,18,0.14)` → additive
-   candle glows → vignette
-7. Floating texts (damage numbers) — above lighting so they stay readable
-8. Room-name banner
-9. HUD → minimap → boss HP bar
-10. Menu / Shop overlays (only when open)
+2. Room backdrop (`gfx/backdrop.ts`, Strategy C) — camera-culled blit of one
+   continuous painted image per room; when present the tilemap skips
+   BgWall/BgWindow (`skipDecor`)
+3. Tilemap
+4. Scenery props (`entities/prop.ts` — throne/banner/chandelier/column,
+   draw-only, behind actors)
+5. Interactables → candles → pickups → enemies → **player** → projectiles
+6. Melee slash arc FX (additive crescents — never draw plain rects for FX)
+7. Particles
+8. **Lighting pass:** ambient dark overlay `rgba(8,5,18,0.14)` → additive
+   candle glows + prop glows (chandeliers) → vignette
+9. Floating texts (damage numbers) — above lighting so they stay readable
+10. Room-name banner
+11. HUD → minimap → boss HP bar
+12. Menu / Shop overlays (only when open)
 
 Pixel-perfect rules: `Math.round()` every draw coordinate; the backbuffer is
 480x270 (`VIEW_W`/`VIEW_H`) integer-scaled to the window.
@@ -122,7 +127,7 @@ Pixel-perfect rules: `Math.round()` every draw coordinate; the backbuffer is
 
 `TILE = 16`. `TileId`: Empty, Brick, FloorTop, Platform (one-way),
 PillarTop/Pillar/PillarBase, BgWall, BgWindow, Cracked (breakable, solid),
-Gate (boss door, solid). Solidity lives in `Tilemap.isSolid`; one-way in
+Gate (boss door, solid), Water/WaterTop (swimmable), Door (passage arch). Solidity lives in `Tilemap.isSolid`; one-way in
 `isOneWay`. Outside the map: solid horizontally, **open below row max**
 (rooms with floor holes let you fall out → bottom exits).
 

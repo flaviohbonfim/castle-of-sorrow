@@ -2159,7 +2159,7 @@ export function buildAxeThrowSprites(): Frame[] {
 /* Throne-room scenery props (procedural fallbacks; PNG overridable). */
 /* ------------------------------------------------------------------ */
 
-export type PropId = "throne" | "banner" | "chandelier";
+export type PropId = "throne" | "banner" | "chandelier" | "column";
 
 /** Static/short-loop scenery for the Throne of Night and future rooms. */
 export function buildPropSprites(): Record<PropId, Frame[]> {
@@ -2316,9 +2316,46 @@ export function buildPropSprites(): Record<PropId, Frame[]> {
     },
   );
 
+  // Tall stone column (fallback) — thick shaft, capital, base.
+  const column = pixelMap(
+    [
+      "  LLLLLL  ",
+      " LMMMMMML ",
+      "LMMDDDMML",
+      " LMMMMMML ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      "  MMMMMM  ",
+      "  MDDDDM  ",
+      " LMMMMMML ",
+      "LMMDDDDMML",
+      "LMMMMMMMML",
+      " DDDDDDDD ",
+    ],
+    {
+      L: T.stoneHi,
+      M: T.stone,
+      D: T.stoneDark,
+    },
+  );
+
   return {
     throne: [throne],
     banner: [banner],
     chandelier: [chA, chB],
+    column: [column],
   };
 }

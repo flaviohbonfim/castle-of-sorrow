@@ -73,32 +73,53 @@ export class Tilemap {
     return t === TileId.Door || t === TileId.Gate;
   }
 
-  draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, viewW: number, viewH: number): void {
+  /**
+   * @param skipDecor When true (room has a painted backdrop), skip BgWall /
+   *   BgWindow so the continuous hall art shows through. Collision tiles and
+   *   pillars/doors still draw. Pillar underlay uses a dark fill instead of
+   *   repeating wall tiles.
+   */
+  draw(
+    ctx: CanvasRenderingContext2D,
+    camX: number,
+    camY: number,
+    viewW: number,
+    viewH: number,
+    skipDecor = false,
+  ): void {
     const c0 = Math.max(0, Math.floor(camX / TILE));
     const c1 = Math.min(this.cols - 1, Math.ceil((camX + viewW) / TILE));
     const r0 = Math.max(0, Math.floor(camY / TILE));
     const r1 = Math.min(this.rows - 1, Math.ceil((camY + viewH) / TILE));
-    const bgWall = this.tileset.get(TileId.BgWall);
+    const bgWall = skipDecor ? undefined : this.tileset.get(TileId.BgWall);
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
         const t = this.at(c, r);
         if (t === TileId.Empty) continue;
+        // Backdrop owns wall fill + painted windows.
+        if (skipDecor && (t === TileId.BgWall || t === TileId.BgWindow)) continue;
         const variants = this.tileset.get(t);
         if (!variants) continue;
         const dx = c * TILE - camX;
         const dy = r * TILE - camY;
         // Platform / pillar sprites only paint part of the 16×16 cell (thin lip
         // or center column). Without a wall underlay the transparent pixels
-        // punch through to the parallax sky — looks like accidental "windows".
+        // punch through to the parallax/backdrop.
         if (
-          bgWall &&
-          (t === TileId.Platform ||
-            t === TileId.PillarTop ||
-            t === TileId.Pillar ||
-            t === TileId.PillarBase)
+          t === TileId.Platform ||
+          t === TileId.PillarTop ||
+          t === TileId.Pillar ||
+          t === TileId.PillarBase
         ) {
-          const under = bgWall[(c * 7 + r * 13) % bgWall.length];
-          ctx.drawImage(under, dx, dy);
+          if (skipDecor) {
+            // Subtle dark plug so pillars don't show sky holes; backdrop still
+            // reads around the column.
+            ctx.fillStyle = "rgba(8, 10, 10, 0.55)";
+            ctx.fillRect(dx, dy, TILE, TILE);
+          } else if (bgWall) {
+            const under = bgWall[(c * 7 + r * 13) % bgWall.length];
+            ctx.drawImage(under, dx, dy);
+          }
         }
         let img: HTMLCanvasElement;
         if (t === TileId.Door && variants.length >= 3) {

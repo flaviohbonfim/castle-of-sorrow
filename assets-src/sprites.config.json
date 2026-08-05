@@ -1332,6 +1332,84 @@
         "coatTrim",
         "bladeHi"
       ]
+    },
+    {
+      "_note": "Strategy C \u2014 Throne backdrop flat side-view (PixelLab). Mid bricks, arches+curtains. Stretched to map at runtime.",
+      "key": "backdrop.throne",
+      "out": "backdrop-throne.png",
+      "frameW": 400,
+      "frameH": 180,
+      "align": "none",
+      "source": {
+        "file": "raw/backdrop-throne-sheet.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "towerStoneDark",
+        "towerStoneMid",
+        "towerStoneLight",
+        "towerStoneHi",
+        "stoneDark",
+        "stoneMid",
+        "stoneLight",
+        "stoneHi",
+        "skyTop",
+        "skyBottom",
+        "moon",
+        "dracCape",
+        "dracCapeMid",
+        "dracCapeDark",
+        "dracSash",
+        "dracSashHi",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "coatTrim",
+        "mpBlue",
+        "mpBlueHi",
+        "hpRed",
+        "hpRedHi",
+        "bladeHi",
+        "candleBrass",
+        "flameMid",
+        "flameCore"
+      ]
+    },
+    {
+      "_note": "Regen v2 via SpriteCook (gpt-image-2 low, style_asset_ids do throne+chandelier) \u2014 substitui a versao PixelLab que destoava (textura ruidosa, sem banda de luz/sombra; ver docs/ART_PIPELINE.md \u00a79.2). Fuste reto, bandas chapadas, capitel gotico.",
+      "key": "prop.column",
+      "out": "prop-column.png",
+      "frameW": 28,
+      "frameH": 100,
+      "align": "feet",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 96,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/prop-column-sheet-v2.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "towerStoneDark",
+        "towerStoneMid",
+        "towerStoneLight",
+        "towerStoneHi",
+        "stoneDark",
+        "stoneMid",
+        "stoneLight",
+        "stoneHi",
+        "gold",
+        "goldHi",
+        "goldShade",
+        "bladeHi",
+        "coatTrim",
+        "dracCapeDark"
+      ]
     }
   ]
 }

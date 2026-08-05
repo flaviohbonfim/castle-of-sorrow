@@ -228,6 +228,18 @@
       "frameW": 32,
       "frameH": 48,
       "frames": 1
+    },
+    "backdrop.throne": {
+      "file": "backdrop-throne.png",
+      "frameW": 400,
+      "frameH": 180,
+      "frames": 1
+    },
+    "prop.column": {
+      "file": "prop-column.png",
+      "frameW": 28,
+      "frameH": 100,
+      "frames": 1
     }
   }
 }

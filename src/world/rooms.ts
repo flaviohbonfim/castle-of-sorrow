@@ -469,10 +469,12 @@ function buildTowerTop(): BuiltRoom {
  * Throne of Night — final boss arena.
  *
  * Layout goals:
- *  - wide flat combat floor (no pyramid of steps)
- *  - short single-step dais with throne prop
- *  - banners + chandeliers for hall-of-night presence
- *  - Dracula and player share the main floor so the fight stays readable
+ *  - wide flat combat floor + short dais
+ *  - Strategy C backdrop owns wall art (arches, curtains, windows)
+ *  - tilemap = solids only (floor / brick / door) — no stubby tile pillars
+ *    (they fought the painted architecture)
+ *  - props aligned to the hall rhythm: chandeliers under ceilings between
+ *    bays; banners only on plain stone piers (not over glass/curtains)
  */
 function buildThrone(): BuiltRoom {
   const b = new RoomBuilder(48, 16, "tower");
@@ -483,27 +485,25 @@ function buildThrone(): BuiltRoom {
   b.fill(1, 14, 46, 14, TileId.Brick);
 
   // Single-step dais at the far right (throne feel, not a climb puzzle).
-  // Exclusive-column: FloorTop only on r12 for cols 38–46; brick under.
   b.hline(12, 38, 46, TileId.FloorTop);
   b.fill(38, 13, 46, 13, TileId.Brick);
 
-  // One clean row of windows + a sparse higher row for depth.
-  b.windows(4, 6, 42, 6);
-  b.windows(3, 9, 39, 10);
-
-  // Pillars on the main floor (base = rTop+2).
-  b.pillar(7, 10);
-  b.pillar(18, 10);
-  b.pillar(29, 10);
-  // Flanking the dais
-  b.pillar(40, 9);
-
+  // No BgWindow / pillar tiles: backdrop paints openings; open floor for the
+  // final fight. Door still needed for exit geometry.
   b.door(0, 10, 12);
-  // Boss on the main floor, mid-right — clear of pillars and dais lip.
+  // Boss on the main floor, mid-right — clear of the dais lip.
   b.at("boss", 34, 12, "dracula");
 
   // --- Scenery props (draw-only) ---
-  // Throne on the dais, facing the hall (left / toward the entrance).
+  // Pier centers were measured from the current 400×180 backdrop scaled
+  // ×1.92 to world space. The next backdrop is generated design-first at
+  // native room size, with piers authored to fixed positions — when that
+  // lands, these values become the authored constants, not measurements.
+  //
+  // Pier 4 stands on the main floor before the dais step (col 38 =
+  // world 608), not on the raised surface.
+  //
+  // Throne on the dais, facing the entrance.
   b.spawns.push({
     kind: "prop",
     x: 43 * TILE + TILE / 2,
@@ -511,21 +511,47 @@ function buildThrone(): BuiltRoom {
     id: "throne",
     dir: -1,
   });
-  // Wall banners between pillars (hang from upper wall).
-  b.spawns.push({ kind: "prop", x: 12 * TILE + 8, y: 8 * TILE, id: "banner" });
-  b.spawns.push({ kind: "prop", x: 24 * TILE + 8, y: 8 * TILE, id: "banner" });
-  b.spawns.push({ kind: "prop", x: 33 * TILE + 8, y: 8 * TILE, id: "banner", dir: -1 });
-  // Chandeliers over the approach and the dais.
-  b.spawns.push({ kind: "prop", x: 14 * TILE + 8, y: 5 * TILE, id: "chandelier" });
-  b.spawns.push({ kind: "prop", x: 26 * TILE + 8, y: 5 * TILE, id: "chandelier" });
-  b.spawns.push({ kind: "prop", x: 41 * TILE + 8, y: 4 * TILE, id: "chandelier" });
 
-  b.at("candle", 4, 12);
-  b.at("candle", 12, 12);
-  b.at("candle", 23, 12);
-  b.at("candle", 35, 12);
-  b.at("candle", 42, 11); // dais
-  b.at("candle", 45, 11);
+  // Full-height column props on the stone piers (not tile stubs). All four
+  // stand on the main floor — see pier 4 note above.
+  const floorY = 13 * TILE; // feet on FloorTop row 13
+  const pierXs = [179, 304, 463, 588];
+  for (const x of pierXs) {
+    b.spawns.push({ kind: "prop", x, y: floorY, id: "column" });
+  }
+
+  // Banners: hang on the pier face, HIGHER so cloth sits on stone under the
+  // arch spring — not mid-glass / mid-curtain (video 13.20.55).
+  // Banner sprite ~48px tall; feet y ≈ 7.5*TILE puts top near arch line.
+  const bannerY = 7 * TILE + 8;
+  // Small inset from the (now accurate) pier center so cloth reads as
+  // draped in front of the shaft rather than pasted dead-center on it.
+  b.spawns.push({ kind: "prop", x: pierXs[0] + 4, y: bannerY, id: "banner" });
+  b.spawns.push({ kind: "prop", x: pierXs[1] - 4, y: bannerY, id: "banner" });
+  b.spawns.push({ kind: "prop", x: pierXs[2] + 4, y: bannerY, id: "banner", dir: -1 });
+  // No banner on the dais pier — throne + curtain bay already fill that side.
+
+  // Chandeliers: high, centered in glass bays (not curtain bays).
+  const chY = 3 * TILE + 4;
+  b.spawns.push({ kind: "prop", x: 6 * TILE + 8, y: chY, id: "chandelier" });
+  b.spawns.push({ kind: "prop", x: 15 * TILE, y: chY, id: "chandelier" });
+  b.spawns.push({ kind: "prop", x: 24 * TILE + 8, y: chY, id: "chandelier" });
+  b.spawns.push({ kind: "prop", x: 34 * TILE, y: chY, id: "chandelier" });
+
+  // Candles mounted mid-shaft on each column, not on the floor — floor-level
+  // candles read as generic corridor clutter next to hand-drawn scenery.
+  // Same breakable Candle (still drops a heart), just relocated onto the
+  // pier; candles draw after props so they render in front of the shaft.
+  // One per column (4, down from 6 on the floor) — same landmarks the
+  // banners/chandeliers use, so the room reads as one composition.
+  // NOTE: at this height the up-attack's starting dagger (reach 26) may not
+  // reach it — measured the swing topping out ~38px above the floor. Left
+  // here per direct request; if the weakest weapon can't hit these in
+  // practice, the fix is lowering candleY, not the art.
+  const candleY = floorY - 50;
+  for (const x of pierXs) {
+    b.spawns.push({ kind: "candle", x, y: candleY });
+  }
   return b.build();
 }
 

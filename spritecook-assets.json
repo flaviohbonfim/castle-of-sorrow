@@ -22,12 +22,23 @@
       "credits": 2
     }
   },
-  "tiles_tower": {
-    "wall": "75607a87-6572-4a53-8273-0e7f8280e86b",
-    "floor": "7ead2014-1ef4-4cbd-8319-9d95bc23ed4b",
-    "window": "7a7f688e-6123-4a8a-a01b-6c86d9a524b8",
-    "pillar": "758cb163-7827-4064-bf9f-8b6d2ce9b7bc",
-    "credits": 8
-  },
-  "tiles_tower_status": "reverted_procedural_better_contrast"
+  "tiles_tower_status": "reverted_procedural_better_contrast",
+  "history": {
+    "_note": "Dead experiments kept for provenance only; nothing here is live.",
+    "tiles_tower": {
+      "wall": "75607a87-6572-4a53-8273-0e7f8280e86b",
+      "floor": "7ead2014-1ef4-4cbd-8319-9d95bc23ed4b",
+      "window": "7a7f688e-6123-4a8a-a01b-6c86d9a524b8",
+      "pillar": "758cb163-7827-4064-bf9f-8b6d2ce9b7bc",
+      "credits": 8
+    },
+    "pixellab_tower": {
+      "wall_job": "e5eb5da8-0f52-4e2f-b904-2677b78dee90",
+      "pillar_job": "f772d60b-bb9f-456e-9fb8-21f3d13ab719",
+      "window_job": "d4d9aa7f-519a-400f-9a59-7f47a4cf7f02",
+      "floor_job": "4737a00f-1e68-4aac-98a7-900d6663569f",
+      "sidescroller_pending": "712891a5-d930-4ffa-84f1-b881b39d32c0",
+      "source_dir": "assets-src/raw/pixellab/ (removed from repo)"
+    }
+  }
 }
