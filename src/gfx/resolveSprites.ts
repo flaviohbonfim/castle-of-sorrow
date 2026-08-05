@@ -17,12 +17,16 @@ import {
   buildPickupSprites,
   buildPlayerSprites,
   buildPortraitSprites,
+  buildPropSprites,
   buildAxeThrowSprites,
   buildSubweaponSprites,
   type Frame,
   type PlayerSprites,
+  type PropId,
   type SpriteSet,
 } from "./sprites";
+
+export type { PropId };
 
 /**
  * Pad an override up to the frame count the procedural art has.
@@ -141,5 +145,15 @@ export function resolvePortraitSprites(): ReturnType<typeof buildPortraitSprites
     demon: resolveFrame("portrait.demon", () => base.demon),
     dracula: resolveFrame("portrait.dracula", () => base.dracula),
     hero: resolveFrame("portrait.hero", () => base.hero),
+  };
+}
+
+/** Scenery props — each id is an independent overridable sheet. */
+export function resolvePropSprites(): Record<PropId, Frame[]> {
+  const base = buildPropSprites();
+  return {
+    throne: resolveFrames("prop.throne", () => base.throne),
+    banner: resolveFrames("prop.banner", () => base.banner),
+    chandelier: resolveFrames("prop.chandelier", () => base.chandelier),
   };
 }

@@ -122,6 +122,7 @@ back to procedural art automatically.
 | `projectile.bone` | spin cycle |
 | `portrait.hermit`, `portrait.ghost`, `portrait.demon` | 1 each (32×32) |
 | `portrait.dracula`, `portrait.hero` | 1 each (32×32) |
+| `prop.throne`, `prop.banner`, `prop.chandelier` | 1 / 1 / 2 (sway) — scenery |
 
 ### Tiles
 

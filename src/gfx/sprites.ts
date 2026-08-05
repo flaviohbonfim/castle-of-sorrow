@@ -2154,3 +2154,171 @@ export function buildAxeThrowSprites(): Frame[] {
   );
   return [a, b, c, d];
 }
+
+/* ------------------------------------------------------------------ */
+/* Throne-room scenery props (procedural fallbacks; PNG overridable). */
+/* ------------------------------------------------------------------ */
+
+export type PropId = "throne" | "banner" | "chandelier";
+
+/** Static/short-loop scenery for the Throne of Night and future rooms. */
+export function buildPropSprites(): Record<PropId, Frame[]> {
+  const T = {
+    wood: "#3a2430",
+    woodMid: "#4a3040",
+    woodDark: "#241018",
+    gold: PAL.gold,
+    goldHi: PAL.goldHi,
+    goldShade: PAL.goldShade,
+    cloth: PAL.dracSash,
+    clothHi: PAL.dracSashHi,
+    clothDark: "#501018",
+    stone: PAL.towerStoneMid,
+    stoneHi: PAL.towerStoneLight,
+    stoneDark: PAL.towerStoneDark,
+    brass: PAL.candleBrass,
+    brassHi: PAL.candleBrassHi,
+    flame: PAL.flameMid,
+    flameHi: PAL.flameCore,
+    black: "#0a0608",
+  };
+
+  // Gothic high-back throne ~36×48 — gold finials, crimson cushion, dark wood.
+  const throne = pixelMap(
+    [
+      "      G    G      ",
+      "     GgG  GgG     ",
+      "     GGG  GGG     ",
+      "    wDDDDDDDDw    ",
+      "   wDmmmmmCmmDw   ",
+      "   wDmCCCCCCmDw   ",
+      "   wDmCcccCCmDw   ",
+      "   wDmCCCCCCmDw   ",
+      "   wDmCcccCCmDw   ",
+      "   wDmCCCCCCmDw   ",
+      "   wDmmmmmCmmDw   ",
+      "   wDDDDDDDDDDw   ",
+      "   wwDwwwwwwDww   ",
+      "    wDwwwwwwDw    ",
+      "    wDwwCCwwDw    ",
+      "    wDwwCCwwDw    ",
+      "   wwDDCCCCDDww   ",
+      "  wDDDDCCCCDDDDw  ",
+      "  wDDccccccccDDw  ",
+      "  wDDCCCCCCCCDDw  ",
+      "  wDDDDDDDDDDDDw  ",
+      "  wwDwwwwwwwwDww  ",
+      "   wDw      wDw   ",
+      "   wDw      wDw   ",
+      "   wDw      wDw   ",
+      "   wDw      wDw   ",
+      "   wDw      wDw   ",
+      "   wDw      wDw   ",
+      "  wwDww    wwDww  ",
+      "  wDDDDw  wDDDDw  ",
+      "  wwwwww  wwwwww  ",
+    ],
+    {
+      G: T.goldHi,
+      g: T.gold,
+      w: T.wood,
+      D: T.woodDark,
+      m: T.woodMid,
+      C: T.cloth,
+      c: T.clothHi,
+    },
+  );
+
+  // Hanging crimson banner with gold crest ~18×40.
+  const banner = pixelMap(
+    [
+      " GGGGGGGGGGGG ",
+      "GggggggggggggG",
+      "GccccccccccccG",
+      "GcCCCCCCCCCCcG",
+      "GcC  GGGG  CcG",
+      "GcC GggggG CcG",
+      "GcC GgGGgG CcG",
+      "GcC GggggG CcG",
+      "GcC  GGGG  CcG",
+      "GcCCCCCCCCCCcG",
+      "GcCccccccccCcG",
+      "GcCCCCCCCCCCcG",
+      "GcCccccccccCcG",
+      "GcCCCCCCCCCCcG",
+      "GcC  D  D  CcG",
+      "GcC DDDDDD CcG",
+      "GcC  DDDD  CcG",
+      "GcC   DD   CcG",
+      "GcCCCCCCCCCCcG",
+      "GccccccccccccG",
+      " GcCCCCCCCCCc ",
+      "  GcCCCCCCc  ",
+      "   GcCCCCc   ",
+      "    GcCCc    ",
+      "     GcG     ",
+      "      G      ",
+    ],
+    {
+      G: T.gold,
+      g: T.goldShade,
+      C: T.cloth,
+      c: T.clothDark,
+      D: T.goldHi,
+    },
+  );
+
+  // Twin-candle chandelier, frame A/B for gentle flicker sway.
+  const chA = pixelMap(
+    [
+      "      bb      ",
+      "      bb      ",
+      "     bBBb     ",
+      "   bbBBBBBb   ",
+      "  bB  bb  Bb  ",
+      " bB   bb   Bb ",
+      "bB  f  f  f Bb",
+      "B  fFf fF fF B",
+      "b   f   f  f b",
+      " Bb        bB ",
+      "  BbbbbbbbbB  ",
+      "   bBBbBBbB   ",
+      "    b    b    ",
+    ],
+    {
+      b: T.brass,
+      B: T.brassHi,
+      f: T.flame,
+      F: T.flameHi,
+    },
+  );
+  const chB = pixelMap(
+    [
+      "      bb      ",
+      "      bb      ",
+      "     bBBb     ",
+      "   bbBBBBBb   ",
+      "  bB  bb  Bb  ",
+      " bB   bb   Bb ",
+      "bB f   f   fBb",
+      "B fFf fF  fF B",
+      "b  f   f   f b",
+      " Bb        bB ",
+      "  BbbbbbbbbB  ",
+      "   bBBbBBbB   ",
+      "    b    b    ",
+    ],
+    {
+      b: T.brass,
+      B: T.brassHi,
+      f: T.flame,
+      F: T.flameHi,
+    },
+  );
+
+  return {
+    throne: [throne],
+    banner: [banner],
+    chandelier: [chA, chB],
+  };
+}

@@ -19,12 +19,13 @@ export interface Spawn {
     | "save"
     | "shopkeeper"
     | "npc"
-    | "boss";
+    | "boss"
+    | "prop";
   x: number; // world px
   y: number; // feet/bottom for grounded, center for flyers
-  id?: string; // relic id, item id, boss id, or item flag key
+  id?: string; // relic id, item id, boss id, prop id, or item flag key
   n?: number; // item pickup index within the room (for flags)
-  dir?: 1 | -1; // medusa spawner flight direction
+  dir?: 1 | -1; // medusa spawner flight direction / prop facing
 }
 
 export interface RoomExit {
@@ -469,8 +470,8 @@ function buildTowerTop(): BuiltRoom {
  *
  * Layout goals:
  *  - wide flat combat floor (no pyramid of steps)
- *  - short single-step dais at the far end for presence only
- *  - tall windows + pillars framing a gothic hall
+ *  - short single-step dais with throne prop
+ *  - banners + chandeliers for hall-of-night presence
  *  - Dracula and player share the main floor so the fight stays readable
  */
 function buildThrone(): BuiltRoom {
@@ -500,6 +501,19 @@ function buildThrone(): BuiltRoom {
   b.door(0, 10, 12);
   // Boss on the main floor, mid-right — clear of pillars and dais lip.
   b.at("boss", 34, 12, "dracula");
+
+  // --- Scenery props (draw-only) ---
+  // Throne centered on the dais, feet on the raised floor.
+  b.at("prop", 43, 11, "throne");
+  // Wall banners between pillars (hang from upper wall).
+  b.spawns.push({ kind: "prop", x: 12 * TILE + 8, y: 8 * TILE, id: "banner" });
+  b.spawns.push({ kind: "prop", x: 24 * TILE + 8, y: 8 * TILE, id: "banner" });
+  b.spawns.push({ kind: "prop", x: 33 * TILE + 8, y: 8 * TILE, id: "banner", dir: -1 });
+  // Chandeliers over the approach and the dais.
+  b.spawns.push({ kind: "prop", x: 14 * TILE + 8, y: 5 * TILE, id: "chandelier" });
+  b.spawns.push({ kind: "prop", x: 26 * TILE + 8, y: 5 * TILE, id: "chandelier" });
+  b.spawns.push({ kind: "prop", x: 41 * TILE + 8, y: 4 * TILE, id: "chandelier" });
+
   b.at("candle", 4, 12);
   b.at("candle", 12, 12);
   b.at("candle", 23, 12);

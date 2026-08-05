@@ -43,6 +43,8 @@ import {
 import { BoneColossus } from "./entities/enemies/boss";
 import { ClockworkWraith } from "./entities/enemies/wraith";
 import { Dracula } from "./entities/enemies/dracula";
+import { Prop } from "./entities/prop";
+import type { PropId } from "./gfx/sprites";
 import { Zombie } from "./entities/enemies/zombie";
 import { SpearGuard } from "./entities/enemies/spearGuard";
 import { FleaMan } from "./entities/enemies/fleaMan";
@@ -111,6 +113,7 @@ export class Game {
 
   private enemies: Enemy[] = [];
   private candles: Candle[] = [];
+  private props: Prop[] = [];
   private pickups: Pickup[] = [];
   private projectiles: Projectile[] = [];
   private interactables: (RelicPickup | ItemPickup | WarpPad | SavePoint | Shopkeeper | Npc)[] = [];
@@ -174,6 +177,7 @@ export class Game {
 
     this.enemies = [];
     this.candles = [];
+    this.props = [];
     this.pickups = [];
     this.projectiles = [];
     this.interactables = [];
@@ -196,6 +200,11 @@ export class Game {
           this.medusaSpawners.push({ x: s.x, y: s.y, dir: s.dir ?? 1 });
           break;
         case "candle": this.candles.push(new Candle(s.x, s.y)); break;
+        case "prop":
+          if (s.id) {
+            this.props.push(new Prop(s.id as PropId, s.x, s.y, s.dir ?? 1));
+          }
+          break;
         case "relic":
           if (s.id && !this.flags.has(`relic:${s.id}`)) {
             this.interactables.push(new RelicPickup(s.id, s.x, s.y));
@@ -695,6 +704,7 @@ export class Game {
 
     for (const e of this.enemies) if (!e.dead) e.update(this);
     for (const c of this.candles) if (!c.dead) c.update(this);
+    for (const p of this.props) p.update();
     for (const p of this.pickups) if (!p.dead) p.update(this);
     for (const p of this.projectiles) if (!p.dead) p.update(this);
     for (const i of this.interactables) if (!i.dead) i.update(this);
@@ -781,28 +791,54 @@ export class Game {
   private drawThroneCurtains(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
     const mapH = this.map.heightPx;
     const mapW = this.map.widthPx;
-    // Deep crimson wall wash
-    ctx.fillStyle = "#3a0a14";
-    ctx.fillRect(Math.round(-camX), Math.round(-camY), mapW, mapH);
-    // Vertical curtain folds across the back
-    for (let i = 0; i < 14; i++) {
-      const x = 24 + i * 52;
-      const wave = Math.sin(i * 1.7) * 6;
-      ctx.fillStyle = i % 2 === 0 ? "#6a1020" : "#501018";
-      ctx.fillRect(Math.round(x - camX + wave), Math.round(8 - camY), 28, mapH - 48);
-      ctx.fillStyle = "#8a1830";
-      ctx.fillRect(Math.round(x + 4 - camX + wave), Math.round(8 - camY), 4, mapH - 48);
-      ctx.fillStyle = "#2a0810";
-      ctx.fillRect(Math.round(x + 22 - camX + wave), Math.round(8 - camY), 3, mapH - 48);
+    const ox = Math.round(-camX);
+    const oy = Math.round(-camY);
+
+    // Deep crimson wall wash (shows through BgWall via translucent tiles)
+    ctx.fillStyle = "#2a0810";
+    ctx.fillRect(ox, oy, mapW, mapH);
+
+    // Vertical curtain folds — denser near the sides, open center for the fight.
+    for (let i = 0; i < 16; i++) {
+      const x = 12 + i * 48;
+      const wave = Math.sin(i * 1.7) * 5;
+      const open = i >= 5 && i <= 10; // centre panels thinner so props read
+      const w = open ? 18 : 30;
+      ctx.fillStyle = i % 2 === 0 ? "#5a101c" : "#401018";
+      ctx.fillRect(Math.round(x - camX + wave), Math.round(6 - camY), w, mapH - 44);
+      ctx.fillStyle = "#7a1830";
+      ctx.fillRect(Math.round(x + 3 - camX + wave), Math.round(6 - camY), 3, mapH - 44);
+      ctx.fillStyle = "#1a060c";
+      ctx.fillRect(Math.round(x + w - 5 - camX + wave), Math.round(6 - camY), 3, mapH - 44);
     }
-    // Red carpet strip on the floor path
-    ctx.fillStyle = "#5a1018";
-    ctx.fillRect(Math.round(80 - camX), Math.round(mapH - 56 - camY), mapW - 120, 20);
-    ctx.fillStyle = "#7a1828";
-    ctx.fillRect(Math.round(80 - camX), Math.round(mapH - 54 - camY), mapW - 120, 4);
-    // Dark upper valence
-    ctx.fillStyle = "#1a0408";
-    ctx.fillRect(Math.round(-camX), Math.round(-camY), mapW, 20);
+
+    // Gold-trimmed runner from the door to the dais (main floor strip).
+    const carpetY = mapH - 64;
+    const carpetX = 48;
+    const carpetW = mapW - 96;
+    ctx.fillStyle = "#4a0c18";
+    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY - camY), carpetW, 16);
+    ctx.fillStyle = "#6a1424";
+    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY + 2 - camY), carpetW, 3);
+    ctx.fillStyle = "#a87820";
+    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY - camY), carpetW, 1);
+    ctx.fillRect(Math.round(carpetX - camX), Math.round(carpetY + 15 - camY), carpetW, 1);
+    // Diamond accents along the runner
+    ctx.fillStyle = "#c02838";
+    for (let dx = 24; dx < carpetW - 16; dx += 40) {
+      const cx = Math.round(carpetX + dx - camX);
+      const cy = Math.round(carpetY + 8 - camY);
+      ctx.fillRect(cx, cy - 2, 2, 5);
+      ctx.fillRect(cx - 2, cy, 6, 2);
+    }
+
+    // Dark upper valence with gold fringe hints
+    ctx.fillStyle = "#140408";
+    ctx.fillRect(ox, oy, mapW, 18);
+    ctx.fillStyle = "#a87820";
+    for (let x = 8; x < mapW; x += 16) {
+      ctx.fillRect(Math.round(x - camX), Math.round(16 - camY), 2, 3);
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D, alpha: number): void {
@@ -816,6 +852,8 @@ export class Game {
     }
     this.map.draw(ctx, camX, camY, VIEW_W, VIEW_H);
 
+    // Scenery props sit behind actors (throne/banners read as furniture).
+    for (const p of this.props) p.draw(ctx, camX, camY);
     for (const i of this.interactables) i.draw(ctx, camX, camY, alpha);
     for (const c of this.candles) c.draw(ctx, camX, camY, alpha);
     for (const p of this.pickups) p.draw(ctx, camX, camY, alpha);
@@ -863,6 +901,7 @@ export class Game {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     for (const c of this.candles) if (!c.dead) c.drawGlow(ctx, camX, camY);
+    for (const p of this.props) p.drawGlow(ctx, camX, camY);
     ctx.restore();
 
     // Low-HP heartbeat vignette pulse below 20%.
