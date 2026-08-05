@@ -191,13 +191,25 @@
       "file": "dracula-human.png",
       "frameW": 60,
       "frameH": 52,
-      "frames": 8
+      "frames": 10
     },
     "dracula.beast": {
       "file": "dracula-beast.png",
       "frameW": 52,
       "frameH": 52,
-      "frames": 8
+      "frames": 10
+    },
+    "portrait.dracula": {
+      "file": "portrait-dracula.png",
+      "frameW": 32,
+      "frameH": 32,
+      "frames": 1
+    },
+    "portrait.hero": {
+      "file": "portrait-hero.png",
+      "frameW": 32,
+      "frameH": 32,
+      "frames": 1
     }
   }
 }

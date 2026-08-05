@@ -1567,6 +1567,8 @@ export function buildPortraitSprites(): {
   hermit: Frame;
   ghost: Frame;
   demon: Frame;
+  dracula: Frame;
+  hero: Frame;
 } {
   const hermit = pixelMap(
     [
@@ -1632,7 +1634,55 @@ export function buildPortraitSprites(): {
       g: "#403050",
     },
   );
-  return { hermit, ghost, demon };
+  // Lord of the castle — white hair, pale face, red eyes, dark collar.
+  const dracula = pixelMap(
+    [
+      "    wwwwwwww    ",
+      "   wwwwwwwwww   ",
+      "  wwssssssssww  ",
+      "  wssrrssrrssw  ",
+      "  wssssssssssw  ",
+      "   wssssssssw   ",
+      "    ssssssss    ",
+      "   cccccccccc   ",
+      "  cccbbbbbbccc  ",
+      "  cccccccccccc  ",
+      "   cccccccccc   ",
+      "    cccccccc    ",
+    ],
+    {
+      w: PAL.dracHair,
+      s: PAL.skin,
+      r: PAL.eyeRed,
+      c: PAL.dracCape,
+      b: PAL.dracSash,
+    },
+  );
+  // Night-walker — pale hair, dark coat, gold trim (hero portrait).
+  const hero = pixelMap(
+    [
+      "    hhhhhhhh    ",
+      "   hhhhhhhhhh   ",
+      "  hhsssssssshh  ",
+      "  hss.ssss.ssh  ",
+      "  hssssssssssh  ",
+      "   hssssssssh   ",
+      "    ssssssss    ",
+      "   cccccccccc   ",
+      "  cccggggggccc  ",
+      "  cccccccccccc  ",
+      "   cccccccccc   ",
+      "    cccccccc    ",
+    ],
+    {
+      h: PAL.hair,
+      s: PAL.skin,
+      ".": PAL.skinShade,
+      c: PAL.coat,
+      g: PAL.coatTrim,
+    },
+  );
+  return { hermit, ghost, demon, dracula, hero };
 }
 
 export function buildGhostSprites(): SpriteSet {

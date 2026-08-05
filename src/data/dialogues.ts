@@ -2,12 +2,25 @@
  * Dialogue pages: each entry is 1–3 short lines for the textbox.
  * Speaker name + portrait key live in NPC_DEFS / resolve logic.
  * Lines are bilingual; resolve with `dialoguePages(id)`.
+ *
+ * Scripted multi-speaker scenes (boss intros) live in DIALOGUE_SCRIPTS —
+ * each beat carries its own speaker + portrait.
  */
 import { getLocale, t, type Locale } from "./i18n";
 
 export type DialoguePages = string[][];
+export type PortraitId = "hermit" | "ghost" | "demon" | "dracula" | "hero";
+
+export interface DialogueBeat {
+  nameKey: string;
+  portrait: PortraitId;
+  lines: string[];
+}
+
+export type DialogueScript = DialogueBeat[];
 
 type LocPages = Record<Locale, DialoguePages>;
+type LocScript = Record<Locale, DialogueScript>;
 
 export const DIALOGUES: Record<string, LocPages> = {
   hermit_welcome: {
@@ -88,8 +101,75 @@ export const DIALOGUES: Record<string, LocPages> = {
   },
 };
 
+/** Multi-speaker scripted scenes (boss intros, story beats). */
+export const DIALOGUE_SCRIPTS: Record<string, LocScript> = {
+  dracula_intro: {
+    en: [
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["So… the night sends another", "pretender to my throne."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["You wear stolen shapes,", "child of the half-blood line."],
+      },
+      {
+        nameKey: "npc.hero",
+        portrait: "hero",
+        lines: ["This castle ends tonight.", "Your reign of sorrow dies here."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Then come, and learn why", "kings are not unmade by hope."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Die well…", "or rise as my servant."],
+      },
+    ],
+    "pt-BR": [
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Então… a noite manda outro", "pretendente ao meu trono."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Você veste formas roubadas,", "filho da linhagem meio-sangue."],
+      },
+      {
+        nameKey: "npc.hero",
+        portrait: "hero",
+        lines: ["Este castelo termina hoje.", "Seu reinado de dor morre aqui."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Então venha, e aprenda por que", "reis não caem por esperança."],
+      },
+      {
+        nameKey: "npc.dracula",
+        portrait: "dracula",
+        lines: ["Morra bem…", "ou erga-se como meu servo."],
+      },
+    ],
+  },
+};
+
 export function dialoguePages(id: string): DialoguePages | null {
   const entry = DIALOGUES[id];
+  if (!entry) return null;
+  const loc = getLocale();
+  return entry[loc] ?? entry.en;
+}
+
+export function dialogueScript(id: string): DialogueScript | null {
+  const entry = DIALOGUE_SCRIPTS[id];
   if (!entry) return null;
   const loc = getLocale();
   return entry[loc] ?? entry.en;
@@ -99,7 +179,7 @@ export interface NpcDef {
   id: string;
   /** i18n key under npc.* */
   nameKey: string;
-  portrait: "hermit" | "ghost" | "demon";
+  portrait: PortraitId;
   pickDialogue: (flags: Set<string>, hasItem: (id: string) => boolean) => string;
   onComplete?: (
     dialogueId: string,

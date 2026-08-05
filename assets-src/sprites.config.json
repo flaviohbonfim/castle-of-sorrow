@@ -1074,7 +1074,7 @@
       ]
     },
     {
-      "_note": "Fase 2 FINAL BOSS \u2014 Dracula human: idle0-5 + cast + lunge. Maior que outros bosses. Hitbox 28x44. Registro per-frame + height fixo: cast/lunge nao alongam o boss.",
+      "_note": "Fase 2 FINAL BOSS \u2014 Dracula human: walk0-7 + cast + lunge (10 frames). Full walk cycle; lunge width ~1.2x walk.",
       "key": "dracula.human",
       "out": "dracula-human.png",
       "frameW": 60,
@@ -1088,7 +1088,7 @@
       },
       "source": {
         "file": "raw/dracula-human-sheet.png",
-        "cols": 8,
+        "cols": 10,
         "rows": 1
       },
       "palette": [
@@ -1114,7 +1114,7 @@
       ]
     },
     {
-      "_note": "Fase 2 FINAL BOSS \u2014 Dracula beast: idle0-5 + cast + lunge. Hitbox 28x44. Registro per-frame + height fixo: cast/lunge nao alongam o boss.",
+      "_note": "Fase 2 FINAL BOSS \u2014 Dracula beast: walk0-7 + cast + lunge (10 frames). Full walk cycle; width-capped.",
       "key": "dracula.beast",
       "out": "dracula-beast.png",
       "frameW": 52,
@@ -1128,7 +1128,7 @@
       },
       "source": {
         "file": "raw/dracula-beast-sheet.png",
-        "cols": 8,
+        "cols": 10,
         "rows": 1
       },
       "palette": [
@@ -1151,6 +1151,81 @@
         "batEye",
         "hpRed",
         "hpRedHi",
+        "bladeHi"
+      ]
+    },
+    {
+      "_note": "Portrait dialogo 32x32 \u2014 Dracula (intro do trono).",
+      "key": "portrait.dracula",
+      "out": "portrait-dracula.png",
+      "frameW": 32,
+      "frameH": 32,
+      "align": "center",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 30,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/portrait-dracula-base.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "dracCape",
+        "dracCapeMid",
+        "dracCapeDark",
+        "dracCapeHi",
+        "dracSash",
+        "dracSashHi",
+        "dracHair",
+        "dracHairShade",
+        "skin",
+        "skinShade",
+        "linen",
+        "gold",
+        "goldHi",
+        "coatTrim",
+        "eyeRed",
+        "batEye",
+        "bladeHi"
+      ]
+    },
+    {
+      "_note": "Portrait dialogo 32x32 \u2014 heroi / Andarilho da Noite.",
+      "key": "portrait.hero",
+      "out": "portrait-hero.png",
+      "frameW": 32,
+      "frameH": 32,
+      "align": "center",
+      "registration": "per-frame",
+      "maxFeetDrift": 2,
+      "resize": {
+        "height": 30,
+        "mode": "majority"
+      },
+      "source": {
+        "file": "raw/portrait-hero-base.png",
+        "cols": 1,
+        "rows": 1
+      },
+      "palette": [
+        "hair",
+        "hairShade",
+        "skin",
+        "skinShade",
+        "linen",
+        "coat",
+        "coatShade",
+        "coatMid",
+        "coatLight",
+        "coatTrim",
+        "pants",
+        "boots",
+        "gold",
+        "goldHi",
+        "eyeRed",
         "bladeHi"
       ]
     }

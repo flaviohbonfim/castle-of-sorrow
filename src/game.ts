@@ -248,7 +248,14 @@ export class Game {
       }
     }
     this.flags.add(`visited:${id}`);
-    music.setTrack(this.boss ? "boss" : "castle");
+    // Throne intro: hold the boss theme until the dialogue finishes.
+    const draculaIntro =
+      id === "throne" &&
+      !!this.boss &&
+      this.room.boss?.id === "dracula" &&
+      !this.flags.has("dlg:dracula:intro") &&
+      !this.flags.has("boss:dracula");
+    music.setTrack(this.boss && !draculaIntro ? "boss" : "castle");
 
     // Re-apply broken walls.
     const prefix = `wall:${id}:`;
@@ -286,6 +293,29 @@ export class Game {
     this.lastEntry = { room: id, x, y };
     this.banner = { text: def.name, life: 170 };
     this.camera.snapTo(p.centerX, p.centerY);
+
+    // Final boss: scripted exchange before the fight (once per save).
+    if (draculaIntro) {
+      this.dialogueUI.startScript("dracula_intro");
+    }
+  }
+
+  /** Called when any dialogue box closes (NPC chat or scripted scene). */
+  onDialogueFinished(dialogueId: string, completed: boolean): void {
+    if (!completed) {
+      // Skipping the intro still marks it so the fight can start.
+      if (dialogueId === "dracula_intro") {
+        this.flags.add("dlg:dracula:intro");
+        if (this.boss && !this.boss.dead) music.setTrack("boss");
+      }
+      return;
+    }
+    if (dialogueId === "dracula_intro") {
+      this.flags.add("dlg:dracula:intro");
+      if (this.boss && !this.boss.dead) music.setTrack("boss");
+      audio.play("spell");
+      this.camera.addShake(0.3);
+    }
   }
 
   private checkTransitions(): void {

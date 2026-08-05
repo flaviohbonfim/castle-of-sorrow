@@ -139,5 +139,7 @@ export function resolvePortraitSprites(): ReturnType<typeof buildPortraitSprites
     hermit: resolveFrame("portrait.hermit", () => base.hermit),
     ghost: resolveFrame("portrait.ghost", () => base.ghost),
     demon: resolveFrame("portrait.demon", () => base.demon),
+    dracula: resolveFrame("portrait.dracula", () => base.dracula),
+    hero: resolveFrame("portrait.hero", () => base.hero),
   };
 }

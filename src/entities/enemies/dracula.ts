@@ -20,6 +20,11 @@ type Mode = "idle" | "cast" | "teleport" | "lunge" | "recover";
 export class Dracula extends Enemy {
   private static sprites: ReturnType<typeof resolveDraculaSprites> | null = null;
   private animTick = 0;
+  /**
+   * Distance-driven walk phase (px accumulated). Ties gait to actual motion so
+   * the cycle stays smooth when speed varies and never skips frames on pause.
+   */
+  private walkDist = 0;
   private mode: Mode = "idle";
   private modeTicks = 0;
   private cooldown = 50;
@@ -29,8 +34,10 @@ export class Dracula extends Enemy {
   readonly bossId = "dracula";
 
   constructor(x: number, y: number, flags?: Set<string>) {
-    // Larger than wing bosses — final lord presence (sprite ~40×50).
-    super(x - 14, y - 44, 28, 44, statsFor("dracula", flags), "dracula");
+    // Hitbox stays near the original 24×36 so multi-step floors (throne dais)
+    // and pillars don't swallow the body. The AI sprite is larger (~50px) and
+    // draws feet-aligned to the hitbox bottom for final-boss presence.
+    super(x - 12, y - 36, 24, 36, statsFor("dracula", flags), "dracula");
     this.maxHp = this.stats.hp;
     Dracula.sprites ??= resolveDraculaSprites();
     this.facing = -1;
@@ -196,23 +203,57 @@ export class Dracula extends Enemy {
     const s = Dracula.sprites!;
     const sheet = this.phase === "beast" ? s.beast : s.human;
     const set = this.facing > 0 ? sheet.right : sheet.left;
-    // Sheet layout: [idle0..idleN-3, cast, lunge] (procedural: idleA, idleB, cast, lunge).
+    // Sheet layout (AI override): [walk0..walkN-3, cast, lunge] (10 frames:
+    // 8 walk + cast + lunge). Procedural fallback is shorter but same layout.
     const n = set.length;
-    const idleCount = Math.max(1, n - 2);
+    const walkCount = Math.max(1, n - 2);
+    const castIdx = Math.max(0, n - 2);
+    const lungeIdx = Math.max(0, n - 1);
     let idx: number;
-    if (this.mode === "cast") idx = Math.max(0, n - 2);
-    else if (this.mode === "lunge") idx = Math.max(0, n - 1);
-    else idx = Math.floor(this.animTick / 14) % idleCount;
+    if (this.mode === "cast") {
+      idx = castIdx;
+    } else if (this.mode === "lunge") {
+      // Wind-up holds a mid walk pose, then the lunge frame while dashing.
+      idx = this.modeTicks < 8 ? Math.min(3, walkCount - 1) : lungeIdx;
+    } else if (this.mode === "teleport" || this.mode === "recover") {
+      idx = 0;
+    } else {
+      // Walk only while moving. ~4px of travel per frame → full 8-frame cycle
+      // every ~32px (matches slow lordly pace without a hitch).
+      const moving = Math.abs(this.body.vx) > 0.12;
+      if (moving) {
+        this.walkDist += Math.abs(this.body.vx);
+        idx = Math.floor(this.walkDist / 4) % walkCount;
+      } else {
+        idx = 0;
+        this.walkDist = 0;
+      }
+    }
     const frame = set[Math.min(idx, n - 1)];
+    // Feet-align to hitbox; centre on body. Frame cell size is fixed across
+    // poses so lunge does not appear to scale up the whole sprite.
     const x = this.renderX(alpha) + this.body.w / 2 - frame.width / 2 - camX;
     const y = this.renderY(alpha) + this.body.h - frame.height - camY;
+    const rx = Math.round(x);
+    const ry = Math.round(y);
 
-    // Phase-2 red aura
+    // Phase-2 presence: soft crimson glow under the silhouette — never a solid
+    // rect (that read as a red background box behind the sprite).
     if (this.phase === "beast") {
+      const cx = rx + frame.width / 2;
+      const cy = ry + frame.height * 0.55;
+      const pulse = 0.12 + Math.sin(this.animTick * 0.12) * 0.04;
       ctx.save();
-      ctx.globalAlpha = 0.25 + Math.sin(this.animTick * 0.15) * 0.1;
-      ctx.fillStyle = PAL.hpRed;
-      ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, frame.width + 4, frame.height + 4);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = pulse;
+      const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, frame.width * 0.42);
+      g.addColorStop(0, PAL.hpRedHi);
+      g.addColorStop(0.55, PAL.hpRed);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, frame.width * 0.42, frame.height * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
     this.drawFrame(ctx, frame, x, y);

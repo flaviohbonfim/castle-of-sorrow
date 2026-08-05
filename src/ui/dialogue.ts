@@ -1,7 +1,15 @@
 import { VIEW_W, VIEW_H } from "../engine/renderer";
 import { PAL } from "../gfx/palette";
 import { audio } from "../engine/audio";
-import { dialoguePages, NPC_DEFS, npcName, type DialoguePages } from "../data/dialogues";
+import {
+  dialoguePages,
+  dialogueScript,
+  NPC_DEFS,
+  npcName,
+  type DialoguePages,
+  type DialogueScript,
+  type PortraitId,
+} from "../data/dialogues";
 import { resolvePortraitSprites } from "../gfx/resolveSprites";
 import { noticeText } from "../combat/damage";
 import { t } from "../data/i18n";
@@ -12,12 +20,16 @@ let PORTRAITS: ReturnType<typeof resolvePortraitSprites> | null = null;
 /**
  * Modal dialogue textbox — freezes the world while open.
  * Attack / Jump advances pages; closes on the last page.
+ *
+ * Supports NPC chats (single speaker) and multi-speaker scripts
+ * (e.g. Dracula intro) where each beat has its own name + portrait.
  */
 export class DialogueUI {
   open = false;
   private name = "";
-  private portrait: "hermit" | "ghost" | "demon" = "hermit";
+  private portrait: PortraitId = "hermit";
   private pages: DialoguePages = [];
+  private script: DialogueScript | null = null;
   private page = 0;
   private dialogueId = "";
   private npcId: string | null = null;
@@ -39,6 +51,7 @@ export class DialogueUI {
     this.name = npcName(def);
     this.portrait = def.portrait;
     this.pages = pages;
+    this.script = null;
     this.page = 0;
     this.dialogueId = dialogueId;
     this.npcId = npcId;
@@ -48,18 +61,52 @@ export class DialogueUI {
     audio.play("pickup");
   }
 
-  startRaw(name: string, portrait: "hermit" | "ghost" | "demon", dialogueId: string): void {
+  startRaw(name: string, portrait: PortraitId, dialogueId: string): void {
     const pages = dialoguePages(dialogueId);
     if (!pages) return;
     this.name = name;
     this.portrait = portrait;
     this.pages = pages;
+    this.script = null;
     this.page = 0;
     this.dialogueId = dialogueId;
     this.npcId = null;
     this.openShopAfter = false;
     this.open = true;
     this.age = 0;
+    audio.play("pickup");
+  }
+
+  /** Multi-speaker scripted scene (boss intro, story beat). */
+  startScript(dialogueId: string): void {
+    const script = dialogueScript(dialogueId);
+    if (!script || script.length === 0) return;
+    this.script = script;
+    this.pages = [];
+    this.page = 0;
+    this.dialogueId = dialogueId;
+    this.npcId = null;
+    this.openShopAfter = false;
+    this.applyBeat(0);
+    this.open = true;
+    this.age = 0;
+    audio.play("pickup");
+  }
+
+  private applyBeat(i: number): void {
+    const beat = this.script?.[i];
+    if (!beat) return;
+    this.name = t(beat.nameKey);
+    this.portrait = beat.portrait;
+  }
+
+  private get pageCount(): number {
+    return this.script ? this.script.length : this.pages.length;
+  }
+
+  private currentLines(): string[] {
+    if (this.script) return this.script[this.page]?.lines ?? [];
+    return this.pages[this.page] ?? [];
   }
 
   update(game: Game): void {
@@ -76,8 +123,9 @@ export class DialogueUI {
       input.consume("attack");
       input.consume("jump");
       input.consume("up");
-      if (this.page < this.pages.length - 1) {
+      if (this.page < this.pageCount - 1) {
         this.page++;
+        if (this.script) this.applyBeat(this.page);
         audio.play("swing");
       } else {
         this.close(game, true);
@@ -108,6 +156,7 @@ export class DialogueUI {
     if (completed && this.openShopAfter) {
       game.openShop();
     }
+    game.onDialogueFinished(this.dialogueId, completed);
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -145,7 +194,7 @@ export class DialogueUI {
     ctx.fillText(this.name, px + 40, boxY + 16);
 
     // Lines
-    const lines = this.pages[this.page] ?? [];
+    const lines = this.currentLines();
     ctx.fillStyle = PAL.textWhite;
     lines.forEach((line, i) => {
       ctx.fillText(line, px + 40, boxY + 32 + i * 12);
@@ -154,7 +203,7 @@ export class DialogueUI {
     // Advance hint (blink)
     if (this.age % 40 < 28) {
       ctx.fillStyle = PAL.uiFrame;
-      const more = this.page < this.pages.length - 1;
+      const more = this.page < this.pageCount - 1;
       ctx.textAlign = "right";
       ctx.fillText(more ? "▼" : "×", boxX + boxW - 10, boxY + boxH - 10);
       ctx.textAlign = "left";

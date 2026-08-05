@@ -134,10 +134,12 @@ const EN: Dict = {
   "notice.petrify": "STONE!",
   "notice.stoneBreak": "Free!",
 
-  // NPCs
+  // NPCs / speakers
   "npc.hermit": "Hermit",
   "npc.ghost": "Pale Knight",
   "npc.demon": "Caged Imp",
+  "npc.dracula": "Dracula",
+  "npc.hero": "Night-Walker",
 
   // Relics
   "relic.doubleJump": "Soul of the Gale",
@@ -289,6 +291,8 @@ const PT: Dict = {
   "npc.hermit": "Eremita",
   "npc.ghost": "Cavaleiro Pálido",
   "npc.demon": "Diabrete Enjaulado",
+  "npc.dracula": "Drácula",
+  "npc.hero": "Andarilho da Noite",
 
   "relic.doubleJump": "Alma da Ventania",
   "relic.batForm": "Alma do Morcego",

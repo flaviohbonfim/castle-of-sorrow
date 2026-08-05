@@ -108,7 +108,7 @@ back to procedural art automatically.
 | `medusaHead.fly` | 8 | 12×12 |
 | `fleaMan.hop` | 8 | 12×16 |
 | `boss.walk`, `boss.windup` | 8, 4 | 26×40 |
-| `dracula.human`, `dracula.beast` | 8 each | 28×44 |
+| `dracula.human`, `dracula.beast` | 10 each (walk×8+cast+lunge) | 24×36 (sprite ~48 tall) |
 
 ### NPCs, props and UI
 
@@ -121,6 +121,7 @@ back to procedural art automatically.
 | `subweapon.dagger`, `subweapon.axe` | 1, 4 (spin) |
 | `projectile.bone` | spin cycle |
 | `portrait.hermit`, `portrait.ghost`, `portrait.demon` | 1 each (32×32) |
+| `portrait.dracula`, `portrait.hero` | 1 each (32×32) |
 
 ### Tiles
 

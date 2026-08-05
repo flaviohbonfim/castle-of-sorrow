@@ -464,44 +464,48 @@ function buildTowerTop(): BuiltRoom {
   return b.build();
 }
 
-/** Final arena — opens only with all form relics + both wing bosses slain. */
 /**
- * Throne of Night — SotN-inspired red hall: wide carpet, stepped dais,
- * pillars sitting on each landing, candelabras. Dracula on the top dais.
+ * Throne of Night — final boss arena.
+ *
+ * Layout goals:
+ *  - wide flat combat floor (no pyramid of steps)
+ *  - short single-step dais at the far end for presence only
+ *  - tall windows + pillars framing a gothic hall
+ *  - Dracula and player share the main floor so the fight stays readable
  */
 function buildThrone(): BuiltRoom {
   const b = new RoomBuilder(48, 16, "tower");
   b.frame();
-  // Main hall floor
+
+  // Main fight floor — almost the whole hall is flat.
   b.hline(13, 1, 46, TileId.FloorTop);
   b.fill(1, 14, 46, 14, TileId.Brick);
 
-  // Stepped dais (each step: FloorTop + solid brick underlay — never inverted fill ranges)
-  // Step 1 (lowest)
-  b.hline(12, 16, 40, TileId.FloorTop);
-  b.fill(16, 13, 40, 13, TileId.Brick);
-  // Step 2
-  b.hline(11, 20, 38, TileId.FloorTop);
-  b.fill(20, 12, 38, 12, TileId.Brick);
-  // Step 3 (throne platform)
-  b.hline(10, 24, 36, TileId.FloorTop);
-  b.fill(24, 11, 36, 11, TileId.Brick);
+  // Single-step dais at the far right (throne feel, not a climb puzzle).
+  // Exclusive-column: FloorTop only on r12 for cols 38–46; brick under.
+  b.hline(12, 38, 46, TileId.FloorTop);
+  b.fill(38, 13, 46, 13, TileId.Brick);
 
-  // Pillars sit ON their landings (base = floor row)
-  b.pillar(6, 11); // main floor 13 → top at 11
-  b.pillar(12, 11);
-  b.pillar(30, 8); // top dais floor 10 → top at 8
-  b.pillar(42, 11);
+  // One clean row of windows + a sparse higher row for depth.
+  b.windows(4, 6, 42, 6);
+  b.windows(3, 9, 39, 10);
 
-  b.door(0, 10, 12); // from sovereign hall / approach
-  b.at("boss", 30, 9, "dracula");
+  // Pillars on the main floor (base = rTop+2).
+  b.pillar(7, 10);
+  b.pillar(18, 10);
+  b.pillar(29, 10);
+  // Flanking the dais
+  b.pillar(40, 9);
+
+  b.door(0, 10, 12);
+  // Boss on the main floor, mid-right — clear of pillars and dais lip.
+  b.at("boss", 34, 12, "dracula");
   b.at("candle", 4, 12);
-  b.at("candle", 9, 12);
-  b.at("candle", 15, 12);
-  b.at("candle", 18, 11);
-  b.at("candle", 22, 10);
-  b.at("candle", 34, 9);
-  b.at("candle", 44, 12);
+  b.at("candle", 12, 12);
+  b.at("candle", 23, 12);
+  b.at("candle", 35, 12);
+  b.at("candle", 42, 11); // dais
+  b.at("candle", 45, 11);
   return b.build();
 }
 
@@ -909,7 +913,8 @@ export const ROOMS: Record<string, RoomDef> = {
       rewards: [],
     },
     exits: [
-      { side: "left", min: 152, max: 208, target: "sovereignHall", tx: 600, ty: 176 },
+      // Main floor feet y = 13*16 = 208
+      { side: "left", min: 152, max: 220, target: "sovereignHall", tx: 600, ty: 176 },
     ],
   },
   saveRoom: {
