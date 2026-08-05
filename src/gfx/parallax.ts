@@ -1,5 +1,7 @@
 import { makeSurface, VIEW_W, VIEW_H } from "../engine/renderer";
+import { getSheet } from "./assets";
 import { PAL } from "./palette";
+import type { ZoneId } from "./tiles";
 
 interface Layer {
   canvas: HTMLCanvasElement;
@@ -8,21 +10,44 @@ interface Layer {
   drift?: number; // autonomous horizontal drift in px/tick (clouds)
 }
 
+/** Override PNG for a parallax layer, else the zone's procedural builder. */
+function resolveLayer(zone: ZoneId, name: "clouds" | "far" | "near", fallback: () => HTMLCanvasElement): HTMLCanvasElement {
+  const sheet = getSheet(`parallax.${zone}.${name}`);
+  if (sheet && sheet.length > 0) return sheet[0];
+  return fallback();
+}
+
 /**
- * Pre-rendered parallax layers: night sky + moon (static), drifting clouds,
- * distant castle towers, and a nearer arched gallery. Each layer tiles
- * horizontally and scrolls at its own factor for depth.
+ * Pre-rendered parallax layers: night sky + moon (static, shared by every
+ * zone), drifting clouds, a distant silhouette, and a nearer arched/detail
+ * layer. Each layer tiles horizontally and scrolls at its own factor for
+ * depth. Castle and tower zones get their own silhouettes so the skyline
+ * reads differently — see resolveLayer() for the override point.
  */
 export class ParallaxBackground {
   private layers: Layer[] = [];
   private sky: HTMLCanvasElement;
   private t = 0;
 
-  constructor() {
+  constructor(zone: ZoneId = "castle") {
     this.sky = this.buildSky();
-    this.layers.push({ canvas: this.buildClouds(), factor: 0.05, y: 10, drift: 0.06 });
-    this.layers.push({ canvas: this.buildFarTowers(), factor: 0.15, y: 40 });
-    this.layers.push({ canvas: this.buildGallery(), factor: 0.35, y: VIEW_H - 150 });
+    const isTower = zone === "tower";
+    this.layers.push({
+      canvas: resolveLayer(zone, "clouds", () => this.buildClouds()),
+      factor: 0.05,
+      y: 10,
+      drift: 0.06,
+    });
+    this.layers.push({
+      canvas: resolveLayer(zone, "far", () => (isTower ? this.buildFarSpires() : this.buildFarTowers())),
+      factor: 0.15,
+      y: 40,
+    });
+    this.layers.push({
+      canvas: resolveLayer(zone, "near", () => (isTower ? this.buildGears() : this.buildGallery())),
+      factor: 0.35,
+      y: VIEW_H - 150,
+    });
   }
 
   update(): void {
@@ -133,6 +158,51 @@ export class ParallaxBackground {
     for (let ax = 8; ax < 240; ax += 60) {
       ctx.fillRect(ax, 30, 3, 120);
     }
+    return c;
+  }
+
+  /** Tower zone far layer: a single tall spire silhouette, taller/narrower than the castle keep. */
+  private buildFarSpires(): HTMLCanvasElement {
+    const [c, ctx] = makeSurface(560, 230);
+    ctx.fillStyle = PAL.towerFar;
+    const spires = [
+      [40, 30, 22], [110, 70, 30], [190, 10, 26], [280, 55, 34], [370, 20, 24], [460, 65, 28],
+    ];
+    for (const [x, top, w] of spires) {
+      ctx.fillRect(x, top, w, 230 - top);
+      // Steep conical roof
+      for (let i = 0; i < w / 2; i++) {
+        ctx.fillRect(x + i, top - i * 2, w - i * 2, 2);
+      }
+      // Gear-face accent partway down each spire
+      ctx.fillStyle = "#2a3a2c";
+      const gy = top + 30;
+      ctx.beginPath();
+      ctx.arc(x + w / 2, gy, w / 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = PAL.towerFar;
+    }
+    ctx.fillRect(0, 190, 560, 40);
+    return c;
+  }
+
+  /** Tower zone near layer: exposed gear/clockwork silhouettes instead of a cloister. */
+  private buildGears(): HTMLCanvasElement {
+    const [c, ctx] = makeSurface(240, 150);
+    ctx.fillStyle = PAL.towerMid;
+    ctx.fillRect(0, 0, 240, 150);
+    ctx.globalCompositeOperation = "destination-out";
+    for (const [gx, gy, r] of [[40, 60, 30], [130, 90, 22], [200, 45, 26]] as const) {
+      ctx.beginPath();
+      ctx.arc(gx, gy, r, 0, Math.PI * 2);
+      ctx.fill();
+      // Gear teeth notches
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        ctx.fillRect(gx + Math.cos(a) * (r + 3) - 2, gy + Math.sin(a) * (r + 3) - 2, 4, 4);
+      }
+    }
+    ctx.globalCompositeOperation = "source-over";
     return c;
   }
 }

@@ -9,7 +9,7 @@ export class Tilemap {
     readonly cols: number,
     readonly rows: number,
     private tiles: Uint8Array, // TileId per cell
-    zone: ZoneId = "castle",
+    readonly zone: ZoneId = "castle",
   ) {
     this.widthPx = cols * TILE;
     this.heightPx = rows * TILE;

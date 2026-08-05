@@ -4,7 +4,7 @@ import { VIEW_W, VIEW_H } from "./engine/renderer";
 import { audio } from "./engine/audio";
 import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
-import { TILE, TileId } from "./gfx/tiles";
+import { TILE, TileId, type ZoneId } from "./gfx/tiles";
 import { ParallaxBackground } from "./gfx/parallax";
 import { resolveRoomBackdrop } from "./gfx/backdrop";
 import {
@@ -97,7 +97,9 @@ export interface SaveFile {
 export class Game {
   readonly input: Input;
   readonly player: Player;
-  readonly parallax = new ParallaxBackground();
+  /** One instance per zone (lazy) — castle and tower get distinct skylines. */
+  private readonly parallaxByZone = new Map<ZoneId, ParallaxBackground>();
+  parallax!: ParallaxBackground;
   readonly texts: FloatingText[] = [];
   /** Persistent world flags: broken walls, collected relics. */
   flags = new Set<string>();
@@ -169,11 +171,21 @@ export class Game {
 
   /* ---------------------------- room loading ---------------------------- */
 
+  private parallaxFor(zone: ZoneId): ParallaxBackground {
+    let p = this.parallaxByZone.get(zone);
+    if (!p) {
+      p = new ParallaxBackground(zone);
+      this.parallaxByZone.set(zone, p);
+    }
+    return p;
+  }
+
   loadRoom(id: string, x: number, y: number): void {
     const def = ROOMS[id];
     if (!def) throw new Error(`Unknown room: ${id}`);
     this.roomId = id;
     this.room = def;
+    this.parallax = this.parallaxFor(def.zone ?? "castle");
     const built = def.build();
     this.map = built.map;
     this.camera = new Camera(this.map.widthPx, this.map.heightPx);

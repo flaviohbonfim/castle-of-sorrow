@@ -23,6 +23,10 @@ export const PAL = {
   castleFar: "#171226",
   castleMid: "#221a38",
   cloudDark: "#2c2248",
+  // Tower-zone parallax silhouettes — verdigris-shifted so the skyline reads
+  // differently from the castle zone at a glance (see gfx/parallax.ts).
+  towerFar: "#141c16",
+  towerMid: "#1c2a20",
 
   // Player (Alucard-ish: pale, black-and-gold coat)
   //

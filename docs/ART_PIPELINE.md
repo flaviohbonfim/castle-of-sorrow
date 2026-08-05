@@ -695,3 +695,26 @@ dois módulos do trono (`throne-window-module.png`, `throne-curtain-module.png`)
 ou são só preenchimento procedural. Todas passaram em `assets:validate` e no
 gate de coerência visual (screenshot no browser, comparado com as salas já
 aprovadas).
+
+### 9.7 Parallax por zona (executado, 0 créditos)
+
+`src/gfx/parallax.ts`: `ParallaxBackground` agora recebe `zone: ZoneId` e
+escolhe entre pares de construtores procedurais — castle mantém
+`buildFarTowers`/`buildGallery` (torres com topo reto + claustro em arco);
+tower ganha `buildFarSpires`/`buildGears` (espiras cônicas + engrenagens
+recortadas). Duas cores novas na paleta (`towerFar`, `towerMid`) mantêm o
+tom verdigris consistente com o resto da zona. Ponto de override pronto
+para arte gerada futura: `parallax.<zone>.{clouds,far,near}` via
+`getSheet()`, com o procedural como fallback — nenhuma geração foi feita
+ainda (economiza créditos até confirmar que vale a pena; a maioria das
+salas cobre o parallax quase inteiro com paredes/backdrop, só vãos/janelas
+grandes o revelam, ex. `towerTop`). `Game` mantém uma instância por zona
+(`parallaxByZone`, lazy) escolhida em `loadRoom` via `def.zone`.
+
+**Achado de ambiente:** o dev server já em execução na porta 5173 (fora do
+controle desta sessão) manteve o bundle antigo em cache mesmo após
+`location.reload()` — o `Tilemap`/`Game.loadRoom` compilado só refletiu as
+mudanças depois de navegar com um query-string novo
+(`?cachebust=<n>`), que força o browser a tratar como URL diferente e
+buscar tudo de novo. Se um teste no browser parecer "não pegar" uma mudança
+recente de código (mas os assets sim), suspeitar disso primeiro.
