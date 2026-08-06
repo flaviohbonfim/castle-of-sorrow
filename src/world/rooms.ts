@@ -226,17 +226,18 @@ function buildEntrance(): BuiltRoom {
   b.at("fleaMan", 30, 13);
   b.spawns.push({ kind: "bat", x: 16 * TILE, y: 8 * TILE });
   b.spawns.push({ kind: "bat", x: 34 * TILE, y: 7 * TILE });
-  b.at("candle", 7, 19);
-  b.at("candle", 16, 19);
-  b.at("candle", 33, 19);
-  b.at("candle", 47, 19);
-  b.at("candle", 21, 16);
-  b.at("candle", 43, 16);
-  b.at("candle", 29, 13);
-  b.at("candle", 51, 13);
-  b.at("candle", 21, 10);
-  b.at("candle", 39, 10);
-  b.at("candle", 58, 17);
+  // Wall/pillar-mounted — none standing on the floor or a platform.
+  b.at("candle", 12, 18); // pillar mid-shaft
+  b.at("candle", 48, 18); // pillar mid-shaft
+  b.at("candle", 7, 5);
+  b.at("candle", 15, 9);
+  b.at("candle", 23, 5);
+  b.at("candle", 31, 9);
+  b.at("candle", 39, 5);
+  b.at("candle", 47, 9);
+  b.at("candle", 55, 5);
+  b.at("candle", 21, 13);
+  b.at("candle", 43, 13);
   return b.build();
 }
 
@@ -262,10 +263,10 @@ function buildCorridor(): BuiltRoom {
 
   b.at("warp", 5, 10);
   b.at("npc", 38, 10, "ghost"); // Pale Knight — double-jump hint
-  b.at("candle", 10, 10);
-  b.at("candle", 18, 10);
-  b.at("candle", 26, 10);
-  b.at("candle", 34, 10);
+  b.at("candle", 13, 9); // pillar mid-shaft
+  b.at("candle", 27, 9); // pillar mid-shaft
+  b.at("candle", 41, 9); // pillar mid-shaft
+  b.at("candle", 31, 5);
   b.at("spearGuard", 20, 10);
   b.at("skeleton", 32, 10);
   b.at("fleaMan", 25, 6);
@@ -286,10 +287,10 @@ function buildChapel(): BuiltRoom {
   b.at("spearGuard", 14, 12);
   b.at("zombie", 8, 12);
   b.at("zombie", 20, 12);
-  b.at("candle", 5, 12);
-  b.at("candle", 22, 12);
-  b.at("candle", 12, 10);
-  b.at("candle", 15, 10);
+  b.at("candle", 6, 11); // pillar mid-shaft
+  b.at("candle", 21, 11); // pillar mid-shaft
+  b.at("candle", 11, 6);
+  b.at("candle", 17, 6);
   return b.build();
 }
 
@@ -308,10 +309,10 @@ function buildLibrary(): BuiltRoom {
   b.at("axeKnight", 16, 10);
   b.at("skeleton", 8, 10);
   b.at("fleaMan", 20, 7);
-  b.at("candle", 6, 10);
-  b.at("candle", 12, 10);
-  b.at("candle", 20, 10);
-  b.at("candle", 26, 10);
+  b.at("candle", 10, 9); // pillar mid-shaft
+  b.at("candle", 22, 9); // pillar mid-shaft
+  b.at("candle", 6, 6);
+  b.at("candle", 26, 6);
   return b.build();
 }
 
@@ -332,10 +333,10 @@ function buildApproach(): BuiltRoom {
   // Form skill relics (separate from the transformation unlocks)
   b.at("relic", 12, 7, "batFire");
   b.at("relic", 22, 7, "wolfDash");
-  b.at("candle", 6, 10);
-  b.at("candle", 12, 10);
-  b.at("candle", 22, 10);
-  b.at("candle", 30, 10);
+  b.at("candle", 8, 9); // pillar mid-shaft
+  b.at("candle", 27, 9); // pillar mid-shaft
+  b.at("candle", 14, 5);
+  b.at("candle", 24, 5);
   return b.build();
 }
 
@@ -357,10 +358,10 @@ function buildCatacombs(): BuiltRoom {
   b.at("skeleton", 28, 12);
   b.at("fleaMan", 20, 9);
   b.at("fleaMan", 30, 6);
-  b.at("candle", 5, 12);
-  b.at("candle", 16, 12);
-  b.at("candle", 26, 12);
-  b.at("candle", 34, 12);
+  b.at("candle", 10, 11); // pillar mid-shaft
+  b.at("candle", 22, 11); // pillar mid-shaft
+  b.at("candle", 32, 11); // pillar mid-shaft
+  b.at("candle", 5, 6);
   return b.build();
 }
 
@@ -413,7 +414,7 @@ function buildTowerShaft(): BuiltRoom {
   b.spawns.push({ kind: "medusaSpawner", x: 16 * TILE - 8, y: 14 * TILE, dir: -1 });
   b.spawns.push({ kind: "medusaSpawner", x: 8, y: 28 * TILE, dir: 1 });
 
-  b.at("candle", 3, 36);
+  b.at("candle", 3, 30); // was resting on the bottom floor — wall-mounted now
   b.at("candle", 12, 33);
   b.at("candle", 4, 21);
   b.at("candle", 11, 12);
@@ -447,9 +448,10 @@ function buildTowerHall(): BuiltRoom {
   b.at("npc", 22, 12, "demon"); // Caged Imp — wraith / high-jump hint
   b.at("axeKnight", 14, 12);
   b.at("axeKnight", 30, 12);
-  b.at("candle", 10, 12);
-  b.at("candle", 34, 12);
-  b.at("candle", 19, 6);
+  b.at("candle", 8, 11); // pillar mid-shaft
+  b.at("candle", 20, 11); // pillar mid-shaft
+  b.at("candle", 32, 11); // pillar mid-shaft
+  b.at("candle", 14, 5);
   return b.build();
 }
 
@@ -465,8 +467,8 @@ function buildTowerTop(): BuiltRoom {
   // Right wall sealed as Gate by default; Game opens it when throne is unlocked.
   for (let r = 8; r <= 10; r++) b.set(31, r, TileId.Gate);
   b.at("boss", 20, 10, "wraith");
-  b.at("candle", 8, 10);
-  b.at("candle", 24, 10);
+  b.at("candle", 5, 9); // pillar mid-shaft
+  b.at("candle", 26, 9); // pillar mid-shaft
   return b.build();
 }
 
@@ -569,10 +571,10 @@ function buildSovereignHall(): BuiltRoom {
   b.door(0, 8, 10); // from approach
   b.door(39, 8, 10); // to throne (sealed as Gate while boss lives)
   b.at("boss", 22, 10, "sovereign");
-  b.at("candle", 6, 10);
-  b.at("candle", 14, 10);
-  b.at("candle", 26, 10);
-  b.at("candle", 34, 10);
+  b.at("candle", 8, 9); // pillar mid-shaft
+  b.at("candle", 31, 9); // pillar mid-shaft
+  b.at("candle", 14, 6);
+  b.at("candle", 26, 6);
   return b.build();
 }
 
@@ -589,7 +591,7 @@ function buildSaveRoom(): BuiltRoom {
   for (let r = 6; r <= 8; r++) b.set(12, r, TileId.Cracked);
 
   b.at("save", 6, 8);
-  b.at("candle", 9, 8);
+  b.at("candle", 9, 5); // no pillars in this room — wall-mounted
   b.at("relic", 15, 8, "doubleJump");
   return b.build();
 }
@@ -635,10 +637,10 @@ function buildCavern(): BuiltRoom {
   b.at("skeleton", 34, 15);
   b.spawns.push({ kind: "bat", x: 20 * TILE, y: 10 * TILE });
   b.spawns.push({ kind: "bat", x: 32 * TILE, y: 8 * TILE });
-  b.at("candle", 10, 15);
-  b.at("candle", 25, 15); // clear of the col-28 pillar base
-  b.at("candle", 38, 12);
-  b.at("candle", 42, 7);
+  b.at("candle", 12, 14); // pillar mid-shaft
+  b.at("candle", 28, 14); // pillar mid-shaft
+  b.at("candle", 18, 6);
+  b.at("candle", 34, 4);
   return b.build();
 }
 
@@ -692,10 +694,12 @@ function buildLake(): BuiltRoom {
   b.at("fishman", 16, 15);
   b.at("fishman", 28, 15);
   b.at("fishman", 36, 15);
-  b.at("candle", 10, 3);
-  b.at("candle", 30, 3);
-  b.at("candle", 42, 12);
-  b.at("candle", 20, 12);
+  // No pillars in this room — wall-mounted, high on the back wall or in the
+  // dry pockets (not standing on the upper ledges or the submerged shelves).
+  b.at("candle", 10, 1);
+  b.at("candle", 30, 1);
+  b.at("candle", 43, 9);
+  b.at("candle", 4, 9);
   return b.build();
 }
 
@@ -729,9 +733,11 @@ function buildLakeDepths(): BuiltRoom {
   b.at("fishman", 18, 13);
   b.at("fishman", 26, 13);
   b.spawns.push({ kind: "item", x: 32 * TILE + 8, y: 11 * TILE, id: "coralRing", n: 0 });
-  b.at("candle", 6, 13);
-  b.at("candle", 22, 13);
-  b.at("candle", 32, 10);
+  // No pillars in this flooded room — wall-mounted in the water column or
+  // the air-pocket ledge, clear of the seabed and the ledge floor.
+  b.at("candle", 6, 8);
+  b.at("candle", 22, 6);
+  b.at("candle", 32, 9);
   return b.build();
 }
 
@@ -743,8 +749,8 @@ function buildShop(): BuiltRoom {
   b.door(0, 6, 8); // from Cavern
   b.door(19, 6, 8); // to the Boss hall
   b.at("shopkeeper", 9, 8);
-  b.at("candle", 4, 8);
-  b.at("candle", 14, 8);
+  b.at("candle", 4, 5); // no pillars in this room — wall-mounted
+  b.at("candle", 14, 5);
   return b.build();
 }
 
@@ -759,8 +765,8 @@ function buildBossRoom(): BuiltRoom {
   // exact cells with Gate so the portcullis sits ON the exit.
   b.door(0, 8, 10); // from the shop
   b.at("boss", 28, 10, "colossus");
-  b.at("candle", 8, 10);
-  b.at("candle", 32, 10);
+  b.at("candle", 4, 9); // pillar mid-shaft
+  b.at("candle", 35, 9); // pillar mid-shaft
   return b.build();
 }
 

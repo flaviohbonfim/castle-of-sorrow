@@ -34,10 +34,17 @@ interface Built {
   spawns: Spawn[];
 }
 
-/** Spawn kinds that must rest on a walkable surface. */
+/**
+ * Spawn kinds that must rest on a walkable surface. `candle` was dropped
+ * from this set on purpose: candles are now wall/pillar-mounted set
+ * dressing (drawn after the tilemap and props, so they render in front of
+ * whatever tile or column they sit on — no physics collision involved),
+ * not grounded entities. The throne room established this pattern first;
+ * every room now follows it.
+ */
 const GROUNDED_SPAWNS = new Set<Spawn["kind"]>([
   "player", "skeleton", "axeKnight", "zombie", "spearGuard", "fleaMan",
-  "candle", "relic", "item", "warp", "save", "shopkeeper", "npc", "boss",
+  "relic", "item", "warp", "save", "shopkeeper", "npc", "boss",
 ]);
 
 function buildAll(): Map<string, Built> {
