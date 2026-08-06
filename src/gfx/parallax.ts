@@ -5,7 +5,8 @@ import type { ZoneId } from "./tiles";
 
 interface Layer {
   canvas: HTMLCanvasElement;
-  factor: number; // scroll factor (0 = static, 1 = foreground speed)
+  factor: number; // horizontal scroll factor (0 = static, 1 = foreground speed)
+  yFactor?: number; // vertical scroll factor (optional, defaults to factor * 0.5)
   y: number;
   drift?: number; // autonomous horizontal drift in px/tick (clouds)
 }
@@ -54,14 +55,16 @@ export class ParallaxBackground {
     this.t++;
   }
 
-  draw(ctx: CanvasRenderingContext2D, camX: number): void {
+  draw(ctx: CanvasRenderingContext2D, camX: number, camY: number = 0): void {
     ctx.drawImage(this.sky, 0, 0);
     for (const layer of this.layers) {
       const w = layer.canvas.width;
       const drift = (layer.drift ?? 0) * this.t;
       let off = ((camX * layer.factor + drift) % w + w) % w;
+      const yFactor = layer.yFactor ?? layer.factor * 0.5;
+      const drawY = Math.round(layer.y - camY * yFactor);
       for (let x = -off; x < VIEW_W; x += w) {
-        ctx.drawImage(layer.canvas, Math.round(x), layer.y);
+        ctx.drawImage(layer.canvas, Math.round(x), drawY);
       }
     }
   }

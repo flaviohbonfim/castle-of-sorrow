@@ -1,6 +1,6 @@
 import { Input } from "./engine/input";
 import { Camera } from "./engine/camera";
-import { VIEW_W, VIEW_H } from "./engine/renderer";
+import { makeSurface, VIEW_W, VIEW_H } from "./engine/renderer";
 import { audio } from "./engine/audio";
 import { rectsOverlap, type Rect } from "./engine/math";
 import { PAL } from "./gfx/palette";
@@ -94,9 +94,18 @@ export interface SaveFile {
 }
 
 /** Central game world: rooms, entities, simulation tick and frame drawing. */
+export interface RoomTransitionState {
+  prevSurface: HTMLCanvasElement;
+  side: "left" | "right" | "top" | "bottom";
+  progress: number;
+  duration: number;
+}
+
 export class Game {
   readonly input: Input;
   readonly player: Player;
+  private readonly transitionSurface = makeSurface(VIEW_W, VIEW_H);
+  roomTransition: RoomTransitionState | null = null;
   /** One instance per zone (lazy) — castle and tower get distinct skylines. */
   private readonly parallaxByZone = new Map<ZoneId, ParallaxBackground>();
   parallax!: ParallaxBackground;
@@ -181,6 +190,7 @@ export class Game {
   }
 
   loadRoom(id: string, x: number, y: number): void {
+    this.roomTransition = null;
     const def = ROOMS[id];
     if (!def) throw new Error(`Unknown room: ${id}`);
     this.roomId = id;
@@ -360,7 +370,38 @@ export class Game {
         // when the whole body is above the room — that felt like a dead end).
         (exit.side === "top" && p.body.y < 0 && cx >= exit.min && cx <= exit.max);
       if (hit) {
-        this.loadRoom(exit.target, exit.tx, exit.ty);
+        let targetX = exit.tx;
+        let targetY = exit.ty;
+        if (exit.side === "top" || exit.side === "bottom") {
+          const exitWidth = exit.max - exit.min;
+          if (exitWidth > 0) {
+            const relRatio = Math.min(1, Math.max(0, (cx - exit.min) / exitWidth));
+            const backExit = ROOMS[exit.target]?.exits.find(
+              (e) => e.target === this.roomId && (e.side === "top" || e.side === "bottom"),
+            );
+            if (backExit) {
+              const backWidth = backExit.max - backExit.min;
+              targetX = backExit.min + relRatio * backWidth;
+            }
+          }
+        }
+
+        const [prevCanvas, prevCtx] = makeSurface(VIEW_W, VIEW_H);
+        this.drawWorld(prevCtx, 1.0);
+
+        this.loadRoom(exit.target, targetX, targetY);
+
+        this.roomTransition = {
+          prevSurface: prevCanvas,
+          side: exit.side,
+          progress: 0,
+          duration: 18,
+        };
+        this.input.clearCommands();
+        this.input.consume("jump");
+        this.input.consume("attack");
+        this.input.consume("subweapon");
+        this.input.consume("backdash");
         return;
       }
     }
@@ -656,6 +697,15 @@ export class Game {
     // the whole app), not here — calling it again would double-fire presses.
     this.tick++;
 
+    if (this.roomTransition) {
+      this.roomTransition.progress += 1 / this.roomTransition.duration;
+      if (this.roomTransition.progress >= 1) {
+        this.roomTransition = null;
+        this.input.clearCommands();
+      }
+      return;
+    }
+
     // Cutscene, results, dialogue, shop, pickers and pause menu freeze the world.
     setNpcQuestHint(!this.flags.has("quest:coral:done"));
     if (this.cutsceneUI.open) {
@@ -803,11 +853,11 @@ export class Game {
 
   /* ------------------------------- draw ------------------------------- */
 
-  draw(ctx: CanvasRenderingContext2D, alpha: number): void {
+  drawWorld(ctx: CanvasRenderingContext2D, alpha: number): void {
     const camX = this.camera.renderX(alpha);
     const camY = this.camera.renderY(alpha);
 
-    this.parallax.draw(ctx, camX);
+    this.parallax.draw(ctx, camX, camY);
     // Strategy C: continuous painted backdrop (override PNG or procedural).
     if (this.roomBackdrop) {
       // Blit only the camera window (maps can be far larger than the view).
@@ -955,6 +1005,39 @@ export class Game {
       ctx.fillRect(x, y, Math.round(w * frac), 5);
       ctx.fillStyle = PAL.hpRedHi;
       ctx.fillRect(x, y, Math.round(w * frac), 1);
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D, alpha: number): void {
+    if (this.roomTransition) {
+      const tr = this.roomTransition;
+      const t = Math.min(1, Math.max(0, tr.progress));
+      let px = 0;
+      let py = 0;
+      let nx = 0;
+      let ny = 0;
+      if (tr.side === "right") {
+        px = -VIEW_W * t;
+        nx = VIEW_W * (1 - t);
+      } else if (tr.side === "left") {
+        px = VIEW_W * t;
+        nx = -VIEW_W * (1 - t);
+      } else if (tr.side === "bottom") {
+        py = -VIEW_H * t;
+        ny = VIEW_H * (1 - t);
+      } else if (tr.side === "top") {
+        py = VIEW_H * t;
+        ny = -VIEW_H * (1 - t);
+      }
+
+      const [nextCanvas, nextCtx] = this.transitionSurface;
+      nextCtx.clearRect(0, 0, VIEW_W, VIEW_H);
+      this.drawWorld(nextCtx, alpha);
+
+      ctx.drawImage(tr.prevSurface, Math.round(px), Math.round(py));
+      ctx.drawImage(nextCanvas, Math.round(nx), Math.round(ny));
+    } else {
+      this.drawWorld(ctx, alpha);
     }
 
     if (this.menu.open) this.menu.draw(ctx, this);

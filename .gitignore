@@ -28,6 +28,7 @@ npm-debug.log*
 
 # Local agent / tool caches
 .claude/
+.kimi-code/
 graphify-out/
 
 # Asset pipeline scratch (previews, failed gens, download leftovers)

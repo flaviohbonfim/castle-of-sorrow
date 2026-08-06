@@ -46,7 +46,8 @@ src/
 ├── world/
 │   ├── tilemap.ts           # Tilemap: at/setTile/isSolid/isOneWay/draw
 │   ├── collision.ts         # moveBody (axis-separated AABB), groundAhead
-│   └── rooms.ts             # RoomBuilder, ROOMS registry, exits, WARP_CYCLE, START
+│   ├── rooms.ts             # RoomBuilder, ROOMS registry, exits, WARP_CYCLE, START
+│   └── castlePlan.ts        # wings, floor datums, door profiles (see CASTLE_PLAN.md)
 ├── entities/
 │   ├── entity.ts            # abstract Entity base (body, facing, savePrev, renderX/Y)
 │   ├── player/
@@ -138,8 +139,14 @@ platforms only collide when falling onto them from above and
 `body.dropThrough` is false (the player sets `dropTimer=8` for ↓+jump).
 `groundAhead(body, map, dir)` is used by walkers for ledge turns.
 
-### Rooms (`world/rooms.ts`)
+### Rooms (`world/rooms.ts` + `world/castlePlan.ts`)
 
+- **`castlePlan.ts`** is the architectural source of truth: wings, floor
+  datums, door profiles (`GALLERY`/`HALL`/`GRAND`/…). See
+  [`docs/CASTLE_PLAN.md`](CASTLE_PLAN.md). Room builders and exits MUST use
+  profile constants (`GALLERY.floorY`, `sideDoorBand(id)`, …) so painted
+  backdrops can continue across doors. Continuous side-door runs share one
+  feet-Y; intentional height changes are listed as steps in the plan.
 - Rooms are built by `RoomBuilder` (helpers: `frame/hline/fill/pillar/
   windows/punch/at`). `punch` opens doorways in border walls.
 - `Spawn` markers use **cell coordinates**; `at(kind, c, r)` resolves
@@ -153,17 +160,17 @@ platforms only collide when falling onto them from above and
 - Current rooms & topology:
 
 ```
-                 [towerHall]——[towerTop]——[throne]
+                 [towerHall]——[towerTop]——[approach]——[sovereign]——[throne]
                       |
                  [towerShaft]
                       |
-  [entrance]——[corridor]——[saveRoom]
-       |           ^ (dbl-jump hatch)
-       v pit
+  [chapel]——[entrance]——[corridor]——[library]——[saveRoom]
+                 |           ^ (dbl-jump hatch)
+                 v pit
   [lake]——[cavern]——[shop]——[bossRoom]
     |
     v dive shaft (flooded)
-  [lakeDepths]
+  [lakeDepths]——[catacombs]
 ```
 
 **Rules — all machine-checked by `__validateMap()` (see §14.1):**

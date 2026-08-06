@@ -62,6 +62,10 @@ applied before releases in a tick, so they cancel out and the key is not held.
 Reset progression: `localStorage.removeItem('castle-of-sorrow-save')` then
 reload. The full regression checklist is in ARCHITECTURE.md §14.
 
+Room architecture: `src/world/castlePlan.ts` + `docs/CASTLE_PLAN.md`. New
+rooms pick a wing + profile; side doors on a continuous run share the wing
+floor datum.
+
 **After ANY room/map change**, run the topology validator in the console and
 make sure it returns an empty array:
 

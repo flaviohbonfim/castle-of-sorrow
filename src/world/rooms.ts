@@ -4,6 +4,17 @@ import {
   THRONE_GLASS_CENTERS,
   THRONE_PIER_XS,
 } from "../gfx/throneLayout";
+import {
+  CAVERN,
+  FLOODED,
+  GALLERY,
+  GRAND,
+  HALL,
+  SHAFT,
+  leftEntry,
+  rightEntry,
+  sideDoorBand,
+} from "./castlePlan";
 import { Tilemap } from "./tilemap";
 
 export interface Spawn {
@@ -70,9 +81,9 @@ export const WARP_CYCLE: string[] = ["corridor", "cavern", "towerHall"];
 
 /** Pad feet positions per room that participates in WARP_CYCLE. */
 export const WARP_PADS: Record<string, { x: number; y: number }> = {
-  corridor: { x: 88, y: 176 },
-  cavern: { x: 360, y: 256 }, // at("warp", 22, 15) — away from both pits
-  towerHall: { x: 168, y: 208 }, // at("warp", 10, 12)
+  corridor: { x: 88, y: GALLERY.floorY }, // at("warp", 5, 10)
+  cavern: { x: 360, y: CAVERN.floorY }, // at("warp", 22, 15)
+  towerHall: { x: 168, y: GALLERY.floorY }, // at("warp", 10, 10)
 };
 
 /** Next warp destination from the pad in `fromRoom`. */
@@ -128,6 +139,22 @@ class RoomBuilder {
     for (let c = from; c <= to; c += step) this.set(c, row, TileId.BgWindow);
   }
 
+  /** Place a 2-tile wide x 3-tile tall (32x48px) grand gothic stained-glass window. */
+  window2x3(c0: number, r0: number): void {
+    for (let r = r0; r < r0 + 3; r++) {
+      for (let c = c0; c < c0 + 2; c++) {
+        this.set(c, r, TileId.BgWindow);
+      }
+    }
+  }
+
+  /** Place a row of grand 2x3 (32x48px) gothic windows across a room. */
+  grandWindows(r0: number, from: number, to: number, step: number): void {
+    for (let c = from; c <= to; c += step) {
+      this.window2x3(c, r0);
+    }
+  }
+
   /** Solid decorative pillar: top at `rTop`, base sits at `rTop + 2`. */
   pillar(c: number, rTop: number): void {
     this.set(c, rTop, TileId.PillarTop);
@@ -173,14 +200,15 @@ class RoomBuilder {
 /* ------------------------------- rooms ------------------------------- */
 
 function buildEntrance(): BuiltRoom {
-  const b = new RoomBuilder(64, 24);
+  const b = new RoomBuilder(64, GRAND.rows);
   b.frame();
-  b.windows(3, 7, 55, 8);
+  b.grandWindows(3, 7, 55, 10);
 
-  // Main floor + solid underlay.
-  b.hline(20, 1, 62, TileId.FloorTop);
-  b.fill(1, 21, 62, 22, TileId.Brick);
+  // Main floor + solid underlay (GRAND datum).
+  b.hline(GRAND.floorRow, 1, 62, TileId.FloorTop);
+  b.fill(1, GRAND.floorRow + 1, 62, 22, TileId.Brick);
   // Right raised step — solid brick column under it (no floating FloorTop strip).
+  // East door sits on this step (floorY 288); drops into corridor GALLERY (176).
   b.hline(18, 55, 62, TileId.FloorTop);
   b.fill(55, 19, 62, 22, TileId.Brick);
 
@@ -215,7 +243,7 @@ function buildEntrance(): BuiltRoom {
   }
   // Keep a solid lip left of the pit to stand on after a return jump.
   b.set(51, 20, TileId.FloorTop);
-  b.set(55, 20, TileId.FloorTop);
+  b.set(55, 20, TileId.Brick);
 
   b.at("player", 3, 19);
   b.at("zombie", 22, 19);
@@ -242,22 +270,22 @@ function buildEntrance(): BuiltRoom {
 }
 
 function buildCorridor(): BuiltRoom {
-  const b = new RoomBuilder(48, 14);
+  const b = new RoomBuilder(48, GALLERY.rows);
   b.frame();
-  b.windows(3, 7, 39, 8);
-  b.hline(11, 1, 46, TileId.FloorTop);
-  b.fill(1, 12, 46, 12, TileId.Brick);
+  b.grandWindows(3, 7, 37, 10);
+  b.hline(GALLERY.floorRow, 1, 46, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 46, GALLERY.floorRow + 1, TileId.Brick);
   b.pillar(13, 8);
   b.pillar(27, 8);
   b.pillar(41, 8);
 
-  b.door(0, 8, 10); // to Entrance
-  b.door(47, 8, 10); // to Sanctuary
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // to Entrance
+  b.door(47, GALLERY.doorRow0, GALLERY.doorRow1); // to library
 
   // Double-jump shaft up to the Clock Tower (ceiling hole + climb platforms).
   b.hline(7, 22, 27, TileId.Platform);
   b.hline(4, 22, 27, TileId.Platform);
-  for (let c = 24; c <= 25; c++) {
+  for (let c = 23; c <= 26; c++) {
     b.set(c, 0, TileId.Empty);
   }
 
@@ -274,19 +302,19 @@ function buildCorridor(): BuiltRoom {
 }
 
 function buildChapel(): BuiltRoom {
-  const b = new RoomBuilder(28, 16);
+  const b = new RoomBuilder(28, HALL.rows);
   b.frame();
-  b.windows(4, 5, 22, 6);
-  b.hline(13, 1, 26, TileId.FloorTop);
-  b.fill(1, 14, 26, 14, TileId.Brick);
+  b.grandWindows(3, 5, 21, 8);
+  b.hline(HALL.floorRow, 1, 26, TileId.FloorTop);
+  b.fill(1, HALL.floorRow + 1, 26, HALL.floorRow + 1, TileId.Brick);
   b.pillar(6, 10);
   b.pillar(21, 10);
   // Raised altar ledge
   b.hline(11, 10, 17, TileId.Platform);
-  b.door(27, 10, 12); // back to entrance
-  b.at("spearGuard", 14, 12);
-  b.at("zombie", 8, 12);
-  b.at("zombie", 20, 12);
+  b.door(27, HALL.doorRow0, HALL.doorRow1); // back to entrance
+  b.at("spearGuard", 14, HALL.floorRow - 1);
+  b.at("zombie", 8, HALL.floorRow - 1);
+  b.at("zombie", 20, HALL.floorRow - 1);
   b.at("candle", 6, 11); // pillar mid-shaft
   b.at("candle", 21, 11); // pillar mid-shaft
   b.at("candle", 11, 6);
@@ -295,19 +323,19 @@ function buildChapel(): BuiltRoom {
 }
 
 function buildLibrary(): BuiltRoom {
-  const b = new RoomBuilder(32, 14);
+  const b = new RoomBuilder(32, GALLERY.rows);
   b.frame();
-  b.windows(4, 5, 26, 6);
-  b.hline(11, 1, 30, TileId.FloorTop);
-  b.fill(1, 12, 30, 12, TileId.Brick);
+  b.grandWindows(3, 5, 23, 9);
+  b.hline(GALLERY.floorRow, 1, 30, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 30, GALLERY.floorRow + 1, TileId.Brick);
   b.hline(8, 8, 14, TileId.Platform);
   b.hline(8, 18, 24, TileId.Platform);
   b.pillar(10, 8);
   b.pillar(22, 8);
-  b.door(0, 8, 10); // from corridor
-  b.door(31, 8, 10); // to sanctuary
-  b.at("axeKnight", 16, 10);
-  b.at("skeleton", 8, 10);
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from corridor
+  b.door(31, GALLERY.doorRow0, GALLERY.doorRow1); // to sanctuary
+  b.at("axeKnight", 16, GALLERY.floorRow - 1);
+  b.at("skeleton", 8, GALLERY.floorRow - 1);
   b.at("fleaMan", 20, 7);
   b.at("candle", 10, 9); // pillar mid-shaft
   b.at("candle", 22, 9); // pillar mid-shaft
@@ -317,19 +345,20 @@ function buildLibrary(): BuiltRoom {
 }
 
 function buildApproach(): BuiltRoom {
-  const b = new RoomBuilder(36, 14, "tower");
+  const b = new RoomBuilder(36, GALLERY.rows, "tower");
   b.frame();
-  b.hline(11, 1, 34, TileId.FloorTop);
-  b.fill(1, 12, 34, 12, TileId.Brick);
+  b.grandWindows(3, 5, 29, 8);
+  b.hline(GALLERY.floorRow, 1, 34, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 34, GALLERY.floorRow + 1, TileId.Brick);
   b.hline(8, 10, 16, TileId.Platform);
   b.hline(8, 20, 26, TileId.Platform);
   b.pillar(8, 8);
   b.pillar(27, 8);
-  b.door(0, 8, 10); // from towerTop
-  b.door(35, 8, 10); // to sovereign hall
-  b.at("spearGuard", 14, 10);
-  b.at("spearGuard", 24, 10);
-  b.at("axeKnight", 18, 10);
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from towerTop
+  b.door(35, GALLERY.doorRow0, GALLERY.doorRow1); // to sovereign hall
+  b.at("spearGuard", 14, GALLERY.floorRow - 1);
+  b.at("spearGuard", 24, GALLERY.floorRow - 1);
+  b.at("axeKnight", 18, GALLERY.floorRow - 1);
   // Form skill relics (separate from the transformation unlocks)
   b.at("relic", 12, 7, "batFire");
   b.at("relic", 22, 7, "wolfDash");
@@ -341,21 +370,21 @@ function buildApproach(): BuiltRoom {
 }
 
 function buildCatacombs(): BuiltRoom {
-  const b = new RoomBuilder(40, 16);
+  const b = new RoomBuilder(40, HALL.rows);
   b.frame();
-  b.hline(13, 1, 38, TileId.FloorTop);
-  b.fill(1, 14, 38, 14, TileId.Brick);
+  b.hline(HALL.floorRow, 1, 38, TileId.FloorTop);
+  b.fill(1, HALL.floorRow + 1, 38, HALL.floorRow + 1, TileId.Brick);
   b.hline(10, 6, 12, TileId.Platform);
   b.hline(10, 18, 24, TileId.Platform);
   b.hline(7, 28, 34, TileId.Platform);
   b.pillar(10, 10);
   b.pillar(22, 10);
   b.pillar(32, 10);
-  b.door(0, 10, 12); // from lakeDepths
-  b.at("zombie", 8, 12);
-  b.at("zombie", 14, 12);
-  b.at("zombie", 20, 12);
-  b.at("skeleton", 28, 12);
+  b.door(0, HALL.doorRow0, HALL.doorRow1); // from lakeDepths
+  b.at("zombie", 8, HALL.floorRow - 1);
+  b.at("zombie", 14, HALL.floorRow - 1);
+  b.at("zombie", 20, HALL.floorRow - 1);
+  b.at("skeleton", 28, HALL.floorRow - 1);
   b.at("fleaMan", 20, 9);
   b.at("fleaMan", 30, 6);
   b.at("candle", 10, 11); // pillar mid-shaft
@@ -372,16 +401,16 @@ function buildCatacombs(): BuiltRoom {
  * drops through on the way back down.
  */
 function buildTowerShaft(): BuiltRoom {
-  const b = new RoomBuilder(16, 40, "tower");
+  const b = new RoomBuilder(16, SHAFT.rows, "tower");
   b.frame();
 
   // --- bottom landing with a real hole through the floor (cols 6–9) ---
-  b.hline(37, 1, 14, TileId.FloorTop);
-  b.fill(1, 38, 14, 38, TileId.Brick);
+  b.hline(SHAFT.floorRow, 1, 14, TileId.FloorTop);
+  b.fill(1, SHAFT.floorRow + 1, 14, SHAFT.floorRow + 1, TileId.Brick);
   for (let c = 6; c <= 9; c++) {
-    b.set(c, 37, TileId.Empty);
-    b.set(c, 38, TileId.Empty);
-    b.set(c, 39, TileId.Empty);
+    b.set(c, SHAFT.floorRow, TileId.Empty);
+    b.set(c, SHAFT.floorRow + 1, TileId.Empty);
+    b.set(c, SHAFT.floorRow + 2, TileId.Empty);
   }
 
   // --- staggered one-way ladder (~3 tiles / 48px — single-jump friendly) ---
@@ -421,52 +450,54 @@ function buildTowerShaft(): BuiltRoom {
   return b.build();
 }
 
-/** Mid tower hall with gears, axe knights, warp pad. */
+/** Mid tower hall with gears, axe knights, warp pad. GALLERY datum (176). */
 function buildTowerHall(): BuiltRoom {
-  const b = new RoomBuilder(40, 16, "tower");
+  const b = new RoomBuilder(40, GALLERY.rows, "tower");
   b.frame();
-  b.hline(13, 1, 38, TileId.FloorTop);
-  b.fill(1, 14, 38, 14, TileId.Brick);
-  b.pillar(8, 10);
-  b.pillar(20, 10);
-  b.pillar(32, 10);
+  b.grandWindows(3, 14, 34, 10);
+  b.hline(GALLERY.floorRow, 1, 38, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 38, GALLERY.floorRow + 1, TileId.Brick);
+  b.pillar(8, 8);
+  b.pillar(20, 8);
+  b.pillar(32, 8);
   // Decorative "gear" platforms
-  b.hline(10, 12, 16, TileId.Platform);
-  b.hline(9, 24, 28, TileId.Platform);
-  b.hline(7, 18, 22, TileId.Platform);
+  b.hline(8, 12, 16, TileId.Platform);
+  b.hline(7, 24, 28, TileId.Platform);
+  b.hline(5, 18, 22, TileId.Platform);
 
   // Floor hole down to shaft (must cut through FloorTop + subfloor).
   for (let c = 4; c <= 7; c++) {
-    b.set(c, 13, TileId.Empty);
-    b.set(c, 14, TileId.Empty);
-    b.set(c, 15, TileId.Empty);
+    b.set(c, GALLERY.floorRow, TileId.Empty);
+    b.set(c, GALLERY.floorRow + 1, TileId.Empty);
+    b.set(c, GALLERY.floorRow + 2, TileId.Empty);
   }
-  b.door(39, 10, 12); // to towerTop boss
+  b.door(39, GALLERY.doorRow0, GALLERY.doorRow1); // to towerTop boss
 
   // Warp sits on solid floor to the right of the hole.
-  b.at("warp", 10, 12);
-  b.at("npc", 22, 12, "demon"); // Caged Imp — wraith / high-jump hint
-  b.at("axeKnight", 14, 12);
-  b.at("axeKnight", 30, 12);
-  b.at("candle", 8, 11); // pillar mid-shaft
-  b.at("candle", 20, 11); // pillar mid-shaft
-  b.at("candle", 32, 11); // pillar mid-shaft
-  b.at("candle", 14, 5);
+  b.at("warp", 10, GALLERY.floorRow - 1);
+  b.at("npc", 22, GALLERY.floorRow - 1, "demon"); // Caged Imp — wraith / high-jump hint
+  b.at("axeKnight", 14, GALLERY.floorRow - 1);
+  b.at("axeKnight", 30, GALLERY.floorRow - 1);
+  b.at("candle", 8, 9); // pillar mid-shaft
+  b.at("candle", 20, 9); // pillar mid-shaft
+  b.at("candle", 32, 9); // pillar mid-shaft
+  b.at("candle", 14, 3);
   return b.build();
 }
 
 /** Clock Tower summit — Wraith boss arena. */
 function buildTowerTop(): BuiltRoom {
-  const b = new RoomBuilder(32, 14, "tower");
+  const b = new RoomBuilder(32, GALLERY.rows, "tower");
   b.frame();
-  b.hline(11, 1, 30, TileId.FloorTop);
-  b.fill(1, 12, 30, 12, TileId.Brick);
+  b.grandWindows(3, 10, 22, 12);
+  b.hline(GALLERY.floorRow, 1, 30, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 30, GALLERY.floorRow + 1, TileId.Brick);
   b.pillar(5, 8);
   b.pillar(26, 8);
-  b.door(0, 8, 10); // from towerHall
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from towerHall
   // Right wall sealed as Gate by default; Game opens it when throne is unlocked.
-  for (let r = 8; r <= 10; r++) b.set(31, r, TileId.Gate);
-  b.at("boss", 20, 10, "wraith");
+  for (let r = GALLERY.doorRow0; r <= GALLERY.doorRow1; r++) b.set(31, r, TileId.Gate);
+  b.at("boss", 20, GALLERY.floorRow - 1, "wraith");
   b.at("candle", 5, 9); // pillar mid-shaft
   b.at("candle", 26, 9); // pillar mid-shaft
   return b.build();
@@ -484,12 +515,12 @@ function buildTowerTop(): BuiltRoom {
  *    bays; banners only on plain stone piers (not over glass/curtains)
  */
 function buildThrone(): BuiltRoom {
-  const b = new RoomBuilder(48, 16, "tower");
+  const b = new RoomBuilder(48, HALL.rows, "tower");
   b.frame();
 
-  // Main fight floor — almost the whole hall is flat.
-  b.hline(13, 1, 46, TileId.FloorTop);
-  b.fill(1, 14, 46, 14, TileId.Brick);
+  // Main fight floor — almost the whole hall is flat (HALL datum / throneLayout).
+  b.hline(HALL.floorRow, 1, 46, TileId.FloorTop);
+  b.fill(1, HALL.floorRow + 1, 46, HALL.floorRow + 1, TileId.Brick);
 
   // Single-step dais at the far right (throne feel, not a climb puzzle).
   b.hline(12, 38, 46, TileId.FloorTop);
@@ -497,9 +528,9 @@ function buildThrone(): BuiltRoom {
 
   // No BgWindow / pillar tiles: backdrop paints openings; open floor for the
   // final fight. Door still needed for exit geometry.
-  b.door(0, 10, 12);
+  b.door(0, HALL.doorRow0, HALL.doorRow1);
   // Boss on the main floor, mid-right — clear of the dais lip.
-  b.at("boss", 34, 12, "dracula");
+  b.at("boss", 34, HALL.floorRow - 1, "dracula");
 
   // --- Scenery props (draw-only) ---
   // All positions come from the authored layout in gfx/throneLayout.ts —
@@ -562,15 +593,15 @@ function buildThrone(): BuiltRoom {
 
 /** Sovereign rematch arena — between Approach and Throne (boss kept, not removed). */
 function buildSovereignHall(): BuiltRoom {
-  const b = new RoomBuilder(40, 14, "tower");
+  const b = new RoomBuilder(40, GALLERY.rows, "tower");
   b.frame();
-  b.hline(11, 1, 38, TileId.FloorTop);
-  b.fill(1, 12, 38, 12, TileId.Brick);
+  b.hline(GALLERY.floorRow, 1, 38, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 38, GALLERY.floorRow + 1, TileId.Brick);
   b.pillar(8, 8);
   b.pillar(31, 8);
-  b.door(0, 8, 10); // from approach
-  b.door(39, 8, 10); // to throne (sealed as Gate while boss lives)
-  b.at("boss", 22, 10, "sovereign");
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from approach
+  b.door(39, GALLERY.doorRow0, GALLERY.doorRow1); // to throne (sealed as Gate while boss lives)
+  b.at("boss", 22, GALLERY.floorRow - 1, "sovereign");
   b.at("candle", 8, 9); // pillar mid-shaft
   b.at("candle", 31, 9); // pillar mid-shaft
   b.at("candle", 14, 6);
@@ -578,21 +609,22 @@ function buildSovereignHall(): BuiltRoom {
   return b.build();
 }
 
+/** Sanctuary — GALLERY datum so the library door is continuous. */
 function buildSaveRoom(): BuiltRoom {
-  const b = new RoomBuilder(20, 12);
+  const b = new RoomBuilder(20, GALLERY.rows);
   b.frame();
-  b.set(5, 3, TileId.BgWindow);
-  b.hline(9, 1, 18, TileId.FloorTop);
-  b.fill(1, 10, 18, 10, TileId.Brick);
+  b.window2x3(5, 3);
+  b.hline(GALLERY.floorRow, 1, 18, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 18, GALLERY.floorRow + 1, TileId.Brick);
 
-  b.door(0, 6, 8); // to Corridor
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // to library
 
   // Secret alcove behind a breakable wall, hiding the double-jump relic.
-  for (let r = 6; r <= 8; r++) b.set(12, r, TileId.Cracked);
+  for (let r = GALLERY.doorRow0; r <= GALLERY.doorRow1; r++) b.set(12, r, TileId.Cracked);
 
-  b.at("save", 6, 8);
+  b.at("save", 6, GALLERY.floorRow - 1);
   b.at("candle", 9, 5); // no pillars in this room — wall-mounted
-  b.at("relic", 15, 8, "doubleJump");
+  b.at("relic", 15, GALLERY.floorRow - 1, "doubleJump");
   return b.build();
 }
 
@@ -605,14 +637,14 @@ function buildSaveRoom(): BuiltRoom {
  *  - RIGHT door ↔ Hermit's Den
  */
 function buildCavern(): BuiltRoom {
-  const b = new RoomBuilder(48, 20);
+  const b = new RoomBuilder(48, CAVERN.rows);
   b.frame();
-  b.hline(16, 1, 46, TileId.FloorTop);
-  b.fill(1, 17, 46, 18, TileId.Brick);
+  b.hline(CAVERN.floorRow, 1, 46, TileId.FloorTop);
+  b.fill(1, CAVERN.floorRow + 1, 46, 18, TileId.Brick);
   b.pillar(12, 13);
   b.pillar(28, 13);
-  b.door(47, 13, 15); // right → shop
-  b.door(0, 13, 15); // left → lake (ONLY link to lake)
+  b.door(47, CAVERN.doorRow0, CAVERN.doorRow1); // right → shop
+  b.door(0, CAVERN.doorRow0, CAVERN.doorRow1); // left → lake (ONLY link to lake)
 
   // Ceiling shaft ↔ Entrance (right side of room, under entrance pit).
   for (let c = 40; c <= 43; c++) {
@@ -652,13 +684,13 @@ function buildCavern(): BuiltRoom {
  *  - BOTTOM water pit  ↔ lakeDepths ceiling (the depths sit BELOW on the map)
  */
 function buildLake(): BuiltRoom {
-  const b = new RoomBuilder(48, 18);
+  const b = new RoomBuilder(48, FLOODED.rows);
   b.frame();
 
   const surface = 9;
   b.hline(surface, 1, 46, TileId.WaterTop);
   b.fill(1, surface + 1, 46, 15, TileId.Water);
-  b.hline(16, 1, 46, TileId.FloorTop);
+  b.hline(FLOODED.floorRow, 1, 46, TileId.FloorTop);
 
   // Upper dry ledges
   b.hline(4, 6, 16, TileId.Platform);
@@ -681,13 +713,13 @@ function buildLake(): BuiltRoom {
   b.fill(40, 14, 46, 15, TileId.Brick);
   b.hline(11, 38, 42, TileId.Platform);
 
-  b.door(47, 10, 12); // right → cavern
+  b.door(47, HALL.doorRow0, HALL.doorRow1); // right → cavern (dry landing = HALL)
 
   // Dive shaft down to the Sunken Depths — flooded so it reads as deep water
   // continuing below, not a hole onto the sky. Clear of both stone shelves.
   for (let c = 26; c <= 29; c++) {
-    b.set(c, 16, TileId.Water);
-    b.set(c, 17, TileId.Water);
+    b.set(c, FLOODED.floorRow, TileId.Water);
+    b.set(c, FLOODED.floorRow + 1, TileId.Water);
   }
 
   b.at("relic", 4, 12, "waterWalk");
@@ -705,7 +737,7 @@ function buildLake(): BuiltRoom {
 
 /** Fully flooded lower depths with denser fishmen + Coral Ring chest. */
 function buildLakeDepths(): BuiltRoom {
-  const b = new RoomBuilder(40, 16);
+  const b = new RoomBuilder(40, HALL.rows);
   b.frame();
 
   // Entire interior flooded; thin surface band near the ceiling.
@@ -718,10 +750,10 @@ function buildLakeDepths(): BuiltRoom {
   b.hline(11, 30, 34, TileId.FloorTop);
   b.fill(30, 12, 34, 13, TileId.Brick);
 
-  // Dry east ledge + door → catacombs
+  // Dry east ledge + door → catacombs (HALL datum)
   b.fill(36, 10, 38, 12, TileId.Empty);
-  b.hline(13, 36, 38, TileId.FloorTop);
-  b.door(39, 10, 12);
+  b.hline(HALL.floorRow, 36, 38, TileId.FloorTop);
+  b.door(39, HALL.doorRow0, HALL.doorRow1);
 
   // Ceiling shaft back up to the Sunken Gallery. Rows 1–2 are already open
   // air above the surface; only the stone ceiling needs punching through.
@@ -741,30 +773,31 @@ function buildLakeDepths(): BuiltRoom {
   return b.build();
 }
 
+/** Hermit's Den — GALLERY datum so the bossRoom door is continuous. */
 function buildShop(): BuiltRoom {
-  const b = new RoomBuilder(20, 12);
+  const b = new RoomBuilder(20, GALLERY.rows);
   b.frame();
-  b.hline(9, 1, 18, TileId.FloorTop);
-  b.fill(1, 10, 18, 10, TileId.Brick);
-  b.door(0, 6, 8); // from Cavern
-  b.door(19, 6, 8); // to the Boss hall
-  b.at("shopkeeper", 9, 8);
+  b.hline(GALLERY.floorRow, 1, 18, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 18, GALLERY.floorRow + 1, TileId.Brick);
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from Cavern
+  b.door(19, GALLERY.doorRow0, GALLERY.doorRow1); // to the Boss hall
+  b.at("shopkeeper", 9, GALLERY.floorRow - 1);
   b.at("candle", 4, 5); // no pillars in this room — wall-mounted
   b.at("candle", 14, 5);
   return b.build();
 }
 
 function buildBossRoom(): BuiltRoom {
-  const b = new RoomBuilder(40, 14);
+  const b = new RoomBuilder(40, GALLERY.rows);
   b.frame();
-  b.hline(11, 1, 38, TileId.FloorTop);
-  b.fill(1, 12, 38, 12, TileId.Brick);
+  b.hline(GALLERY.floorRow, 1, 38, TileId.FloorTop);
+  b.fill(1, GALLERY.floorRow + 1, 38, GALLERY.floorRow + 1, TileId.Brick);
   b.pillar(4, 8);
   b.pillar(35, 8);
   // Doorway (left wall). While the Colossus lives, Game fills these
   // exact cells with Gate so the portcullis sits ON the exit.
-  b.door(0, 8, 10); // from the shop
-  b.at("boss", 28, 10, "colossus");
+  b.door(0, GALLERY.doorRow0, GALLERY.doorRow1); // from the shop
+  b.at("boss", 28, GALLERY.floorRow - 1, "colossus");
   b.at("candle", 4, 9); // pillar mid-shaft
   b.at("candle", 35, 9); // pillar mid-shaft
   return b.build();
@@ -772,29 +805,31 @@ function buildBossRoom(): BuiltRoom {
 
 /**
  * Castle topology (minimap grid — gx right, gy down). ONE link per edge.
+ * Architectural datums: see `castlePlan.ts` and docs/CASTLE_PLAN.md.
  *
  * ```
- *                 [towerHall]——[towerTop]——[throne]
- *                      |
- *                 [towerShaft]
- *                      |
- *  [entrance]——[corridor]——[saveRoom]
- *       |           ^up from corridor
- *       v pit
- *  [lake]——[cavern]——[shop]——[bossRoom]
- *    |
- *    v dive shaft
- *  [lakeDepths]
+ *                  [towerHall]——[towerTop]——[approach]——[sovereign]——[throne]
+ *                       |
+ *                  [towerShaft]
+ *                       |
+ *   [chapel]——[entrance]——[corridor]——[library]——[saveRoom]
+ *                  |           ^ hatch
+ *                  v pit
+ *   [lake]——[cavern]——[shop]——[bossRoom]
+ *     |
+ *     v dive
+ *   [lakeDepths]——[catacombs]
  * ```
+ *
+ * Floor datums (feet Y): GALLERY=176 · HALL=208 · CAVERN=256 · GRAND=320
+ * Continuous side-door runs share a datum; documented steps elsewhere.
  *
  * Exit spawn convention (feet = bottom-center):
- *  - Door floors: y = FloorTop row * TILE
+ *  - Door floors: y = profile.floorY
  *  - Left entry x ≈ 40; right entry x ≈ widthPx - 40
  *  - Shaft landings: solid ledge beside the hole, never into the void
  *
- * Minimap scale: ONE grid cell ≈ 16 columns × 12 rows of room, rounded, so a
- * footprint reflects the room's real size. Keep new rooms on that scale —
- * `__validateMap()` checks adjacency/direction but not proportion.
+ * Minimap scale: ONE grid cell ≈ 16 columns × 12 rows of room, rounded.
  */
 export const ROOMS: Record<string, RoomDef> = {
   entrance: {
@@ -803,8 +838,10 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildEntrance,
     mapRect: { gx: 0, gy: 0, gw: 4, gh: 2 }, // 64x24
     exits: [
-      { side: "left", min: 260, max: 320, target: "chapel", tx: 400, ty: 208 },
-      { side: "right", min: 230, max: 300, target: "corridor", tx: 40, ty: 176 },
+      // West door on main floor → chapel (HALL 208)
+      { side: "left", min: GRAND.doorBand.min, max: GRAND.doorBand.max, target: "chapel", tx: 400, ty: HALL.floorY },
+      // East door on raised step (y band ~230–300) → corridor GALLERY
+      { side: "right", min: 230, max: 300, target: "corridor", ...leftEntry("corridor") },
       {
         side: "bottom",
         min: 52 * TILE,
@@ -820,7 +857,10 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Forsaken Chapel",
     build: buildChapel,
     mapRect: { gx: -2, gy: 0, gw: 2, gh: 1 }, // 28x16
-    exits: [{ side: "right", min: 152, max: 208, target: "entrance", tx: 48, ty: 304 }],
+    exits: [
+      // Into entrance main floor (GRAND datum)
+      { side: "right", ...sideDoorBand("chapel"), target: "entrance", tx: 48, ty: GRAND.floorY },
+    ],
   },
   corridor: {
     id: "corridor",
@@ -828,15 +868,16 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildCorridor,
     mapRect: { gx: 4, gy: 0, gw: 3, gh: 1 }, // 48x14
     exits: [
-      { side: "left", min: 120, max: 180, target: "entrance", tx: 960, ty: 288 },
-      { side: "right", min: 120, max: 180, target: "library", tx: 40, ty: 176 },
+      // West → entrance raised step (288)
+      { side: "left", ...sideDoorBand("corridor"), target: "entrance", tx: 960, ty: 18 * TILE },
+      { side: "right", ...sideDoorBand("corridor"), target: "library", ...leftEntry("library") },
       {
         side: "top",
-        min: 24 * TILE,
-        max: 26 * TILE,
+        min: 23 * TILE,
+        max: 27 * TILE,
         target: "towerShaft",
-        tx: 40,
-        ty: 592,
+        tx: 80, // fallback landing
+        ty: SHAFT.floorY,
       },
     ],
   },
@@ -846,8 +887,8 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildLibrary,
     mapRect: { gx: 7, gy: 0, gw: 2, gh: 1 }, // 32x14
     exits: [
-      { side: "left", min: 120, max: 180, target: "corridor", tx: 728, ty: 176 },
-      { side: "right", min: 120, max: 180, target: "saveRoom", tx: 40, ty: 144 },
+      { side: "left", ...sideDoorBand("library"), target: "corridor", ...rightEntry("corridor") },
+      { side: "right", ...sideDoorBand("library"), target: "saveRoom", ...leftEntry("saveRoom") },
     ],
   },
   towerShaft: {
@@ -857,22 +898,22 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildTowerShaft,
     mapRect: { gx: 5, gy: -3, gw: 1, gh: 3 }, // 16x40
     exits: [
-      // Range matches the floor hole exactly (cols 6–9).
       {
         side: "bottom",
         min: 6 * TILE,
         max: 10 * TILE,
         target: "corridor",
         tx: 400,
-        ty: 176,
+        ty: 64, // top platform under ceiling hatch (row 4)
       },
       {
         side: "top",
         min: 4 * TILE,
         max: 12 * TILE,
         target: "towerHall",
+        // Land on solid floor right of the hole (cols 4–7)
         tx: 168,
-        ty: 208,
+        ty: GALLERY.floorY,
       },
     ],
   },
@@ -881,7 +922,7 @@ export const ROOMS: Record<string, RoomDef> = {
     name: "Gear Gallery",
     zone: "tower",
     build: buildTowerHall,
-    mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 }, // 40x16
+    mapRect: { gx: 4, gy: -4, gw: 3, gh: 1 }, // 40x14
     exits: [
       {
         side: "bottom",
@@ -891,14 +932,7 @@ export const ROOMS: Record<string, RoomDef> = {
         tx: 40,
         ty: 64,
       },
-      {
-        side: "right",
-        min: 152,
-        max: 208,
-        target: "towerTop",
-        tx: 40,
-        ty: 176,
-      },
+      { side: "right", ...sideDoorBand("towerHall"), target: "towerTop", ...leftEntry("towerTop") },
     ],
   },
   towerTop: {
@@ -910,15 +944,15 @@ export const ROOMS: Record<string, RoomDef> = {
     boss: {
       id: "wraith",
       gateCells: [
-        [0, 8],
-        [0, 9],
-        [0, 10],
+        [0, GALLERY.doorRow0],
+        [0, GALLERY.doorRow0 + 1],
+        [0, GALLERY.doorRow1],
       ],
-      rewards: [{ relic: "highJump", x: 256, y: 176 }],
+      rewards: [{ relic: "highJump", x: 256, y: GALLERY.floorY }],
     },
     exits: [
-      { side: "left", min: 120, max: 180, target: "towerHall", tx: 600, ty: 208 },
-      { side: "right", min: 120, max: 180, target: "approach", tx: 40, ty: 176 },
+      { side: "left", ...sideDoorBand("towerTop"), target: "towerHall", ...rightEntry("towerHall") },
+      { side: "right", ...sideDoorBand("towerTop"), target: "approach", ...leftEntry("approach") },
     ],
   },
   approach: {
@@ -928,8 +962,8 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildApproach,
     mapRect: { gx: 9, gy: -4, gw: 2, gh: 1 }, // 36x14
     exits: [
-      { side: "left", min: 120, max: 180, target: "towerTop", tx: 472, ty: 176 },
-      { side: "right", min: 120, max: 180, target: "sovereignHall", tx: 40, ty: 176 },
+      { side: "left", ...sideDoorBand("approach"), target: "towerTop", ...rightEntry("towerTop") },
+      { side: "right", ...sideDoorBand("approach"), target: "sovereignHall", ...leftEntry("sovereignHall") },
     ],
   },
   sovereignHall: {
@@ -941,15 +975,16 @@ export const ROOMS: Record<string, RoomDef> = {
     boss: {
       id: "sovereign",
       gateCells: [
-        [39, 8],
-        [39, 9],
-        [39, 10],
+        [39, GALLERY.doorRow0],
+        [39, GALLERY.doorRow0 + 1],
+        [39, GALLERY.doorRow1],
       ],
       rewards: [],
     },
     exits: [
-      { side: "left", min: 120, max: 180, target: "approach", tx: 536, ty: 176 },
-      { side: "right", min: 120, max: 180, target: "throne", tx: 48, ty: 208 },
+      { side: "left", ...sideDoorBand("sovereignHall"), target: "approach", ...rightEntry("approach") },
+      // Ceremonial step up into throne (HALL 208)
+      { side: "right", ...sideDoorBand("sovereignHall"), target: "throne", ...leftEntry("throne", 48) },
     ],
   },
   throne: {
@@ -961,56 +996,52 @@ export const ROOMS: Record<string, RoomDef> = {
     boss: {
       id: "dracula",
       gateCells: [
-        [0, 10],
-        [0, 11],
-        [0, 12],
+        [0, HALL.doorRow0],
+        [0, HALL.doorRow0 + 1],
+        [0, HALL.doorRow1],
       ],
       rewards: [],
     },
     exits: [
-      // Main floor feet y = 13*16 = 208
-      { side: "left", min: 152, max: 220, target: "sovereignHall", tx: 600, ty: 176 },
+      { side: "left", ...sideDoorBand("throne"), target: "sovereignHall", ...rightEntry("sovereignHall") },
     ],
   },
   saveRoom: {
     id: "saveRoom",
     name: "Sanctuary",
     build: buildSaveRoom,
-    mapRect: { gx: 9, gy: 0, gw: 1, gh: 1 }, // 20x12
-    exits: [{ side: "left", min: 88, max: 148, target: "library", tx: 472, ty: 176 }],
+    mapRect: { gx: 9, gy: 0, gw: 1, gh: 1 }, // 20x14
+    exits: [
+      { side: "left", ...sideDoorBand("saveRoom"), target: "library", ...rightEntry("library") },
+    ],
   },
   cavern: {
     id: "cavern",
     name: "Underground Cavern",
     build: buildCavern,
-    // Under entrance; lake is immediately to the LEFT on the map. 48x20
-    mapRect: { gx: 1, gy: 2, gw: 3, gh: 2 },
+    mapRect: { gx: 1, gy: 2, gw: 3, gh: 2 }, // 48x20
     exits: [
-      // Ceiling shaft → entrance pit lip
       {
         side: "top",
         min: 40 * TILE,
         max: 44 * TILE,
         target: "entrance",
         tx: 816,
-        ty: 320,
+        ty: GRAND.floorY,
       },
-      // Left door → lake (ONLY link to lake)
-      { side: "left", min: 200, max: 260, target: "lake", tx: 720, ty: 208 },
-      // Right door → shop
-      { side: "right", min: 200, max: 260, target: "shop", tx: 40, ty: 144 },
+      // Left door → lake dry landing (HALL)
+      { side: "left", ...sideDoorBand("cavern"), target: "lake", ...rightEntry("lake") },
+      // Right door → shop (GALLERY)
+      { side: "right", ...sideDoorBand("cavern"), target: "shop", ...leftEntry("shop") },
     ],
   },
   lake: {
     id: "lake",
     name: "Sunken Gallery",
     build: buildLake,
-    // Same vertical band as cavern, immediately to its left. 48x18
-    mapRect: { gx: -2, gy: 2, gw: 3, gh: 2 },
+    mapRect: { gx: -2, gy: 2, gw: 3, gh: 2 }, // 48x18
     exits: [
-      // Right door → cavern left (ONLY link to cavern)
-      { side: "right", min: 152, max: 208, target: "cavern", tx: 40, ty: 256 },
-      // Dive shaft (cols 26–29) → depths, which sit BELOW on the map.
+      { side: "right", ...sideDoorBand("lake"), target: "cavern", ...leftEntry("cavern") },
       {
         side: "bottom",
         min: 26 * TILE,
@@ -1033,9 +1064,9 @@ export const ROOMS: Record<string, RoomDef> = {
         max: 22 * TILE,
         target: "lake",
         tx: 376,
-        ty: 256,
+        ty: 256, // swim landing near surface platforms
       },
-      { side: "right", min: 152, max: 208, target: "catacombs", tx: 40, ty: 208 },
+      { side: "right", ...sideDoorBand("lakeDepths"), target: "catacombs", ...leftEntry("catacombs") },
     ],
   },
   catacombs: {
@@ -1044,17 +1075,17 @@ export const ROOMS: Record<string, RoomDef> = {
     build: buildCatacombs,
     mapRect: { gx: 1, gy: 4, gw: 3, gh: 1 }, // 40x16
     exits: [
-      { side: "left", min: 152, max: 208, target: "lakeDepths", tx: 600, ty: 208 },
+      { side: "left", ...sideDoorBand("catacombs"), target: "lakeDepths", ...rightEntry("lakeDepths") },
     ],
   },
   shop: {
     id: "shop",
     name: "Hermit's Den",
     build: buildShop,
-    mapRect: { gx: 4, gy: 3, gw: 1, gh: 1 }, // 20x12
+    mapRect: { gx: 4, gy: 3, gw: 1, gh: 1 }, // 20x14
     exits: [
-      { side: "left", min: 88, max: 148, target: "cavern", tx: 728, ty: 256 },
-      { side: "right", min: 88, max: 148, target: "bossRoom", tx: 48, ty: 176 },
+      { side: "left", ...sideDoorBand("shop"), target: "cavern", ...rightEntry("cavern") },
+      { side: "right", ...sideDoorBand("shop"), target: "bossRoom", ...leftEntry("bossRoom", 48) },
     ],
   },
   bossRoom: {
@@ -1065,20 +1096,22 @@ export const ROOMS: Record<string, RoomDef> = {
     boss: {
       id: "colossus",
       gateCells: [
-        [0, 8],
-        [0, 9],
-        [0, 10],
+        [0, GALLERY.doorRow0],
+        [0, GALLERY.doorRow0 + 1],
+        [0, GALLERY.doorRow1],
       ],
       rewards: [
-        { relic: "batForm", x: 368, y: 176 },
-        { relic: "wolfForm", x: 416, y: 176 },
+        { relic: "batForm", x: 368, y: GALLERY.floorY },
+        { relic: "wolfForm", x: 416, y: GALLERY.floorY },
       ],
     },
-    exits: [{ side: "left", min: 120, max: 180, target: "shop", tx: 280, ty: 144 }],
+    exits: [
+      { side: "left", ...sideDoorBand("bossRoom"), target: "shop", ...rightEntry("shop") },
+    ],
   },
 };
 
-export const START = { room: "entrance", x: 56, y: 320 };
+export const START = { room: "entrance", x: 56, y: GRAND.floorY };
 
 /** True when the final throne gate should open. */
 export function canEnterThrone(flags: Set<string>): boolean {

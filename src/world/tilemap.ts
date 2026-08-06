@@ -128,6 +128,26 @@ export class Tilemap {
           const below = this.isPassage(c, r + 1);
           const vi = !above && below ? 0 : above && !below ? 2 : 1;
           img = variants[vi];
+        } else if (t === TileId.BgWindow && variants.length >= 6) {
+          // 2x3 Grand Window grid (32x48px) or 1x3 window:
+          // 0=Top-Left Arch, 1=Top-Right Arch
+          // 2=Mid-Left Glass, 3=Mid-Right Glass
+          // 4=Sill-Left,      5=Sill-Right
+          // 6=1x3 Top Arch,   7=1x3 Mid Glass, 8=1x3 Sill, 9=1x1 Standalone
+          const above = this.at(c, r - 1) === TileId.BgWindow;
+          const below = this.at(c, r + 1) === TileId.BgWindow;
+          const left = this.at(c - 1, r) === TileId.BgWindow;
+          const right = this.at(c + 1, r) === TileId.BgWindow;
+
+          if (!above && below) {
+            img = !left && right ? variants[0] : left && !right ? variants[1] : (variants[6] ?? variants[0]);
+          } else if (above && below) {
+            img = !left && right ? variants[2] : left && !right ? variants[3] : (variants[7] ?? variants[1]);
+          } else if (above && !below) {
+            img = !left && right ? variants[4] : left && !right ? variants[5] : (variants[8] ?? variants[2]);
+          } else {
+            img = variants[9] ?? variants[0];
+          }
         } else if (t === TileId.WaterTop) {
           img = variants[c % variants.length];
         } else {

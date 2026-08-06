@@ -110,68 +110,102 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
   tiles.set(
     TileId.Platform,
     variants(1, (ctx) => {
-      ctx.fillStyle = ramp.light;
+      // Clean carved gothic stone ledge
+      ctx.fillStyle = ramp.mid;
       ctx.fillRect(0, 0, TILE, 3);
-      ctx.fillStyle = ramp.hi;
+      ctx.fillStyle = ramp.light;
       ctx.fillRect(0, 0, TILE, 1);
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(0, 3, TILE, 2);
-      ctx.fillStyle = ramp.mid;
-      ctx.fillRect(2, 5, 2, 2);
-      ctx.fillRect(12, 5, 2, 2);
     }),
   );
 
-  // Pillars use the lighter end of the ramp so they separate from bgWall
-  // (especially in tower, where AI mid-tone shafts vanished into the wall).
+  // Pillars: 3D carved gothic stone columns with fluting and detailed capitals/bases
   tiles.set(
     TileId.PillarTop,
     variants(1, (ctx) => {
+      // Abacus top plate
       ctx.fillStyle = ramp.hi;
-      ctx.fillRect(0, 4, TILE, 4);
+      ctx.fillRect(0, 2, TILE, 2);
       ctx.fillStyle = ramp.light;
-      ctx.fillRect(0, 4, TILE, 1);
-      ctx.fillStyle = ramp.light;
-      ctx.fillRect(2, 8, 12, 8);
+      ctx.fillRect(0, 4, TILE, 2);
       ctx.fillStyle = ramp.dark;
-      ctx.fillRect(2, 8, 1, 8);
-      ctx.fillRect(13, 8, 1, 8);
+      ctx.fillRect(0, 6, TILE, 1);
+      // Carved bell capital with leaf relief
       ctx.fillStyle = ramp.mid;
-      ctx.fillRect(3, 8, 1, 8);
+      ctx.fillRect(2, 7, 12, 5);
+      ctx.fillStyle = ramp.light;
+      ctx.fillRect(4, 7, 3, 4);
+      ctx.fillRect(9, 7, 3, 4);
+      ctx.fillStyle = ramp.hi;
+      ctx.fillRect(5, 7, 1, 3);
+      ctx.fillRect(10, 7, 1, 3);
+      // Necking ring
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(2, 12, 12, 1);
+      // Shaft top start
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(2, 13, 12, 3);
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(2, 13, 1, 3);
+      ctx.fillRect(13, 13, 1, 3);
+      ctx.fillStyle = ramp.hi;
+      ctx.fillRect(4, 13, 1, 3);
     }),
   );
 
   tiles.set(
     TileId.Pillar,
     variants(2, (ctx, s) => {
-      ctx.fillStyle = ramp.light;
+      // Fluted 3D column shaft
+      ctx.fillStyle = ramp.mid;
       ctx.fillRect(2, 0, 12, TILE);
+      // Shadow & specular cylinder curve
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(2, 0, 1, TILE);
       ctx.fillRect(13, 0, 1, TILE);
       ctx.fillStyle = ramp.hi;
       ctx.fillRect(4, 0, 1, TILE);
-      ctx.fillStyle = ramp.mid;
-      ctx.fillRect(3, 0, 1, TILE);
+      ctx.fillStyle = ramp.light;
+      ctx.fillRect(5, 0, 1, TILE);
+      // Fluting grooves (estrias verticais)
       ctx.fillStyle = ramp.dark;
-      ctx.fillRect(3, s === 0 ? 5 : 11, 10, 1);
+      ctx.fillRect(6, 0, 1, TILE);
+      ctx.fillRect(9, 0, 1, TILE);
+      // Horizontal stone ring joint seam
+      const seamY = s === 0 ? 6 : 12;
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(2, seamY, 12, 1);
+      ctx.fillStyle = ramp.hi;
+      ctx.fillRect(3, seamY + 1, 10, 1);
     }),
   );
 
   tiles.set(
     TileId.PillarBase,
     variants(1, (ctx) => {
-      ctx.fillStyle = ramp.light;
-      ctx.fillRect(2, 0, 12, 8);
-      ctx.fillStyle = ramp.hi;
-      ctx.fillRect(0, 8, TILE, 8);
-      ctx.fillStyle = ramp.light;
-      ctx.fillRect(0, 8, TILE, 1);
-      ctx.fillStyle = ramp.dark;
-      ctx.fillRect(2, 0, 1, 8);
-      ctx.fillRect(13, 0, 1, 8);
+      // Shaft bottom
       ctx.fillStyle = ramp.mid;
-      ctx.fillRect(3, 0, 1, 8);
+      ctx.fillRect(2, 0, 12, 6);
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(2, 0, 1, 6);
+      ctx.fillRect(13, 0, 1, 6);
+      ctx.fillStyle = ramp.hi;
+      ctx.fillRect(4, 0, 1, 6);
+      // Torus moulding
+      ctx.fillStyle = ramp.light;
+      ctx.fillRect(1, 6, 14, 4);
+      ctx.fillStyle = ramp.hi;
+      ctx.fillRect(1, 6, 14, 1);
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(1, 9, 14, 1);
+      // Plinth base
+      ctx.fillStyle = ramp.mid;
+      ctx.fillRect(0, 10, TILE, 6);
+      ctx.fillStyle = ramp.light;
+      ctx.fillRect(0, 10, TILE, 1);
+      ctx.fillStyle = ramp.dark;
+      ctx.fillRect(0, 15, TILE, 1);
     }),
   );
 
@@ -228,21 +262,223 @@ export function buildTileset(zone: ZoneId = "castle"): Map<TileId, HTMLCanvasEle
 
   tiles.set(
     TileId.BgWindow,
-    variants(1, (ctx) => {
+    variants(10, (ctx, s) => {
       ctx.fillStyle = ramp.dark;
       ctx.fillRect(0, 0, TILE, TILE);
-      // Arched moonlit window
-      ctx.fillStyle = PAL.skyBottom;
-      ctx.fillRect(4, 4, 8, 12);
-      ctx.fillRect(5, 2, 6, 2);
-      ctx.fillStyle = "#4a3d70";
-      ctx.fillRect(5, 3, 6, 1);
-      ctx.fillRect(5, 5, 6, 1);
-      ctx.fillStyle = ramp.mid;
-      ctx.fillRect(7, 2, 1, 14); // mullion
-      ctx.fillStyle = ramp.light;
-      ctx.fillRect(3, 4, 1, 12);
-      ctx.fillRect(12, 4, 1, 12);
+
+      if (s === 0) {
+        // --- 2x3 Grand Window: Top-Left Arch ---
+        // Stained glass background (matches mid panel #1c142c)
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(2, 2, 14, 14);
+        // Glass color patches
+        ctx.fillStyle = "#781828"; // ruby
+        ctx.fillRect(4, 5, 4, 11);
+        ctx.fillStyle = "#283878"; // sapphire
+        ctx.fillRect(9, 4, 4, 12);
+        ctx.fillStyle = "#482868"; // violet
+        ctx.fillRect(4, 9, 4, 7);
+        // Central stone mullion (right edge, matches mid-left #14..15)
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(14, 2, 2, 14);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(14, 2, 1, 14);
+        // Ogival stone arch curve (left-to-top)
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 0, 2, TILE); // left jamb
+        ctx.fillRect(2, 2, 4, 3);
+        ctx.fillRect(4, 1, 5, 2);
+        ctx.fillRect(7, 0, 9, 2);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(8, 0, 8, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(2, 4, 1, 12);
+      } else if (s === 1) {
+        // --- 2x3 Grand Window: Top-Right Arch ---
+        // Stained glass background (matches mid panel #1c142c)
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(0, 2, 14, 14);
+        // Glass color patches
+        ctx.fillStyle = "#283878"; // sapphire
+        ctx.fillRect(3, 4, 4, 12);
+        ctx.fillStyle = "#781828"; // ruby
+        ctx.fillRect(8, 5, 4, 11);
+        ctx.fillStyle = "#482868"; // violet
+        ctx.fillRect(8, 9, 4, 7);
+        // Central stone mullion (left edge, matches mid-right #0..1)
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 2, 2, 14);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(0, 2, 1, 14);
+        // Ogival stone arch curve (right-to-top)
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(14, 0, 2, TILE); // right jamb
+        ctx.fillRect(10, 2, 4, 3);
+        ctx.fillRect(7, 1, 5, 2);
+        ctx.fillRect(0, 0, 9, 2);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(0, 0, 8, 1);
+        // Keystone accent
+        ctx.fillRect(0, 0, 2, 3);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(13, 4, 1, 12);
+      } else if (s === 2) {
+        // --- 2x3 Grand Window: Mid-Left Glass ---
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 0, 2, TILE); // left stone jamb
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(2, 0, 1, TILE);
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(3, 0, 13, TILE); // glass pane
+        // Stained glass patterns (ruby, violet, sapphire)
+        ctx.fillStyle = "#781828";
+        ctx.fillRect(4, 1, 4, 6);
+        ctx.fillStyle = "#482868";
+        ctx.fillRect(4, 8, 4, 7);
+        ctx.fillStyle = "#283878";
+        ctx.fillRect(9, 2, 4, 12);
+        // Lead came grid
+        ctx.fillStyle = "#100a1a";
+        ctx.fillRect(3, 7, 13, 1);
+        // Stone mullion edge right
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(14, 0, 2, TILE);
+      } else if (s === 3) {
+        // --- 2x3 Grand Window: Mid-Right Glass ---
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 0, 2, TILE); // stone mullion edge left
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(2, 0, 11, TILE); // glass pane
+        // Stained glass patterns (ruby, sapphire, violet)
+        ctx.fillStyle = "#283878";
+        ctx.fillRect(3, 2, 4, 12);
+        ctx.fillStyle = "#781828";
+        ctx.fillRect(8, 1, 4, 6);
+        ctx.fillStyle = "#482868";
+        ctx.fillRect(8, 8, 4, 7);
+        // Lead came grid
+        ctx.fillStyle = "#100a1a";
+        ctx.fillRect(2, 7, 11, 1);
+        // Right stone jamb
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(13, 0, 1, TILE);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(14, 0, 2, TILE);
+      } else if (s === 4) {
+        // --- 2x3 Grand Window: Sill-Left ---
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 0, 2, 8); // left jamb
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(2, 0, 12, 8);
+        ctx.fillStyle = "#482868";
+        ctx.fillRect(4, 1, 4, 6);
+        ctx.fillStyle = "#283878";
+        ctx.fillRect(9, 1, 4, 6);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(14, 0, 2, 8);
+        // Carved stone sill base
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 8, TILE, 5);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(0, 8, TILE, 1);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 9, TILE, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(0, 13, TILE, 3);
+      } else if (s === 5) {
+        // --- 2x3 Grand Window: Sill-Right ---
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 0, 2, 8);
+        ctx.fillStyle = "#1c142c";
+        ctx.fillRect(2, 0, 12, 8);
+        ctx.fillStyle = "#283878";
+        ctx.fillRect(3, 1, 4, 6);
+        ctx.fillStyle = "#482868";
+        ctx.fillRect(8, 1, 4, 6);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(14, 0, 2, 8);
+        // Carved stone sill base
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 8, TILE, 5);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(0, 8, TILE, 1);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 9, TILE, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(0, 13, TILE, 3);
+      } else if (s === 6) {
+        // --- 1x3 Window: Top Arch ---
+        ctx.fillStyle = PAL.skyBottom;
+        ctx.fillRect(3, 4, 10, 12);
+        ctx.fillStyle = "#362858";
+        ctx.fillRect(4, 6, 8, 10);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(2, 4, 12, 2);
+        ctx.fillRect(3, 2, 10, 2);
+        ctx.fillRect(5, 1, 6, 1);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(6, 0, 4, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(2, 4, 1, 12);
+        ctx.fillRect(13, 4, 1, 12);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(7, 4, 2, 12);
+      } else if (s === 7) {
+        // --- 1x3 Window: Mid Glass ---
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(0, 0, 2, TILE);
+        ctx.fillRect(14, 0, 2, TILE);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(2, 0, 1, TILE);
+        ctx.fillRect(13, 0, 1, TILE);
+        ctx.fillStyle = "#201838";
+        ctx.fillRect(3, 0, 10, TILE);
+        ctx.fillStyle = "#362858";
+        ctx.fillRect(4, 1, 3, 5);
+        ctx.fillStyle = "#4a3c74";
+        ctx.fillRect(9, 1, 3, 5);
+        ctx.fillStyle = "#2a1e48";
+        ctx.fillRect(4, 8, 3, 6);
+        ctx.fillStyle = "#384878";
+        ctx.fillRect(9, 8, 3, 6);
+        ctx.fillStyle = "#120c20";
+        ctx.fillRect(3, 6, 10, 2);
+        ctx.fillRect(3, 14, 10, 2);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(7, 0, 2, TILE);
+      } else if (s === 8) {
+        // --- 1x3 Window: Sill ---
+        ctx.fillStyle = "#201838";
+        ctx.fillRect(3, 0, 10, 8);
+        ctx.fillStyle = "#362858";
+        ctx.fillRect(4, 1, 3, 6);
+        ctx.fillStyle = "#4a3c74";
+        ctx.fillRect(9, 1, 3, 6);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(7, 0, 2, 8);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(1, 8, 14, 4);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(0, 8, TILE, 1);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(0, 9, TILE, 1);
+        ctx.fillStyle = ramp.dark;
+        ctx.fillRect(0, 12, TILE, 4);
+      } else {
+        // --- Standalone 1x1 Mini Window ---
+        ctx.fillStyle = PAL.skyBottom;
+        ctx.fillRect(4, 4, 8, 10);
+        ctx.fillStyle = "#362858";
+        ctx.fillRect(5, 5, 6, 8);
+        ctx.fillStyle = ramp.mid;
+        ctx.fillRect(3, 3, 10, 2);
+        ctx.fillRect(2, 4, 2, 10);
+        ctx.fillRect(12, 4, 2, 10);
+        ctx.fillStyle = ramp.hi;
+        ctx.fillRect(5, 2, 6, 1);
+        ctx.fillStyle = ramp.light;
+        ctx.fillRect(7, 3, 2, 11);
+      }
     }),
   );
 

@@ -234,6 +234,12 @@
       "frameW": 28,
       "frameH": 100,
       "frames": 1
+    },
+    "backdrop.corridor": {
+      "file": "backdrop-corridor.png",
+      "frameW": 768,
+      "frameH": 224,
+      "frames": 1
     }
   }
 }

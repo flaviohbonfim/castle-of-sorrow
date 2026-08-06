@@ -18,6 +18,7 @@ import {
   THRONE_PIER_W,
   THRONE_PIER_XS,
 } from "./throneLayout";
+import { ROOMS } from "../world/rooms";
 
 export type Frame = HTMLCanvasElement;
 
@@ -45,7 +46,12 @@ function buildRoomBackdrop(
   const sheet = getSheet(`backdrop.${roomId}`);
   if (sheet && sheet.length > 0) {
     const src = sheet[0];
-    if (src.width === widthPx && src.height === heightPx) return src;
+    if (src.width === widthPx && src.height === heightPx) {
+      const [c, ctx] = makeSurface(widthPx, heightPx);
+      ctx.drawImage(src, 0, 0);
+      drawDoorVestibules(ctx, roomId, widthPx, heightPx);
+      return c;
+    }
     // Native-size art is the contract; stretching is a legacy fallback that
     // distorts pixels (non-integer, non-uniform scale).
     if (import.meta.env.DEV) {
@@ -56,10 +62,57 @@ function buildRoomBackdrop(
     const [c, ctx] = makeSurface(widthPx, heightPx);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(src, 0, 0, widthPx, heightPx);
+    drawDoorVestibules(ctx, roomId, widthPx, heightPx);
     return c;
   }
-  if (roomId === "throne") return buildThroneBackdrop(widthPx, heightPx);
+  if (roomId === "throne") {
+    const frame = buildThroneBackdrop(widthPx, heightPx);
+    const ctx = frame.getContext("2d")!;
+    drawDoorVestibules(ctx, roomId, widthPx, heightPx);
+    return frame;
+  }
   return null;
+}
+
+/**
+ * Dark vestibule overlay on backdrop exits — creates a dark doorway frame
+ * at room boundaries so cross-room transitions read as walking through stone arches.
+ */
+export function drawDoorVestibules(
+  ctx: CanvasRenderingContext2D,
+  roomId: string,
+  w: number,
+  h: number,
+): void {
+  const def = ROOMS[roomId];
+  if (!def) return;
+  for (const e of def.exits) {
+    if (e.side === "left") {
+      const g = ctx.createLinearGradient(0, 0, 24, 0);
+      g.addColorStop(0, "rgba(5, 3, 10, 0.75)");
+      g.addColorStop(1, "rgba(5, 3, 10, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, Math.max(0, e.min - 16), 24, e.max - e.min + 32);
+    } else if (e.side === "right") {
+      const g = ctx.createLinearGradient(w, 0, w - 24, 0);
+      g.addColorStop(0, "rgba(5, 3, 10, 0.75)");
+      g.addColorStop(1, "rgba(5, 3, 10, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(w - 24, Math.max(0, e.min - 16), 24, e.max - e.min + 32);
+    } else if (e.side === "top") {
+      const g = ctx.createLinearGradient(0, 0, 0, 24);
+      g.addColorStop(0, "rgba(5, 3, 10, 0.75)");
+      g.addColorStop(1, "rgba(5, 3, 10, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(Math.max(0, e.min - 16), 0, e.max - e.min + 32, 24);
+    } else if (e.side === "bottom") {
+      const g = ctx.createLinearGradient(0, h, 0, h - 24);
+      g.addColorStop(0, "rgba(5, 3, 10, 0.75)");
+      g.addColorStop(1, "rgba(5, 3, 10, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(Math.max(0, e.min - 16), h - 24, e.max - e.min + 32, 24);
+    }
+  }
 }
 
 /**
